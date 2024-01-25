@@ -1,3 +1,5 @@
+from .typing import Config
+
 from datetime import datetime
 
 from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint
@@ -11,13 +13,14 @@ __all__ = [
 
 
 def load_tensorboard_logger(
+        config: Config,
         save_dir: str,
         name: str,
 ) -> TensorBoardLogger:
     return TensorBoardLogger(
         save_dir=save_dir,
         name=name,
-        version=datetime.now().strftime("%y%m%d%H%M%S"),
+        version=f"{config['seed']}-{datetime.now().strftime('%y%m%d%H%M%S')}",
     )
 
 

@@ -32,7 +32,8 @@ class Wrapper(L.LightningModule):
         self.config = config
         self.save_hyperparameters(self.config)
 
-        L.seed_everything(self.config["seed"])
+        seed = self.config["seed"]
+        L.seed_everything(seed if seed >= 0 else None)
 
         self.train_loss = MeanMetric()
         self.train_acc = Accuracy(task="multiclass", num_classes=self.config["num_classes"])
