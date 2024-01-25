@@ -1,0 +1,24 @@
+[project]
+name = "wah"
+version = "0.0.0"
+authors = [
+  { name="Juyeop Kim", email="juyeopkim@yonsei.ac.kr" },
+]
+description = "a library so simple you will learn Within An Hour"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/yupeeee/WAH"
+Issues = "https://github.com/yupeeee/WAH/issues"
+
+[build-system]
+requires = [
+    "setuptools>=61.0",
+]
+build-backend = "setuptools.build_meta"
