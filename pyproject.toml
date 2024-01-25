@@ -2,7 +2,7 @@
 name = "wah"
 version = "0.0.1"
 authors = [
-  { name="Juyeop Kim", email="juyeopkim@yonsei.ac.kr" },
+    { name = "Juyeop Kim", email = "juyeopkim@yonsei.ac.kr" },
 ]
 description = "a library so simple you will learn Within An Hour"
 readme = "README.md"
@@ -20,11 +20,10 @@ Issues = "https://github.com/yupeeee/WAH/issues"
 [build-system]
 requires = [
     "setuptools>=61.0",
-    "pytorch",
-    "pytorch-cuda",
-    "pytorch-lightning",
-    "pyyaml",
+    "lightning",
+    "PyYAML",
     "tensorboard",
+    "torch",
     "torchaudio",
     "torchmetrics",
     "torchvision",

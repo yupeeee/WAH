@@ -1,0 +1,7 @@
+lightning
+PyYAML
+tensorboard
+pytorch-cuda
+torchaudio
+torchmetrics
+torchvision
