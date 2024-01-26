@@ -84,7 +84,7 @@ class Wrapper(L.LightningModule):
             layer, attr = os.path.splitext(name)
             attr = attr[1:]  # removing '.'
 
-            self.log(f"grads/{layer}/{attr}", torch.norm(param.grad.flatten()))
+            self.log(f"grads/{self.logger.name}/{layer}/{attr}", torch.norm(param.grad.flatten()))
 
     def on_train_epoch_end(self) -> None:
         # self.log("step", self.current_epoch)
@@ -99,7 +99,7 @@ class Wrapper(L.LightningModule):
             layer, attr = os.path.splitext(name)
             attr = attr[1:]  # removing '.'
 
-            tensorboard.add_histogram(f"params/{layer}/{attr}", param, self.current_epoch)
+            tensorboard.add_histogram(f"params/{self.logger.name}/{layer}/{attr}", param, self.current_epoch)
 
     def validation_step(self, batch, batch_idx):
         data, targets = batch
