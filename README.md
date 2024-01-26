@@ -1,4 +1,4 @@
-![logo](./WAH.png)
+![logo](https://github.com/yupeeee/WAH/blob/main/WAH.png?raw=true)
 
 ## Install
 
@@ -24,7 +24,9 @@ torchvision
 ## Model Training
 
 Let's train [**ResNet50**](https://arxiv.org/abs/1512.03385) [1]
-on [**CIFAR-10**](https://www.cs.toronto.edu/~kriz/cifar.html) [2] dataset.
+on [**CIFAR-10**](https://www.cs.toronto.edu/~kriz/cifar.html) [2] dataset
+(Full example codes
+[**here**](https://github.com/yupeeee/WAH/tree/main/examples/train_cifar10)).\
 First, import the package.
 
 ```python
@@ -130,18 +132,11 @@ model = wah.Wrapper(model, config)
 Finally, train your model!
 
 ```python
-tensorboard_logger = wah.load_tensorboard_logger(
+trainer = wah.load_trainer(
     config=config,
     save_dir=TRAIN_LOG_ROOT,
     name="cifar10-resnet50",
-)
-lr_monitor = wah.load_lr_monitor()
-checkpoint_callback = wah.load_checkpoint_callback(SAVE_CKPT_PER_THIS_EPOCH)
-
-trainer = wah.load_trainer(
-    config=config,
-    logger=[tensorboard_logger, ],
-    callbacks=[lr_monitor, checkpoint_callback, ],
+    every_n_epochs=SAVE_CKPT_PER_THIS_EPOCH,
 )
 trainer.fit(
     model=model,

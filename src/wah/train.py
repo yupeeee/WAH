@@ -1,4 +1,4 @@
-from .typing import Config, Module
+from .typing import Config, Module, Path
 
 import os
 
@@ -12,6 +12,12 @@ from torchmetrics import (
     Accuracy,
     CalibrationError,
     MeanMetric,
+)
+
+from .log import (
+    load_tensorboard_logger,
+    load_lr_monitor,
+    load_checkpoint_callback,
 )
 
 __all__ = [
@@ -117,12 +123,21 @@ class Wrapper(L.LightningModule):
 
 def load_trainer(
         config: Config,
-        logger,
-        callbacks,
+        save_dir: Path,
+        name: str,
+        every_n_epochs: int,
 ) -> L.Trainer:
+    tensorboard_logger = load_tensorboard_logger(
+        config=config,
+        save_dir=save_dir,
+        name=name,
+    )
+    lr_monitor = load_lr_monitor()
+    checkpoint_callback = load_checkpoint_callback(every_n_epochs)
+
     return L.Trainer(
-        logger=logger,
+        logger=[tensorboard_logger, ],
         max_epochs=config["epochs"],
-        callbacks=callbacks,
+        callbacks=[lr_monitor, checkpoint_callback, ],
         deterministic="warn" if config["seed"] is not None else False,
     )
