@@ -1,4 +1,7 @@
-from .typing import Config, Path
+from .typing import (
+    Config,
+    Path,
+)
 
 import yaml
 

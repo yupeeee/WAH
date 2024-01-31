@@ -53,6 +53,8 @@ lr_scheduler: MultiStepLR
 lr_scheduler_cfg:
   milestones: [ 60, 120, 160, ]
   gamma: 0.2
+
+criterion: CrossEntropyLoss
 ```
 
 - **num_classes** (*int*) -
@@ -93,6 +95,11 @@ lr_scheduler_cfg:
 - **lr_scheduler_cfg** -
   parameters for the specified scheduler.
   The *optimizer* parameter does not need to be explicitly provided (automatically initialized).
+
+- **criterion** (*str*) -
+  specifies which loss function to use.
+  Must be one of the loss functions supported in
+  [*torch.nn*](https://pytorch.org/docs/stable/nn.html#loss-functions).
 
 Third, load your *config.yaml* file.
 

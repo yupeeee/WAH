@@ -15,3 +15,5 @@ lr_scheduler: MultiStepLR
 lr_scheduler_cfg:
   milestones: [ 60, 120, 160, ]
   gamma: 0.2
+
+criterion: CrossEntropyLoss

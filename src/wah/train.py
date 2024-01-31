@@ -1,9 +1,14 @@
-from .typing import Config, Module, Path
+from .typing import (
+    Callable,
+    Config,
+    Module,
+    Path,
+)
 
 import os
 
 import torch
-import torch.nn.functional as F
+from torch import nn
 import torch.optim as _optim
 import torch.optim.lr_scheduler as _lr_scheduler
 
@@ -41,6 +46,8 @@ class Wrapper(L.LightningModule):
         seed = self.config["seed"]
         L.seed_everything(seed if seed >= 0 else None)
 
+        self.criterion = self.load_criterion()
+
         self.train_loss = MeanMetric()
         self.train_acc = Accuracy(task="multiclass", num_classes=self.config["num_classes"])
         self.train_ece = CalibrationError(task="multiclass", num_classes=self.config["num_classes"])
@@ -48,6 +55,15 @@ class Wrapper(L.LightningModule):
         self.val_loss = MeanMetric()
         self.val_acc = Accuracy(task="multiclass", num_classes=self.config["num_classes"])
         self.val_ece = CalibrationError(task="multiclass", num_classes=self.config["num_classes"])
+
+    def load_criterion(self) -> Callable:
+        criterion_cfg = self.config["criterion"]
+
+        if isinstance(criterion_cfg, str):
+            return getattr(nn, criterion_cfg)()
+
+        else:
+            return criterion_cfg
 
     def configure_optimizers(self):
         optimizer = getattr(_optim, self.config["optimizer"])(
@@ -71,7 +87,7 @@ class Wrapper(L.LightningModule):
         data, targets = batch
 
         outputs = self.model(data)
-        loss = F.cross_entropy(outputs, targets)
+        loss = self.criterion(outputs, targets)
 
         self.train_loss(loss / data.size(0))
         self.train_acc(outputs, targets)
@@ -105,7 +121,7 @@ class Wrapper(L.LightningModule):
         data, targets = batch
 
         outputs = self.model(data)
-        loss = F.cross_entropy(outputs, targets)
+        loss = self.criterion(outputs, targets)
 
         self.val_loss(loss / data.size(0))
         self.val_acc(outputs, targets)

@@ -1,4 +1,9 @@
-from .typing import Config, DataLoader, Dataset, Optional
+from .typing import (
+    Config,
+    DataLoader,
+    Dataset,
+    Optional,
+)
 
 __all__ = [
     "load_dataloader",

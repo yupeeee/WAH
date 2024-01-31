@@ -1,4 +1,6 @@
-from .typing import Config
+from .typing import (
+    Config,
+)
 
 from datetime import datetime
 
