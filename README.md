@@ -112,7 +112,7 @@ metrics:
 
 - **metrics** -
   metrics to record during the training and validation stages.
-  Must be one of the metrics supported in
+  Must be the metrics supported in
   [*torchmetrics*](https://lightning.ai/docs/torchmetrics/stable/).
 
 Third, load your *config.yaml* file.
