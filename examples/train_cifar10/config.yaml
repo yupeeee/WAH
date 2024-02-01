@@ -17,3 +17,15 @@ lr_scheduler_cfg:
   gamma: 0.2
 
 criterion: CrossEntropyLoss
+
+metrics:
+  acc@1:
+    Accuracy:
+      task: multiclass
+      top_k: 1
+  ece:
+    CalibrationError:
+      task: multiclass
+#  mae:
+#    MeanAbsoluteError:
+#      { }

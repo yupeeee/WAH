@@ -76,7 +76,7 @@ if __name__ == "__main__":
     val_dataloader = wah.load_dataloader(val_dataset, config, shuffle=False)
 
     # load model
-    model = getattr(models, args.model)(weights=None, num_classes=10)
+    model = getattr(models, args.model)(weights=None, num_classes=config["num_classes"])
     model = wah.Wrapper(model, config)
 
     # train!

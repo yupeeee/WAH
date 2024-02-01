@@ -1,29 +1,36 @@
 from .typing import (
     Callable,
     Config,
+    List,
+    Metric,
     Module,
+    Optional,
     Path,
+    Tuple,
 )
 
+import math
 import os
 
 import torch
 from torch import nn
 import torch.optim as _optim
 import torch.optim.lr_scheduler as _lr_scheduler
+from torchvision.models.feature_extraction import (
+    create_feature_extractor,
+    get_graph_node_names,
+)
 
 import lightning as L
-from torchmetrics import (
-    Accuracy,
-    CalibrationError,
-    MeanMetric,
-)
+from torchmetrics import MeanMetric
 
 from .log import (
     load_tensorboard_logger,
     load_lr_monitor,
     load_checkpoint_callback,
 )
+from .metrics import load_metric
+from .utils import clean
 
 __all__ = [
     "Wrapper",
@@ -37,7 +44,7 @@ class Wrapper(L.LightningModule):
             model: Module,
             config: Config,
     ) -> None:
-        super().__init__()
+        super(Wrapper, self).__init__()
 
         self.model = model
         self.config = config
@@ -49,12 +56,21 @@ class Wrapper(L.LightningModule):
         self.criterion = self.load_criterion()
 
         self.train_loss = MeanMetric()
-        self.train_acc = Accuracy(task="multiclass", num_classes=self.config["num_classes"])
-        self.train_ece = CalibrationError(task="multiclass", num_classes=self.config["num_classes"])
-
         self.val_loss = MeanMetric()
-        self.val_acc = Accuracy(task="multiclass", num_classes=self.config["num_classes"])
-        self.val_ece = CalibrationError(task="multiclass", num_classes=self.config["num_classes"])
+
+        self.train_metrics = load_metric(config)
+        self.val_metrics = load_metric(config)
+
+        self.init_metrics(self.train_metrics, header="train")
+        self.init_metrics(self.val_metrics, header="val")
+
+        _, eval_nodes = get_graph_node_names(self.model)
+        self.feature_extractor = create_feature_extractor(
+            model=self.model,
+            return_nodes={eval_nodes[-2]: "features"},
+        )
+        self.train_features_l2 = []
+        self.val_features_l2 = []
 
     def load_criterion(self) -> Callable:
         criterion_cfg = self.config["criterion"]
@@ -83,6 +99,16 @@ class Wrapper(L.LightningModule):
             }
         }
 
+    def init_metrics(
+            self,
+            metrics: List[Tuple[str, Metric]],
+            header: Optional[str] = "",
+    ) -> None:
+        for label, _ in metrics:
+            label = "_".join([header, label]) if len(header) else label
+
+            setattr(self, clean(label), ...)
+
     def training_step(self, batch, batch_idx):
         data, targets = batch
 
@@ -90,8 +116,14 @@ class Wrapper(L.LightningModule):
         loss = self.criterion(outputs, targets)
 
         self.train_loss(loss / data.size(0))
-        self.train_acc(outputs, targets)
-        self.train_ece(outputs, targets)
+
+        for _, metric in self.train_metrics:
+            metric.to(self.device)(outputs, targets)
+
+        with torch.no_grad():
+            features = self.feature_extractor(data)["features"].reshape(len(batch), -1)
+            features_l2 = torch.norm(features, p=2, dim=-1).cpu() / math.sqrt(features.size(-1))
+            self.train_features_l2.append(features_l2)
 
         return loss
 
@@ -100,16 +132,21 @@ class Wrapper(L.LightningModule):
             layer, attr = os.path.splitext(name)
             attr = attr[1:]  # removing '.'
 
-            self.log(f"grads/{self.logger.name}/{layer}/{attr}", torch.norm(param.grad.flatten()))
+            self.log(f"grads/l2_norm/{self.logger.name}/{layer}/{attr}", torch.norm(param.grad.flatten()))
 
     def on_train_epoch_end(self) -> None:
         # self.log("step", self.current_epoch)
 
         self.log("train/avg_loss", self.train_loss)
-        self.log("train/acc@1", self.train_acc)
-        self.log("train/ece", self.train_ece)
+
+        for label, metric in self.train_metrics:
+            self.log(f"train/{label}", metric, metric_attribute=f"train_{clean(label)}")
 
         tensorboard = self.logger.experiment
+
+        self.train_features_l2 = torch.cat(self.train_features_l2)
+        tensorboard.add_histogram(f"train/features/l2_norm", self.train_features_l2, self.current_epoch)
+        self.train_features_l2 = []
 
         for name, param in self.model.named_parameters():
             layer, attr = os.path.splitext(name)
@@ -124,8 +161,14 @@ class Wrapper(L.LightningModule):
         loss = self.criterion(outputs, targets)
 
         self.val_loss(loss / data.size(0))
-        self.val_acc(outputs, targets)
-        self.val_ece(outputs, targets)
+
+        for _, metric in self.val_metrics:
+            metric.to(self.device)(outputs, targets)
+
+        with torch.no_grad():
+            features = self.feature_extractor(data)["features"].reshape(len(batch), -1)
+            features_l2 = torch.norm(features, p=2, dim=-1).cpu() / math.sqrt(features.size(-1))
+            self.val_features_l2.append(features_l2)
 
         return loss
 
@@ -133,8 +176,15 @@ class Wrapper(L.LightningModule):
         # self.log("step", self.current_epoch)
 
         self.log("val/avg_loss", self.val_loss)
-        self.log("val/acc@1", self.val_acc)
-        self.log("val/ece", self.val_ece)
+
+        for label, metric in self.val_metrics:
+            self.log(f"val/{label}", metric, metric_attribute=f"val_{clean(label)}")
+
+        tensorboard = self.logger.experiment
+
+        self.val_features_l2 = torch.cat(self.val_features_l2)
+        tensorboard.add_histogram(f"val/features/l2_norm", self.val_features_l2, self.current_epoch)
+        self.val_features_l2 = []
 
 
 def load_trainer(

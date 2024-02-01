@@ -55,6 +55,15 @@ lr_scheduler_cfg:
   gamma: 0.2
 
 criterion: CrossEntropyLoss
+
+metrics:
+  acc@1:
+    Accuracy:
+      task: multiclass
+      top_k: 1
+  ece:
+    CalibrationError:
+      task: multiclass
 ```
 
 - **num_classes** (*int*) -
@@ -85,7 +94,7 @@ criterion: CrossEntropyLoss
 
 - **optimizer_cfg** -
   parameters for the specified optimizer.
-  The *params* parameter does not need to be explicitly provided (automatically initialized).
+  The *params* and *lr* parameters do not need to be explicitly provided (automatically initialized).
 
 - **lr_scheduler** (*str*) -
   specifies which scheduler to use.
@@ -100,6 +109,11 @@ criterion: CrossEntropyLoss
   specifies which loss function to use.
   Must be one of the loss functions supported in
   [*torch.nn*](https://pytorch.org/docs/stable/nn.html#loss-functions).
+
+- **metrics** -
+  metrics to record during the training and validation stages.
+  Must be one of the metrics supported in
+  [*torchmetrics*](https://lightning.ai/docs/torchmetrics/stable/).
 
 Third, load your *config.yaml* file.
 

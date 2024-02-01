@@ -11,11 +11,13 @@ from typing import (
 
 import os
 
-from torch import Tensor
+from torch import device as Device, Tensor
 from torch.nn import Module, Parameter
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader, Dataset
+
+from torchmetrics import Metric
 
 __all__ = [
     "Any",
@@ -23,9 +25,11 @@ __all__ = [
     "Config",
     "DataLoader",
     "Dataset",
+    "Device",
     "Dict",
     "List",
     "LRScheduler",
+    "Metric",
     "Module",
     "Optimizer",
     "Optional",
