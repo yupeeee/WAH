@@ -131,7 +131,7 @@ class Wrapper(L.LightningModule):
             layer, attr = os.path.splitext(name)
             attr = attr[1:]  # removing '.'
 
-            self.log(f"grads/l2_norm/{self.logger.name}/{layer}/{attr}", torch.norm(param.grad.flatten()))
+            self.log(f"grads/l2_norm/{self.logger.name}/{layer}/{attr}", torch.norm(param.grad.flatten(), p=2))
 
     def on_train_epoch_end(self) -> None:
         # self.log("step", self.current_epoch)
@@ -202,7 +202,8 @@ def load_trainer(
 
     return L.Trainer(
         logger=[tensorboard_logger, ],
-        max_epochs=config["epochs"],
         callbacks=[lr_monitor, checkpoint_callback, ],
+        max_epochs=config["epochs"],
+        log_every_n_steps=1,
         deterministic="warn" if config["seed"] is not None else False,
     )
