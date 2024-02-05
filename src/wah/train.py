@@ -30,7 +30,7 @@ from .log import (
     load_checkpoint_callback,
 )
 from .metrics import load_metric
-from .utils import clean
+from .utils import clean, seed_everything
 
 __all__ = [
     "Wrapper",
@@ -50,8 +50,7 @@ class Wrapper(L.LightningModule):
         self.config = config
         self.save_hyperparameters(self.config)
 
-        seed = self.config["seed"]
-        L.seed_everything(seed if seed >= 0 else None)
+        seed_everything(self.config["seed"])
 
         self.criterion = self.load_criterion()
 
