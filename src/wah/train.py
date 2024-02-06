@@ -54,15 +54,32 @@ class Wrapper(L.LightningModule):
 
         self.criterion = self.load_criterion()
 
+        ###########
+        # Metrics #
+        ###########
+
+        # loss
         self.train_loss = MeanMetric()
         self.val_loss = MeanMetric()
 
+        # config: train/val metrics
         self.train_metrics = load_metric(config)
         self.val_metrics = load_metric(config)
 
         self.init_metrics(self.train_metrics, header="train")
         self.init_metrics(self.val_metrics, header="val")
 
+        # grads/l2_norm
+        grads_l2 = []
+        self.grads_l2_hist_data = {}
+
+        for name, _ in self.model.named_parameters():
+            grads_l2.append((f"{clean(name)}", MeanMetric()))
+            self.grads_l2_hist_data[clean(name)] = []
+
+        self.init_metrics(grads_l2, header="grads_l2")
+
+        # features/l2_norm
         _, eval_nodes = get_graph_node_names(self.model)
         self.feature_extractor = create_feature_extractor(
             model=self.model,
@@ -103,10 +120,10 @@ class Wrapper(L.LightningModule):
             metrics: List[Tuple[str, Metric]],
             header: Optional[str] = "",
     ) -> None:
-        for label, _ in metrics:
+        for label, metric in metrics:
             label = "_".join([header, label]) if len(header) else label
 
-            setattr(self, clean(label), ...)
+            setattr(self, clean(label), metric)
 
     def training_step(self, batch, batch_idx):
         data, targets = batch
@@ -128,30 +145,59 @@ class Wrapper(L.LightningModule):
 
     def on_after_backward(self) -> None:
         for name, param in self.model.named_parameters():
-            layer, attr = os.path.splitext(name)
-            attr = attr[1:]  # removing '.'
+            grad_l2 = torch.norm(param.grad.flatten(), p=2)
 
-            self.log(f"grads/l2_norm/{self.logger.name}/{layer}/{attr}", torch.norm(param.grad.flatten(), p=2))
+            getattr(self, f"grads_l2_{clean(name)}")(grad_l2)
+            self.grads_l2_hist_data[clean(name)].append(grad_l2.view(1))
 
     def on_train_epoch_end(self) -> None:
-        self.log("step", self.current_epoch + 1)
+        current_epoch = self.current_epoch + 1
 
+        # global step as epoch
+        self.log("step", current_epoch)
+
+        # loss
         self.log("train/avg_loss", self.train_loss)
 
+        # config: train metrics
         for label, metric in self.train_metrics:
-            self.log(f"train/{label}", metric, metric_attribute=f"train_{clean(label)}")
+            self.log(f"train/{label}", metric)
 
         tensorboard = self.logger.experiment
 
+        # features/l2_norm
         self.train_features_l2 = torch.cat(self.train_features_l2)
-        tensorboard.add_histogram(f"train/features/l2_norm", self.train_features_l2, self.current_epoch)
-        self.train_features_l2 = []
+        tensorboard.add_histogram(
+            f"train/features/l2_norm",
+            self.train_features_l2,
+            current_epoch,
+        )
+        self.train_features_l2 = []  # reset
 
         for name, param in self.model.named_parameters():
             layer, attr = os.path.splitext(name)
             attr = attr[1:]  # removing '.'
 
-            tensorboard.add_histogram(f"params/{self.logger.name}/{layer}/{attr}", param, self.current_epoch)
+            # grads/l2_norm
+            self.log(
+                f"grads/avg_l2_norm/{self.logger.name}/{layer}/{attr}",
+                getattr(self, f"grads_l2_{clean(name)}"),
+            )
+
+            grads_l2 = torch.cat(self.grads_l2_hist_data[clean(name)])
+            tensorboard.add_histogram(
+                f"grads/l2_norm/{self.logger.name}/{layer}/{attr}",
+                grads_l2,
+                current_epoch,
+            )
+            self.grads_l2_hist_data[clean(name)] = []  # reset
+
+            # params
+            tensorboard.add_histogram(
+                f"params/{self.logger.name}/{layer}/{attr}",
+                param,
+                current_epoch,
+            )
 
     def validation_step(self, batch, batch_idx):
         data, targets = batch
@@ -172,18 +218,28 @@ class Wrapper(L.LightningModule):
         return loss
 
     def on_validation_epoch_end(self) -> None:
-        self.log("step", self.current_epoch + 1)
+        current_epoch = self.current_epoch + 1
 
+        # global step as epoch
+        self.log("step", current_epoch)
+
+        # loss
         self.log("val/avg_loss", self.val_loss)
 
+        # config: val metrics
         for label, metric in self.val_metrics:
-            self.log(f"val/{label}", metric, metric_attribute=f"val_{clean(label)}")
+            self.log(f"val/{label}", metric)
 
         tensorboard = self.logger.experiment
 
+        # features/l2_norm
         self.val_features_l2 = torch.cat(self.val_features_l2)
-        tensorboard.add_histogram(f"val/features/l2_norm", self.val_features_l2, self.current_epoch)
-        self.val_features_l2 = []
+        tensorboard.add_histogram(
+            f"val/features/l2_norm",
+            self.val_features_l2,
+            current_epoch,
+        )
+        self.val_features_l2 = []  # reset
 
 
 def load_trainer(

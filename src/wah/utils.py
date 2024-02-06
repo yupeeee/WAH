@@ -10,7 +10,7 @@ __all__ = [
 
 
 def clean(s: str, ) -> str:
-    s = "_".join(filter(
+    s = "".join(filter(
         lambda c: str.isidentifier(c) or str.isdecimal(c), s
     ))
 
