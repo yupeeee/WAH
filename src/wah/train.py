@@ -134,7 +134,7 @@ class Wrapper(L.LightningModule):
             self.log(f"grads/l2_norm/{self.logger.name}/{layer}/{attr}", torch.norm(param.grad.flatten(), p=2))
 
     def on_train_epoch_end(self) -> None:
-        # self.log("step", self.current_epoch)
+        self.log("step", self.current_epoch + 1)
 
         self.log("train/avg_loss", self.train_loss)
 
@@ -172,7 +172,7 @@ class Wrapper(L.LightningModule):
         return loss
 
     def on_validation_epoch_end(self) -> None:
-        # self.log("step", self.current_epoch)
+        self.log("step", self.current_epoch + 1)
 
         self.log("val/avg_loss", self.val_loss)
 
