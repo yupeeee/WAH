@@ -14,7 +14,13 @@ import os
 from torch import device as Device, Tensor
 from torch.nn import Module, Parameter
 from torch.optim import Optimizer
-from torch.optim.lr_scheduler import LRScheduler
+
+# ImportError: cannot import name 'LRScheduler' from 'torch.optim.lr_scheduler'
+try:
+    from torch.optim.lr_scheduler import LRScheduler
+except ImportError:
+    from torch.optim.lr_scheduler import LambdaLR as LRScheduler
+
 from torch.utils.data import DataLoader, Dataset
 
 from torchmetrics import Metric
