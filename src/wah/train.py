@@ -15,7 +15,6 @@ import os
 import torch
 from torch import nn
 import torch.optim as _optim
-import torch.optim.lr_scheduler as _lr_scheduler
 from torchvision.models.feature_extraction import (
     create_feature_extractor,
     get_graph_node_names,
@@ -30,6 +29,7 @@ from .log import (
     load_checkpoint_callback,
 )
 from .metrics import load_metric
+from .scheduler import load_scheduler
 from .utils import clean, seed_everything
 
 __all__ = [
@@ -103,10 +103,7 @@ class Wrapper(L.LightningModule):
             lr=self.config["init_lr"],
             **self.config["optimizer_cfg"],
         )
-        lr_scheduler = getattr(_lr_scheduler, self.config["lr_scheduler"])(
-            optimizer=optimizer,
-            **self.config["lr_scheduler_cfg"],
-        )
+        lr_scheduler = load_scheduler(self.config, optimizer)
 
         return {
             "optimizer": optimizer,

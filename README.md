@@ -54,6 +54,11 @@ lr_scheduler_cfg:
   milestones: [ 60, 120, 160, ]
   gamma: 0.2
 
+warmup_lr_scheduler: LinearLR
+warmup_lr_scheduler_cfg:
+  start_factor: 0.01
+  total_iters: 10
+
 criterion: CrossEntropyLoss
 
 metrics:
@@ -104,6 +109,15 @@ metrics:
 - **lr_scheduler_cfg** -
   parameters for the specified scheduler.
   The *optimizer* parameter does not need to be explicitly provided (automatically initialized).
+
+- **warmup_lr_scheduler** (*str*) -
+  specifies which scheduler to use for warmup phase.
+  Must be one of [*"ConstantLR"*, *"LinearLR"*, ].
+
+- **warmup_lr_scheduler_cfg** -
+  parameters for the specified warmup scheduler.
+  The *optimizer* parameter does not need to be explicitly provided (automatically initialized).
+  Note that the *total_iters* parameter initializes the length of warmup phase.
 
 - **criterion** (*str*) -
   specifies which loss function to use.

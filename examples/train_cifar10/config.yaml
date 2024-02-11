@@ -16,6 +16,11 @@ lr_scheduler_cfg:
   milestones: [ 60, 120, 160, ]
   gamma: 0.2
 
+warmup_lr_scheduler: LinearLR
+warmup_lr_scheduler_cfg:
+  start_factor: 0.01
+  total_iters: 10
+
 criterion: CrossEntropyLoss
 
 metrics:
