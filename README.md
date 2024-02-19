@@ -43,6 +43,7 @@ num_workers: 2
 epochs: 200
 init_lr: 0.1
 seed: 0
+gpu: [ 0, ]
 
 optimizer: SGD
 optimizer_cfg:
@@ -92,6 +93,10 @@ metrics:
   Must be a non-negative integer.
   If a negative integer is provided, no seeding will occur.
 
+- **gpu** (*List[int], optional*) -
+  the GPU device(s) to be utilized for computation.
+  If not specified, the system automatically detects and selects devices.
+
 - **optimizer** (*str*) -
   specifies which optimizer to use.
   Must be one of the optimizers supported in
@@ -110,11 +115,11 @@ metrics:
   parameters for the specified scheduler.
   The *optimizer* parameter does not need to be explicitly provided (automatically initialized).
 
-- **warmup_lr_scheduler** (*str*) -
+- **warmup_lr_scheduler** (*str, optional*) -
   specifies which scheduler to use for warmup phase.
   Must be one of [*"ConstantLR"*, *"LinearLR"*, ].
 
-- **warmup_lr_scheduler_cfg** -
+- **warmup_lr_scheduler_cfg** (*optional*) -
   parameters for the specified warmup scheduler.
   The *optimizer* parameter does not need to be explicitly provided (automatically initialized).
   Note that the *total_iters* parameter initializes the length of warmup phase.

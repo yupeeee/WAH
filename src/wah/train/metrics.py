@@ -1,4 +1,9 @@
-from .typing import Config, List, Metric, Tuple
+from ..typing import (
+    Config,
+    List,
+    Metric,
+    Tuple,
+)
 
 import torchmetrics
 

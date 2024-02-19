@@ -1,6 +1,8 @@
 lightning
 PyYAML
 tensorboard
+## package location
+# --find-links https://download.pytorch.org/whl/torch_stable.html
 torch
 torchaudio
 torchmetrics

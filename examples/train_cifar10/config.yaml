@@ -5,6 +5,7 @@ num_workers: 2
 epochs: 200
 init_lr: 0.1
 seed: 0
+gpu: [ 0, ]
 
 optimizer: SGD
 optimizer_cfg:

@@ -1,4 +1,4 @@
-from .typing import (
+from ..typing import (
     Callable,
     Config,
     List,
@@ -23,6 +23,10 @@ from torchvision.models.feature_extraction import (
 import lightning as L
 from torchmetrics import MeanMetric
 
+from ..utils import (
+    clean,
+    seed_everything,
+)
 from .log import (
     load_tensorboard_logger,
     load_lr_monitor,
@@ -30,7 +34,6 @@ from .log import (
 )
 from .metrics import load_metric
 from .scheduler import load_scheduler
-from .utils import clean, seed_everything
 
 __all__ = [
     "Wrapper",
@@ -245,6 +248,13 @@ def load_trainer(
         name: str,
         every_n_epochs: int,
 ) -> L.Trainer:
+    accelerator = "auto"
+    devices = "auto"
+
+    if "gpu" in config.keys():
+        accelerator = "gpu"
+        devices = config["gpu"]
+
     tensorboard_logger = load_tensorboard_logger(
         config=config,
         save_dir=save_dir,
@@ -254,6 +264,8 @@ def load_trainer(
     checkpoint_callback = load_checkpoint_callback(every_n_epochs)
 
     return L.Trainer(
+        accelerator=accelerator,
+        devices=devices,
         logger=[tensorboard_logger, ],
         callbacks=[lr_monitor, checkpoint_callback, ],
         max_epochs=config["epochs"],
