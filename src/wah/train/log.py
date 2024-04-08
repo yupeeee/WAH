@@ -1,11 +1,9 @@
-from ..typing import (
-    Config,
-)
-
 from datetime import datetime
 
 from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint
 from lightning.pytorch.loggers import TensorBoardLogger
+
+from ..typing import Config
 
 __all__ = [
     "load_tensorboard_logger",

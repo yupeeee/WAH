@@ -1,9 +1,6 @@
-from ..typing import (
-    Config,
-    Path,
-)
-
 import yaml
+
+from ..typing import Config, Path
 
 __all__ = [
     "load_config",

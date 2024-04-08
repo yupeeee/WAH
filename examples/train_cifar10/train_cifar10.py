@@ -5,58 +5,19 @@ CHECK TRAIN LOGS:   tensorboard --logdir logs
 import argparse
 import os
 
-from torchvision.datasets import CIFAR10
 from torchvision import models
-import torchvision.transforms as tf
 
 import wah
 
 CIFAR10_ROOT = os.path.join(".", "dataset")  # directory to download CIFAR-10 dataset
 TRAIN_LOG_ROOT = os.path.join(".", "logs")  # directory to save train logs
-EVERY_N_EPOCHS = 10  # checkpoints will be saved every 10 epochs
-
-
-def load_train_dataset(root):
-    train_transform = tf.Compose([
-        tf.RandomHorizontalFlip(),
-        tf.RandomCrop(32, 4),
-        tf.ToTensor(),
-        tf.Normalize(
-            mean=[0.4914, 0.4822, 0.4465],
-            std=[0.2470, 0.2435, 0.2616],
-        ),
-    ])
-
-    return CIFAR10(
-        root=root,
-        train=True,
-        transform=train_transform,
-        target_transform=None,
-        download=True,
-    )
-
-
-def load_val_dataset(root):
-    val_transform = tf.Compose([
-        tf.ToTensor(),
-        tf.Normalize(
-            mean=[0.4914, 0.4822, 0.4465],
-            std=[0.2470, 0.2435, 0.2616],
-        ),
-    ])
-
-    return CIFAR10(
-        root=root,
-        train=False,
-        transform=val_transform,
-        target_transform=None,
-        download=True,
-    )
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, required=True)
+    parser.add_argument("--portion", type=float, required=False, default=1.)
+    parser.add_argument("--config", type=str, required=False, default="config.yaml")
     args = parser.parse_args()
 
     if args.model not in models.list_models():
@@ -69,22 +30,58 @@ if __name__ == "__main__":
     config = wah.load_config("config.yaml")
 
     # load dataset/dataloader
-    train_dataset = load_train_dataset(CIFAR10_ROOT)
-    val_dataset = load_val_dataset(CIFAR10_ROOT)
+    # load dataset/dataloader
+    train_dataset = wah.CIFAR10(
+        root=CIFAR10_ROOT,
+        split="train",
+        transform="auto",
+        target_transform="auto",
+        download=True,
+    )
+    val_dataset = wah.CIFAR10(
+        root=CIFAR10_ROOT,
+        split="test",
+        transform="auto",
+        target_transform="auto",
+        download=True,
+    )
 
-    train_dataloader = wah.load_dataloader(train_dataset, config, shuffle=True)
-    val_dataloader = wah.load_dataloader(val_dataset, config, shuffle=False)
+    if args.portion < 1:
+        train_dataset = wah.portion_dataset(train_dataset, args.portion)
+        val_dataset = wah.portion_dataset(val_dataset, args.portion)
+
+    train_dataloader = wah.load_dataloader(
+        dataset=train_dataset,
+        config=config,
+        shuffle=True,
+    )
+    val_dataloader = wah.load_dataloader(
+        dataset=val_dataset,
+        config=config,
+        shuffle=False,
+    )
 
     # load model
-    model = getattr(models, args.model)(weights=None, num_classes=config["num_classes"])
+    kwargs = {
+        "weights": None,
+        "num_classes": config["num_classes"],
+    }
+    if "vit" in args.model:
+        kwargs["image_size"] = 32
+
+    model = getattr(models, args.model)(**kwargs)
     model = wah.Wrapper(model, config)
 
-    # train!
+    # train
+    train_id = "cifar10"
+    train_id += f"x{args.portion}" if args.portion < 1. else ""
+    train_id += f"-{args.model}"
+
     trainer = wah.load_trainer(
         config=config,
         save_dir=TRAIN_LOG_ROOT,
-        name=f"cifar10-{args.model}",
-        every_n_epochs=EVERY_N_EPOCHS,
+        name=train_id,
+        every_n_epochs=config["epochs"],
     )
     trainer.fit(
         model=model,

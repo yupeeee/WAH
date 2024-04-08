@@ -1,10 +1,6 @@
-from ..typing import (
-    Config,
-    LRScheduler,
-    Optimizer,
-)
-
 from torch.optim import lr_scheduler as _lr_scheduler
+
+from ..typing import Config, LRScheduler, Optimizer
 
 __all__ = [
     "load_scheduler",

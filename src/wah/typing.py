@@ -1,17 +1,9 @@
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
-
 import os
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
+from typing_extensions import Literal
 
-from torch import device as Device, Tensor
+from torch import Tensor
+from torch import device as Device
 from torch.nn import Module, Parameter
 from torch.optim import Optimizer
 
@@ -22,7 +14,6 @@ except ImportError:
     from torch.optim.lr_scheduler import LambdaLR as LRScheduler
 
 from torch.utils.data import DataLoader, Dataset
-
 from torchmetrics import Metric
 
 __all__ = [
@@ -34,6 +25,7 @@ __all__ = [
     "Device",
     "Dict",
     "List",
+    "Literal",
     "LRScheduler",
     "Metric",
     "Module",

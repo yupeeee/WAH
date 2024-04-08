@@ -1,37 +1,55 @@
-num_classes: 10
-batch_size: 128
-num_workers: 2
+--- # config.yaml
 
-epochs: 200
-init_lr: 0.1
+
+#
+# Dataset
+#
+num_classes: 10
+batch_size: 64
+num_workers: 2
+mixup_alpha: 0.
+cutmix_alpha: 0.
+# use_v2: False
+
+
+#
+# Training hyperparameters
+#
+epochs: 300
+init_lr: 1.e-3
 seed: 0
 gpu: [ 0, ]
 
-optimizer: SGD
+optimizer: AdamW
 optimizer_cfg:
-  momentum: 0.9
-  weight_decay: 5.e-4
+  weight_decay: 5.e-2
 
-lr_scheduler: MultiStepLR
+lr_scheduler: CosineAnnealingLR
 lr_scheduler_cfg:
-  milestones: [ 60, 120, 160, ]
-  gamma: 0.2
+  eta_min: 1.e-5
 
 warmup_lr_scheduler: LinearLR
 warmup_lr_scheduler_cfg:
-  start_factor: 0.01
-  total_iters: 10
+  start_factor: 1.e-2
+  total_iters: 20
 
 criterion: CrossEntropyLoss
+criterion_cfg:
+  label_smoothing: 0.
 
+
+#
+# Metrics
+#
 metrics:
-  acc@1:
-    Accuracy:
-      task: multiclass
-      top_k: 1
-  ece:
-    CalibrationError:
-      task: multiclass
-#  mae:
-#    MeanAbsoluteError:
-#      { }
+- "Acc1"
+- "Acc5"
+- "ECE"
+- "sECE"
+
+track:
+- "grad_l2"
+- "feature_rms"
+
+
+... # end

@@ -36,40 +36,61 @@ import wah
 Second, write your own *config.yaml* file (which will do **everything** for you).
 
 ```yaml
-num_classes: 10
-batch_size: 128
-num_workers: 2
+--- # config.yaml
 
-epochs: 200
-init_lr: 0.1
+
+#
+# Dataset
+#
+num_classes: 10
+batch_size: 64
+num_workers: 2
+mixup_alpha: 0.
+cutmix_alpha: 0.
+# use_v2: False
+
+
+#
+# Training hyperparameters
+#
+epochs: 300
+init_lr: 1.e-3
 seed: 0
 gpu: [ 0, ]
 
-optimizer: SGD
+optimizer: AdamW
 optimizer_cfg:
-  momentum: 0.9
-  weight_decay: 5.e-4
+  weight_decay: 5.e-2
 
-lr_scheduler: MultiStepLR
+lr_scheduler: CosineAnnealingLR
 lr_scheduler_cfg:
-  milestones: [ 60, 120, 160, ]
-  gamma: 0.2
+  eta_min: 1.e-5
 
 warmup_lr_scheduler: LinearLR
 warmup_lr_scheduler_cfg:
-  start_factor: 0.01
-  total_iters: 10
+  start_factor: 1.e-2
+  total_iters: 20
 
 criterion: CrossEntropyLoss
+criterion_cfg:
+  label_smoothing: 0.
 
+
+#
+# Metrics
+#
 metrics:
-  acc@1:
-    Accuracy:
-      task: multiclass
-      top_k: 1
-  ece:
-    CalibrationError:
-      task: multiclass
+- "Acc1"
+- "Acc5"
+- "ECE"
+- "sECE"
+
+track:
+- "grad_l2"
+- "feature_rms"
+
+
+... # end
 ```
 
 - **num_classes** (*int*) -
@@ -81,6 +102,14 @@ metrics:
 - **num_workers** (*int*) -
   how many subprocesses to use for data loading.
   0 means that the data will be loaded in the main process.
+
+- **mixup_alpha** (*float*) -
+  hyperparameter of the Beta distribution used for mixup.
+  ([*mixup: Beyond Empirical Risk Minimization*](https://arxiv.org/abs/1710.09412))
+
+- **cutmix_alpha** (*float*) -
+  hyperparameter of the Beta distribution used for mixup.
+  ([*CutMix: Regularization Strategy to Train Strong Classifiers with Localizable Features*](https://arxiv.org/abs/1905.04899))
 
 - **epochs** (*int*) -
   stop training once this number of epochs is reached.
@@ -129,6 +158,14 @@ metrics:
   Must be one of the loss functions supported in
   [*torch.nn*](https://pytorch.org/docs/stable/nn.html#loss-functions).
 
+- **criterion_cfg** (*optional*) -
+  parameters for the specified loss function.
+
+  - **label_smoothing** (*optional, float*) -
+     specifies the amount of smoothing when computing the loss, where 0.0 means no smoothing.
+     The targets become a mixture of the original ground truth and a uniform distribution
+     as described in [*Rethinking the Inception Architecture for Computer Vision*](https://arxiv.org/abs/1512.00567).
+
 - **metrics** -
   metrics to record during the training and validation stages.
   Must be the metrics supported in
@@ -143,10 +180,20 @@ config = wah.load_config(PATH_TO_CONFIG)
 Fourth, load your dataloaders.
 
 ```python
-from torchvision.datasets import CIFAR10
-
-train_dataset = CIFAR10(train=True, ...)
-val_dataset = CIFAR10(train=False, ...)
+train_dataset = wah.CIFAR10(
+    root=...,
+    train=True,
+    transform="auto",
+    target_transform="auto",
+    download=True,
+)
+val_dataset = wah.CIFAR10(
+    root=...,
+    train=False,
+    transform="auto",
+    target_transform="auto",
+    download=True,
+)
 
 train_dataloader = wah.load_dataloader(
     dataset=train_dataset,
