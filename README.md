@@ -168,8 +168,11 @@ track:
 
 - **metrics** -
   metrics to record during the training and validation stages.
-  Must be the metrics supported in
-  [*torchmetrics*](https://lightning.ai/docs/torchmetrics/stable/).
+  Must be one of [*"Acc1"*, *"Acc5"*, *"ECE"*, *"sECE"*, ].
+
+- **track** -
+  values to track during the training and validation stages.
+  Must be one of [*"grad_l2"*, *"feature_rms"*, ].
 
 Third, load your *config.yaml* file.
 
