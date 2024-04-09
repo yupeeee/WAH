@@ -84,6 +84,7 @@ class Wrapper(L.LightningModule):
         self.layers = []
         self.train_rms = {}
         self.val_rms = {}
+        self.checked_layers = False
 
         if self.track_feature_rms:
             self.init_feature_rms()
@@ -149,28 +150,35 @@ class Wrapper(L.LightningModule):
     def check_layers(self, batch, batch_idx) -> None:
         assert self.track_feature_rms
 
-        data, _ = batch
+        if not self.checked_layers:
+            data, _ = batch
 
-        layers = []
+            layers = []
 
-        with torch.no_grad():
-            features = self.feature_extractor(data)
+            with torch.no_grad():
+                features = self.feature_extractor(data)
 
-            for layer in self.layers:
-                try:
-                    f = features[layer].reshape(len(batch), -1)
+                for layer in self.layers:
+                    try:
+                        f = features[layer].reshape(len(batch), -1)
 
-                    del f
-                    torch.cuda.empty_cache()
+                        del f
+                        torch.cuda.empty_cache()
 
-                    layers.append(layer)
+                        layers.append(layer)
 
-                except BaseException:
-                    continue
+                    except BaseException:
+                        continue
 
-        self.layers = layers
-        self.train_rms = dict((layer, []) for layer in layers)
-        self.val_rms = dict((layer, []) for layer in layers)
+            self.layers = layers
+            self.feature_extractor = create_feature_extractor(
+                model=self.model,
+                return_nodes=self.layers,
+            )
+            self.train_rms = dict((layer, []) for layer in layers)
+            self.val_rms = dict((layer, []) for layer in layers)
+
+            self.checked_layers = True
 
     def training_step(self, batch, batch_idx):
         data, targets = batch
