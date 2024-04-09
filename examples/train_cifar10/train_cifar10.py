@@ -30,7 +30,6 @@ if __name__ == "__main__":
     config = wah.load_config("config.yaml")
 
     # load dataset/dataloader
-    # load dataset/dataloader
     train_dataset = wah.CIFAR10(
         root=CIFAR10_ROOT,
         split="train",

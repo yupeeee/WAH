@@ -134,23 +134,43 @@ class Wrapper(L.LightningModule):
 
     def init_grad_l2(self, ) -> None:
         for name, _ in self.model.named_parameters():
-            # layer, attr = os.path.splitext(name)
-            # attr = attr[1:]  # removing '.'
-            # label = f"{layer}/{attr}"
-
             self.grad_l2[name] = []
 
     def init_feature_rms(self, ) -> None:
-        # features/l2_norm
         _, self.layers = get_graph_node_names(self.model)
         self.feature_extractor = create_feature_extractor(
             model=self.model,
             return_nodes=self.layers,
         )
 
-        for layer in self.layers:
-            self.train_rms[layer] = []
-            self.val_rms[layer] = []
+        self.train_rms = dict((layer, []) for layer in self.layers)
+        self.val_rms = dict((layer, []) for layer in self.layers)
+
+    def check_layers(self, batch, batch_idx) -> None:
+        assert self.track_feature_rms
+
+        data, _ = batch
+
+        layers = []
+
+        with torch.no_grad():
+            features = self.feature_extractor(data)
+
+            for layer in self.layers:
+                try:
+                    f = features[layer].reshape(len(batch), -1)
+
+                    del f
+                    torch.cuda.empty_cache()
+
+                    layers.append(layer)
+
+                except BaseException:
+                    continue
+
+        self.layers = layers
+        self.train_rms = dict((layer, []) for layer in layers)
+        self.val_rms = dict((layer, []) for layer in layers)
 
     def training_step(self, batch, batch_idx):
         data, targets = batch
@@ -234,6 +254,9 @@ class Wrapper(L.LightningModule):
             metric.to(self.device)(outputs, targets)
 
         if self.track_feature_rms:
+            if self.current_epoch == 0:
+                self.check_layers(batch, batch_idx)
+
             with torch.no_grad():
                 features = self.feature_extractor(data)
 
