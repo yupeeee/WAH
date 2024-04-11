@@ -27,7 +27,7 @@ if __name__ == "__main__":
         )
 
     # load config
-    config = wah.load_config("config.yaml")
+    config = wah.load_config(args.config)
 
     # load dataset/dataloader
     train_dataset = wah.CIFAR10(
