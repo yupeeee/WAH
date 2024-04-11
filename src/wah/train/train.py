@@ -72,6 +72,7 @@ class Wrapper(L.LightningModule):
         # grad_l2
         self.track_grad_l2 = \
             True if "grad_l2" in self.config["track"] else False
+        self.grad_layers = {}
         self.grad_l2 = {}
 
         if self.track_grad_l2:
@@ -81,7 +82,7 @@ class Wrapper(L.LightningModule):
         self.track_feature_rms = \
             True if "feature_rms" in self.config["track"] else False
         self.feature_extractor = None
-        self.layers = []
+        self.feature_layers = {}
         self.train_rms = {}
         self.val_rms = {}
         self.checked_layers = False
@@ -134,18 +135,24 @@ class Wrapper(L.LightningModule):
         return metrics_dict
 
     def init_grad_l2(self, ) -> None:
-        for name, _ in self.model.named_parameters():
-            self.grad_l2[name] = []
+        for i, (name, _) in enumerate(self.model.named_parameters()):
+            self.grad_layers[name] = f"{i}_{name}"
+            self.grad_l2[f"{i}_{name}"] = []
 
     def init_feature_rms(self, ) -> None:
-        _, self.layers = get_graph_node_names(self.model)
+        _, layers = get_graph_node_names(self.model)
+        self.feature_layers = dict(
+            (layer, f"{i}_{layer}") for i, layer in enumerate(layers))
+
         self.feature_extractor = create_feature_extractor(
             model=self.model,
-            return_nodes=self.layers,
+            return_nodes=self.feature_layers,
         )
 
-        self.train_rms = dict((layer, []) for layer in self.layers)
-        self.val_rms = dict((layer, []) for layer in self.layers)
+        self.train_rms = dict(
+            (layer, []) for layer in self.feature_layers.values())
+        self.val_rms = dict(
+            (layer, []) for layer in self.feature_layers.values())
 
     def check_layers(self, batch, batch_idx) -> None:
         assert self.track_feature_rms
@@ -158,9 +165,9 @@ class Wrapper(L.LightningModule):
             with torch.no_grad():
                 features = self.feature_extractor(data)
 
-                for layer in self.layers:
+                for layer, i_layer in self.feature_layers.items():
                     try:
-                        f = features[layer].reshape(len(batch), -1)
+                        f = features[i_layer].reshape(len(batch), -1)
 
                         del f
                         torch.cuda.empty_cache()
@@ -170,13 +177,18 @@ class Wrapper(L.LightningModule):
                     except BaseException:
                         continue
 
-            self.layers = layers
+            self.feature_layers = dict(
+                (layer, f"{i}_{layer}") for i, layer in enumerate(layers))
+
             self.feature_extractor = create_feature_extractor(
                 model=self.model,
-                return_nodes=self.layers,
+                return_nodes=self.feature_layers,
             )
-            self.train_rms = dict((layer, []) for layer in layers)
-            self.val_rms = dict((layer, []) for layer in layers)
+
+            self.train_rms = dict(
+                (layer, []) for layer in self.feature_layers.values())
+            self.val_rms = dict(
+                (layer, []) for layer in self.feature_layers.values())
 
             self.checked_layers = True
 
@@ -195,7 +207,7 @@ class Wrapper(L.LightningModule):
             with torch.no_grad():
                 features = self.feature_extractor(data)
 
-                for layer in self.layers:
+                for layer in self.feature_layers.values():
                     f = features[layer].reshape(len(batch), -1)
                     f_rms = torch.norm(f, p=2, dim=-1) / math.sqrt(f.size(-1))
                     self.train_rms[layer].append(f_rms)
@@ -207,9 +219,9 @@ class Wrapper(L.LightningModule):
 
     def on_after_backward(self) -> None:
         if self.track_grad_l2:
-            for name, param in self.model.named_parameters():
+            for i, (name, param) in enumerate(self.model.named_parameters()):
                 grad_l2 = torch.norm(param.grad.flatten(), p=2)
-                self.grad_l2[name].append(grad_l2.view(1))
+                self.grad_l2[f"{i}_{name}"].append(grad_l2.view(1))
 
     def on_train_epoch_end(self) -> None:
         current_epoch = self.current_epoch + 1
@@ -268,7 +280,7 @@ class Wrapper(L.LightningModule):
             with torch.no_grad():
                 features = self.feature_extractor(data)
 
-                for layer in self.layers:
+                for layer in self.feature_layers.values():
                     f = features[layer].reshape(len(batch), -1)
                     f_rms = torch.norm(f, p=2, dim=-1) / math.sqrt(f.size(-1))
                     self.val_rms[layer].append(f_rms)
