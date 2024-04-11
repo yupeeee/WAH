@@ -153,6 +153,17 @@ class Wrapper(L.LightningModule):
             (layer, []) for layer in self.feature_layers.values())
         self.val_rms = dict(
             (layer, []) for layer in self.feature_layers.values())
+    
+    @staticmethod
+    def flatten_feature(feature, batch) -> torch.Tensor:
+        # vit: self_attention
+        if isinstance(feature, tuple):
+            feature = [f for f in feature if f is not None]
+            feature = torch.cat(feature, dim=0)
+
+        feature = feature.reshape(len(batch), -1)
+
+        return feature
 
     def check_layers(self, batch, batch_idx) -> None:
         assert self.track_feature_rms
@@ -166,10 +177,15 @@ class Wrapper(L.LightningModule):
                 features = self.feature_extractor(data)
 
                 for layer, i_layer in self.feature_layers.items():
-                    try:
-                        f = features[i_layer].reshape(len(batch), -1)
+                    if layer == "x":
+                        continue
+                    if "dropout" in layer:
+                        continue
+                    if "getitem" in layer:
+                        continue
 
-                        del f
+                    try:
+                        _ = self.flatten_feature(features[i_layer], batch)
                         torch.cuda.empty_cache()
 
                         layers.append(layer)
@@ -207,12 +223,14 @@ class Wrapper(L.LightningModule):
             with torch.no_grad():
                 features = self.feature_extractor(data)
 
-                for layer in self.feature_layers.values():
-                    f = features[layer].reshape(len(batch), -1)
-                    f_rms = torch.norm(f, p=2, dim=-1) / math.sqrt(f.size(-1))
-                    self.train_rms[layer].append(f_rms)
+                for i_layer in self.feature_layers.values():
+                    feature = features[i_layer]
+                    feature = self.flatten_feature(feature, batch)
 
-                    del f
+                    f_rms = torch.norm(feature, p=2, dim=-1) / math.sqrt(feature.size(-1))
+                    self.train_rms[i_layer].append(f_rms)
+
+                    del feature
                     torch.cuda.empty_cache()
 
         return loss
@@ -280,12 +298,14 @@ class Wrapper(L.LightningModule):
             with torch.no_grad():
                 features = self.feature_extractor(data)
 
-                for layer in self.feature_layers.values():
-                    f = features[layer].reshape(len(batch), -1)
-                    f_rms = torch.norm(f, p=2, dim=-1) / math.sqrt(f.size(-1))
-                    self.val_rms[layer].append(f_rms)
+                for i_layer in self.feature_layers.values():
+                    feature = features[i_layer]
+                    feature = self.flatten_feature(feature, batch)
 
-                    del f
+                    f_rms = torch.norm(feature, p=2, dim=-1) / math.sqrt(feature.size(-1))
+                    self.val_rms[i_layer].append(f_rms)
+
+                    del feature
                     torch.cuda.empty_cache()
 
         return loss
