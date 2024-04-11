@@ -179,10 +179,6 @@ class Wrapper(L.LightningModule):
                 for layer, i_layer in self.feature_layers.items():
                     if layer == "x":
                         continue
-                    if "dropout" in layer:
-                        continue
-                    if "getitem" in layer:
-                        continue
 
                     try:
                         _ = self.flatten_feature(features[i_layer], batch)
