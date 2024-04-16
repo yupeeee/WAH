@@ -17,20 +17,20 @@ __all__ = [
 
 
 def load_dataloader(
-        dataset: Dataset,
-        config: Config,
-        shuffle: Optional[bool] = None,
+    dataset: Dataset,
+    config: Config,
+    train: Optional[bool] = False,
 ) -> DataLoader:
     collate_fn = CollateFunction(
         mixup_alpha=config["mixup_alpha"],
         cutmix_alpha=config["cutmix_alpha"],
         num_classes=config["num_classes"],
-    ) 
+    ) if train else None
 
     return DataLoader(
         dataset=dataset,
         batch_size=config["batch_size"],
-        shuffle=shuffle,
+        shuffle=True if train else False,
         num_workers=config["num_workers"],
         persistent_workers=True if config["num_workers"] > 0 else False,
         collate_fn=collate_fn,
@@ -38,10 +38,10 @@ def load_dataloader(
 
 
 def portion_dataset(
-        dataset: Dataset,
-        portion: float,
-        balanced: Optional[bool] = True,
-        random_sample: Optional[bool] = False,
+    dataset: Dataset,
+    portion: float,
+    balanced: Optional[bool] = True,
+    random_sample: Optional[bool] = False,
 ) -> Subset:
     assert 0 < portion <= 1, \
         f"Expected 0 < portion <= 1, got {portion}"

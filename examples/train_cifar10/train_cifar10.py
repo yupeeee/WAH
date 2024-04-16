@@ -52,12 +52,12 @@ if __name__ == "__main__":
     train_dataloader = wah.load_dataloader(
         dataset=train_dataset,
         config=config,
-        shuffle=True,
+        train=True,
     )
     val_dataloader = wah.load_dataloader(
         dataset=val_dataset,
         config=config,
-        shuffle=False,
+        train=False,
     )
 
     # load model
