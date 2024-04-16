@@ -213,6 +213,10 @@ class Wrapper(L.LightningModule):
         self.train_loss(loss / data.size(0))
 
         for _, metric in self.train_metrics.items():
+            # mixup/cutmix target reshape
+            if len(targets.shape) == 2:
+                targets = targets.argmax(dim=1)
+
             metric.to(self.device)(outputs, targets)
 
         if self.track_feature_rms:
@@ -285,6 +289,10 @@ class Wrapper(L.LightningModule):
         self.val_loss(loss / data.size(0))
 
         for _, metric in self.val_metrics.items():
+            # mixup/cutmix target reshape
+            if len(targets.shape) == 2:
+                targets = targets.argmax(dim=1)
+
             metric.to(self.device)(outputs, targets)
 
         if self.track_feature_rms:

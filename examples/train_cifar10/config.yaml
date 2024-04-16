@@ -9,7 +9,6 @@ batch_size: 64
 num_workers: 2
 mixup_alpha: 0.
 cutmix_alpha: 0.
-# use_v2: False
 
 
 #

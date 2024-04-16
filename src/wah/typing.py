@@ -1,6 +1,15 @@
 import os
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
-from typing_extensions import Literal
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 from torch import Tensor
 from torch import device as Device
@@ -15,6 +24,7 @@ except ImportError:
 
 from torch.utils.data import DataLoader, Dataset
 from torchmetrics import Metric
+from torchvision.transforms.v2 import Transform
 
 __all__ = [
     "Any",
@@ -35,6 +45,7 @@ __all__ = [
     "Path",
     "Sequence",
     "Tensor",
+    "Transform",
     "Tuple",
     "Union",
 ]

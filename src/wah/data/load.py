@@ -2,7 +2,12 @@ import random
 
 from torch.utils.data import Subset
 
-from ..typing import Config, DataLoader, Dataset, Optional
+from ..typing import (
+    Config,
+    DataLoader,
+    Dataset,
+    Optional,
+)
 from .transforms import CollateFunction
 
 __all__ = [
@@ -20,8 +25,7 @@ def load_dataloader(
         mixup_alpha=config["mixup_alpha"],
         cutmix_alpha=config["cutmix_alpha"],
         num_classes=config["num_classes"],
-        use_v2=config["use_v2"] if "use_v2" in config.keys() else False,
-    )
+    ) 
 
     return DataLoader(
         dataset=dataset,

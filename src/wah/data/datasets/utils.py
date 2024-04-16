@@ -2,6 +2,7 @@ import hashlib
 import os
 import tarfile
 from urllib.request import Request, urlopen
+from torch.utils.data import Dataset
 
 from tqdm import tqdm
 
@@ -116,7 +117,7 @@ def extract(fpath: Path, mode: str) -> None:
         f.extractall(os.path.dirname(fpath))
 
 
-class DNTDataset:
+class DNTDataset(Dataset):
     URL: str = ...
     ROOT: Path = ...
     MODE: str = ...
