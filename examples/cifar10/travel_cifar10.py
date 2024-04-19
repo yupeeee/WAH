@@ -8,8 +8,8 @@ from torchvision import models
 
 import wah
 
-CIFAR10_ROOT = os.path.join(".", "dataset")  # directory to download CIFAR-10 dataset
-CKPT_ROOT = os.path.join(".", "weights")  # directory where model checkpoints (i.e., weights) are saved
+CIFAR10_ROOT = os.path.join(".", "dataset") # directory to download CIFAR-10 dataset
+CKPT_ROOT = os.path.join(".", "weights")    # directory where model checkpoints (i.e., weights) are saved
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -58,12 +58,13 @@ if __name__ == "__main__":
     wah.load_state_dict(
         model=model,
         state_dict_path=os.path.join(CKPT_ROOT, f"{args.model}.ckpt"),
-        map_location=f"cuda:{','.join(config['gpu'])}",
+        map_location=f"cuda:{','.join([str(d) for d in config['gpu']])}",
     )
     model = wah.add_preprocess(model, preprocess=normalize)
+    model.eval()
 
     # travel
-    travel_id = f"{config["travel"]["method"]}_travel-cifar10"
+    travel_id = f"{config['travel']['method']}_travel-cifar10"
     travel_id += f"x{args.portion}" if args.portion < 1. else ""
     travel_id += f"-{args.model}"
 
