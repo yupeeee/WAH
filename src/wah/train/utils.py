@@ -1,19 +1,12 @@
-import time
-
-import lightning as L
-
 from ..typing import (
     Config,
     List,
     Metric,
-    Tuple,
 )
 from . import metrics as lib
 
 __all__ = [
     "clean",
-    "seed_everything",
-    "unseed_everything",
     "load_metrics",
 ]
 
@@ -24,17 +17,6 @@ def clean(s: str, ) -> str:
     ))
 
     return s
-
-
-def seed_everything(seed: int, ) -> None:
-    L.seed_everything(seed if seed >= 0 else None)
-
-
-def unseed_everything() -> None:
-    t = 1000 * time.time()  # current time in milliseconds
-    seed = int(t) % 2 ** 32  # seed must be in range [0, 2^32-1]
-
-    L.seed_everything(seed if seed >= 0 else None)
 
 
 requires_num_classes = [

@@ -20,6 +20,7 @@ from ..typing import (
     Optional,
     Path,
 )
+from ..utils.random import seed_everything
 from .log import (
     load_checkpoint_callback,
     load_lr_monitor,
@@ -29,7 +30,6 @@ from .scheduler import load_scheduler
 from .utils import (
     clean,
     load_metrics,
-    seed_everything,
 )
 
 __all__ = [

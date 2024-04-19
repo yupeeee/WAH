@@ -43,17 +43,18 @@ class CIFAR10(DNTDataset):
 
     MEAN = [0.4914, 0.4822, 0.4465]
     STD = [0.2470, 0.2435, 0.2616]
+    NORMALIZE = tf.Normalize(MEAN, STD)
 
     TRANSFORM = {
         "train": tf.Compose([
             tf.RandomHorizontalFlip(),
             tf.RandomCrop(32, 4),
             tf.ToTensor(),
-            tf.Normalize(MEAN, STD),
+            NORMALIZE,
         ]),
         "test": tf.Compose([
             tf.ToTensor(),
-            tf.Normalize(MEAN, STD),
+            NORMALIZE,
         ])
     }
     TARGET_TRANSFORM = {
@@ -65,7 +66,7 @@ class CIFAR10(DNTDataset):
         self,
         root: Path = ROOT,
         split: Literal["train", "test", ] = "train",
-        transform: Union[Optional[Callable], Literal["auto", ]] = None,
+        transform: Union[Optional[Callable], Literal["auto", "tt", ]] = None,
         target_transform: Union[Optional[Callable], Literal["auto", ]] = None,
         download: bool = False,
     ) -> None:
@@ -85,6 +86,10 @@ class CIFAR10(DNTDataset):
 
         if self.transform == "auto":
             self.transform = self.TRANSFORM[split]
+        elif self.transform == "tt":
+            self.transform = tf.ToTensor()
+        else:
+            pass
 
         if self.target_transform == "auto":
             self.target_transform = self.TARGET_TRANSFORM[split]

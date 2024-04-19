@@ -38,12 +38,12 @@ class ImageNet(DNTDataset):
     ]
 
     def __init__(
-            self,
-            root: Path = ROOT,
-            split: str = "train",
-            transform: Optional[Callable] = None,
-            target_transform: Optional[Callable] = None,
-            download: bool = False,
+        self,
+        root: Path = ROOT,
+        split: str = "train",
+        transform: Optional[Callable] = None,
+        target_transform: Optional[Callable] = None,
+        download: bool = False,
     ) -> None:
         super().__init__(root, transform, target_transform)
 

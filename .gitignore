@@ -160,7 +160,5 @@ cython_debug/
 .idea/
 dataset/
 logs/
-tests/
 temp*
-
-RelitDataset/
+*.ckpt

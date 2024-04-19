@@ -38,17 +38,18 @@ class CIFAR100(CIFAR10):
 
     MEAN = [0.5071, 0.4865, 0.4409]
     STD = [0.2673, 0.2564, 0.2762]
+    NORMALIZE = tf.Normalize(MEAN, STD)
 
     TRANSFORM = {
         "train": tf.Compose([
             tf.RandomHorizontalFlip(),
             tf.RandomCrop(32, 4),
             tf.ToTensor(),
-            tf.Normalize(MEAN, STD),
+            NORMALIZE,
         ]),
         "test": tf.Compose([
             tf.ToTensor(),
-            tf.Normalize(MEAN, STD),
+            NORMALIZE,
         ])
     }
     TARGET_TRANSFORM = {
@@ -60,7 +61,7 @@ class CIFAR100(CIFAR10):
         self,
         root: Path = ROOT,
         split: Literal["train", "test", ] = "train",
-        transform: Union[Optional[Callable], Literal["auto", ]] = None,
+        transform: Union[Optional[Callable], Literal["auto", "tt", ]] = None,
         target_transform: Union[Optional[Callable], Literal["auto", ]] = None,
         download: bool = False,
     ) -> None:
