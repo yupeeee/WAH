@@ -26,7 +26,7 @@ torchvision
 Let's train [**ResNet50**](https://arxiv.org/abs/1512.03385) [1]
 on [**CIFAR-10**](https://www.cs.toronto.edu/~kriz/cifar.html) [2] dataset
 (Full example codes
-[**here**](https://github.com/yupeeee/WAH/tree/main/examples/train_cifar10)).\
+[**here**](https://github.com/yupeeee/WAH/tree/main/examples/cifar10)).\
 First, import the package.
 
 ```python
