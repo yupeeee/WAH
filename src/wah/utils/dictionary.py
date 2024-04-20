@@ -11,13 +11,13 @@ from ..typing import (
 )
 
 __all__ = [
-    "load_csv_dict",
-    "dict_to_df",
-    "save_dict_in_csv",
+    "load_csv",
+    "to_df",
+    "save_in_csv",
 ]
 
 
-def load_csv_dict(
+def load_csv(
     csv_path: Path,
     index_col: Any = 0,
 ) -> Dict[Any, List[Any]]:
@@ -26,7 +26,7 @@ def load_csv_dict(
     return df.to_dict(orient="list")
 
 
-def dict_to_df(
+def to_df(
     dictionary: Dict,
     index_col: Any = None,
 ) -> DataFrame:
@@ -38,7 +38,7 @@ def dict_to_df(
     return df
 
 
-def save_dict_in_csv(
+def save_in_csv(
     dictionary: Dict,
     save_dir: Path,
     save_name: str,
@@ -51,7 +51,7 @@ def save_dict_in_csv(
         f"{save_name}.csv",
     )
 
-    df = dict_to_df(dictionary, index_col)
+    df = to_df(dictionary, index_col)
 
     if index_col is not None:
         df.to_csv(save_path, mode="w", index=False)

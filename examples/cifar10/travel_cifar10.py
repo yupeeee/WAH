@@ -2,14 +2,13 @@
 e.g., python travel_cifar10.py --model resnet50
 """
 import argparse
-import os
 
 from torchvision import models
 
 import wah
 
-CIFAR10_ROOT = os.path.join(".", "dataset") # directory to download CIFAR-10 dataset
-CKPT_ROOT = os.path.join(".", "weights")    # directory where model checkpoints (i.e., weights) are saved
+CIFAR10_ROOT = wah.path.join(".", "dataset") # directory to download CIFAR-10 dataset
+CKPT_ROOT = wah.path.join(".", "weights")    # directory where model checkpoints (i.e., weights) are saved
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -57,7 +56,7 @@ if __name__ == "__main__":
     model = getattr(models, args.model)(**kwargs)
     wah.load_state_dict(
         model=model,
-        state_dict_path=os.path.join(CKPT_ROOT, f"{args.model}.ckpt"),
+        state_dict_path=wah.path.join(CKPT_ROOT, f"{args.model}.ckpt"),
         map_location=f"cuda:{','.join([str(d) for d in config['gpu']])}",
     )
     model = wah.add_preprocess(model, preprocess=normalize)
@@ -76,7 +75,7 @@ if __name__ == "__main__":
     )
     travel_res = traveler.travel(dataloader, verbose=True)
 
-    wah.save_dict_in_csv(
+    wah.dictionary.save_in_csv(
         dictionary=travel_res,
         save_dir=".",
         save_name=travel_id,
