@@ -11,7 +11,7 @@ from .sort import sort_str_list
 __all__ = [
     "mkdir",
     "rmdir",
-    "join_path",
+    "join",
     "ext",
     "ls",
 ]
@@ -40,13 +40,13 @@ def clean(
     return os.path.normpath(path)
 
 
-def join_path(
+def join(
     *path_list,
 ) -> Path:
     return clean(os.path.join(*path_list))
 
 
-def ext(
+def splitext(
     path: Path,
 ) -> str:
     return os.path.splitext(path)[-1]
@@ -82,5 +82,5 @@ def ls(
 
         return [
             f for f in file_list
-            if ext(f) == fext
+            if splitext(f) == fext
         ]
