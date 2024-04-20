@@ -173,7 +173,7 @@ class Traveler:
         data: Tensor,
         target: Tensor,
         direction: Tensor,
-    ) -> Tuple[Tensor, float]:
+    ) -> float:
         data = torch.unsqueeze(data, dim=0)
         _data = data
 

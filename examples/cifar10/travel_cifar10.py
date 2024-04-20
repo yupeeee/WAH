@@ -1,20 +1,24 @@
 """
-e.g., python travel_cifar10.py --model resnet50
+e.g., python travel_cifar10.py --model resnet50 --cuda
 """
 import argparse
 
+import torch
 from torchvision import models
 
 import wah
 
-CIFAR10_ROOT = wah.path.join(".", "dataset") # directory to download CIFAR-10 dataset
-CKPT_ROOT = wah.path.join(".", "weights")    # directory where model checkpoints (i.e., weights) are saved
+CIFAR10_ROOT = wah.path.join(".", "dataset")     # directory to download CIFAR-10 dataset
+CKPT_ROOT = wah.path.join(".", "logs")           # directory where model checkpoints (i.e., weights) are saved
+TRAVEL_ROOT = wah.path.join(".", "travel_res")   # directory to save travel results
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, required=True)
+    parser.add_argument("--tag", type=str, required=False, default="base")
     parser.add_argument("--portion", type=float, required=False, default=1.)
-    parser.add_argument("--config", type=str, required=False, default="config.yaml")
+    parser.add_argument("--config", type=str, required=False, default="travel_cfg.yaml")
+    parser.add_argument("--cuda", action="store_true", required=False, default=False)
     args = parser.parse_args()
 
     if args.model not in models.list_models():
@@ -54,10 +58,19 @@ if __name__ == "__main__":
         kwargs["image_size"] = 32
 
     model = getattr(models, args.model)(**kwargs)
+
+    # load weights
+    train_id = "cifar10"
+    train_id += f"x{args.portion}" if args.portion < 1. else ""
+    train_id += f"-{args.model}"
+
+    ckpt_dir = wah.path.join(CKPT_ROOT, train_id, args.tag, "checkpoints")
+    ckpt_fname = wah.path.ls(ckpt_dir, fext="ckpt")[-1]
+
     wah.load_state_dict(
         model=model,
-        state_dict_path=wah.path.join(CKPT_ROOT, f"{args.model}.ckpt"),
-        map_location=f"cuda:{','.join([str(d) for d in config['gpu']])}",
+        state_dict_path=wah.path.join(ckpt_dir, ckpt_fname),
+        map_location=torch.device("cuda" if args.cuda else "cpu"),
     )
     model = wah.add_preprocess(model, preprocess=normalize)
     model.eval()
@@ -65,19 +78,19 @@ if __name__ == "__main__":
     # travel
     travel_id = f"{config['travel']['method']}_travel-cifar10"
     travel_id += f"x{args.portion}" if args.portion < 1. else ""
-    travel_id += f"-{args.model}"
+    travel_id += f"-{args.model}-{args.tag}"
 
     traveler = wah.Traveler(
         model,
         seed=config["seed"],
-        use_cuda=True if "gpu" in config.keys() else False,
+        use_cuda=args.cuda,
         **config["travel"],
     )
     travel_res = traveler.travel(dataloader, verbose=True)
 
     wah.dictionary.save_in_csv(
         dictionary=travel_res,
-        save_dir=".",
+        save_dir=wah.path.join(TRAVEL_ROOT, train_id, args.tag),
         save_name=travel_id,
         index_col="gt",
     )
