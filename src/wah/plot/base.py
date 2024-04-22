@@ -1,3 +1,5 @@
+import os
+
 import matplotlib.pyplot as plt
 
 from ..typing import (
@@ -100,6 +102,10 @@ class Plot2D:
             kwargs["dpi"] = 300
             kwargs["bbox_inches"] = "tight"
             kwargs["pad_inches"] = 0.01
+        
+        save_dir, _ = os.path.split(save_path)
+        save_dir = os.path.normpath(save_dir)
+        os.makedirs(save_dir, exist_ok=True)
 
         plt.savefig(save_path, **kwargs)
         plt.draw()
