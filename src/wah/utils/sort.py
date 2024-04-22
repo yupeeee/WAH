@@ -15,8 +15,8 @@ def sort_str_list(
     str_list: List[str],
     return_indices: bool = False,
 ) -> Union[
-    List[str],                      # return_indices = False
-    Tuple[List[str], List[int]],    # return_indices = True
+    List[str],  # return_indices = False
+    Tuple[List[str], List[int]],  # return_indices = True
 ]:
     convert = lambda text: int(text) if text.isdigit() else text
 
@@ -31,7 +31,7 @@ def sort_str_list(
     else:
         indices = sorted(
             range(len(str_list)),
-            key=lambda key: [convert(c) for c in re.split('([0-9]+)', str_list[key])],
+            key=lambda key: [convert(c) for c in re.split("([0-9]+)", str_list[key])],
         )
 
         return sorted_str_list, indices

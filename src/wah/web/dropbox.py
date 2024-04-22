@@ -1,7 +1,9 @@
 import os
 from tqdm import tqdm
 
-from ..typing import Path
+from ..typing import (
+    Path,
+)
 from ..utils.download_from_url import urlretrieve
 from ..utils.zip import extract
 from .driver import ChromeDriver

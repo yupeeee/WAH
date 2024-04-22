@@ -36,7 +36,7 @@ class IFGSM:
         data: Tensor,
         targets: Tensor,
     ) -> Tensor:
-        if self.epsilon == 0.:
+        if self.epsilon == 0.0:
             return data
 
         _data = data.detach()
@@ -73,7 +73,7 @@ class IFGSM:
         targets: Tensor,
         epsilon: float,
     ) -> Tensor:
-        if epsilon == 0.:
+        if epsilon == 0.0:
             return data
 
         signed_grads = -self.grad(data, targets).sign()

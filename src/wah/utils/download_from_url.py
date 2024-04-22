@@ -54,7 +54,9 @@ def download_url(
     checklist: List[Tuple[Path, str]],
 ) -> str:
     def check_extracted_files(
-            root: Path, checklist: List[Tuple[Path, str]], ) -> str:
+        root: Path,
+        checklist: List[Tuple[Path, str]],
+    ) -> str:
         for ext_fname, ext_checksum in checklist[1:]:
             ext_fpath = os.fspath(os.path.join(root, ext_fname))
 
@@ -80,7 +82,8 @@ def download_url(
         # dataset not yet downloaded
         except FileNotFoundError:
             urlretrieve(
-                url, fpath,
+                url,
+                fpath,
                 desc=f"Downloading {fname} to {root}",
             )
 
@@ -93,7 +96,8 @@ def download_url(
             # zipped/extracted file both corrupted; redownload dataset
             except FileNotFoundError:
                 urlretrieve(
-                    url, fpath,
+                    url,
+                    fpath,
                     desc=f"Redownloading {fname} to {root}",
                 )
 

@@ -13,12 +13,17 @@ for GPU computation.
 
 ```text
 lightning
+matplotlib
+pandas
+pyperclip
 PyYAML
+selenium
 tensorboard
 torch
 torchaudio
 torchmetrics
 torchvision
+webdriver_manager
 ```
 
 ## Model Training

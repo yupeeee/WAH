@@ -8,8 +8,8 @@ __all__ = [
 
 
 def load_scheduler(
-        config: Config,
-        optimizer: Optimizer,
+    config: Config,
+    optimizer: Optimizer,
 ) -> LRScheduler:
     if "warmup_lr_scheduler" in config.keys():
         warmup_epochs = config["warmup_lr_scheduler_cfg"]["total_iters"]

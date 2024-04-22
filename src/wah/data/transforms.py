@@ -1,7 +1,9 @@
 from torch.utils.data.dataloader import default_collate
 from torchvision.transforms import v2
 
-from ..typing import Transform
+from ..typing import (
+    Transform,
+)
 
 __all__ = [
     "CollateFunction",
@@ -15,14 +17,14 @@ def get_mixup_cutmix(
 ) -> Transform:
     mixup_cutmix = []
 
-    if mixup_alpha > 0.:
+    if mixup_alpha > 0.0:
         mixup = v2.MixUp(
             alpha=mixup_alpha,
             num_classes=num_classes,
         )
         mixup_cutmix.append(mixup)
 
-    if cutmix_alpha > 0.:
+    if cutmix_alpha > 0.0:
         cutmix = v2.CutMix(
             alpha=cutmix_alpha,
             num_classes=num_classes,

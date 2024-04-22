@@ -1,4 +1,7 @@
-from .fgsm import FGSM, IFGSM
+from .fgsm import (
+    FGSM,
+    IFGSM,
+)
 
 __all__ = [
     # fgsm

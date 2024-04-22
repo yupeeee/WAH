@@ -1,6 +1,8 @@
 from torch import nn
 
-from ...typing import Module
+from ...typing import (
+    Module,
+)
 from ..modules import get_module_name
 from .misc import ReplaceModule
 from .wrapper import PermuteWrapper

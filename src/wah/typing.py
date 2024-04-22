@@ -3,6 +3,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Iterable,
     List,
     Literal,
     Optional,
@@ -11,6 +12,7 @@ from typing import (
     Union,
 )
 
+from matplotlib.pyplot import Axes
 from pandas import DataFrame
 from torch import Tensor
 from torch import device as Device
@@ -29,6 +31,7 @@ from torchvision.transforms.v2 import Transform
 
 __all__ = [
     "Any",
+    "Axes",
     "Callable",
     "Config",
     "DataFrame",
@@ -36,6 +39,7 @@ __all__ = [
     "Dataset",
     "Device",
     "Dict",
+    "Iterable",
     "List",
     "Literal",
     "LRScheduler",

@@ -11,10 +11,10 @@ __all__ = [
 ]
 
 
-def clean(s: str, ) -> str:
-    s = "".join(filter(
-        lambda c: str.isidentifier(c) or str.isdecimal(c), s
-    ))
+def clean(
+    s: str,
+) -> str:
+    s = "".join(filter(lambda c: str.isidentifier(c) or str.isdecimal(c), s))
 
     return s
 
@@ -32,8 +32,8 @@ train_only_metrics = [
 
 
 def load_metrics(
-        config: Config,
-        train: bool,
+    config: Config,
+    train: bool,
 ) -> List[Metric]:
     metrics = []
 

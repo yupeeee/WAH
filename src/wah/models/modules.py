@@ -1,6 +1,12 @@
 from ast import literal_eval
 
-from ..typing import Any, Dict, List, Module, Tuple
+from ..typing import (
+    Any,
+    Dict,
+    List,
+    Module,
+    Tuple,
+)
 
 __all__ = [
     "_getattr",

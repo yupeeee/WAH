@@ -1,6 +1,9 @@
 import torch
 
-from ...typing import Module, Optional
+from ...typing import (
+    Module,
+    Optional,
+)
 from ..modules import _getattr, get_attrs
 from .misc import replace_module
 
@@ -30,10 +33,9 @@ class Replacer:
         to: str,
         test_replacement: Optional[torch.Tensor] = None,
     ) -> None:
-        assert (target, to) in \
-            [item for sublist in self.replacements.values()
-             for item in sublist], \
-            f"{target}->{to} not supported."
+        assert (target, to) in [
+            item for sublist in self.replacements.values() for item in sublist
+        ], f"{target}->{to} not supported."
 
         self.target = target
         self.to = to

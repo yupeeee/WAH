@@ -65,22 +65,19 @@ def ls(
             return_indices=False,
         )
 
-    if fext in [None, "", ]:
+    if fext in [
+        None,
+        "",
+    ]:
         return file_list
 
     # return directories (folders) only
     elif fext == "dir":
-        return [
-            f for f in file_list
-            if os.path.isdir(os.path.join(path, f))
-        ]
+        return [f for f in file_list if os.path.isdir(os.path.join(path, f))]
 
     # return files w/ specified extensions only
     else:
         if "." not in fext:
             fext = "." + fext
 
-        return [
-            f for f in file_list
-            if splitext(f) == fext
-        ]
+        return [f for f in file_list if splitext(f) == fext]

@@ -1,6 +1,14 @@
 import torch
 
-from ...typing import Any, Dict, List, Module, Optional, Tuple, Union
+from ...typing import (
+    Any,
+    Dict,
+    List,
+    Module,
+    Optional,
+    Tuple,
+    Union,
+)
 from ..modules import get_module_name, get_module_params
 
 __all__ = [
@@ -61,7 +69,9 @@ class ReplaceModule:
     keymaps: List[Tuple[str, str]]
     _replacement_module: Module
 
-    def __init__(self, ) -> None:
+    def __init__(
+        self,
+    ) -> None:
         if isinstance(self.target_module_name, str):
             self.target_module_name = [self.target_module_name]
 

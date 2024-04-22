@@ -1,7 +1,11 @@
-import torch
 from torch import nn
 
-from ...typing import Module, Optional, Sequence
+from ...typing import (
+    Module,
+    Optional,
+    Sequence,
+    Tensor,
+)
 
 __all__ = [
     "PermuteWrapper",
@@ -26,7 +30,12 @@ class PermuteWrapper(Module):
         if hasattr(module, "bias"):
             self.bias = self.module.bias
 
-    def forward(self, x: torch.Tensor, *args, **kwargs, ) -> torch.Tensor:
+    def forward(
+        self,
+        x: Tensor,
+        *args,
+        **kwargs,
+    ) -> Tensor:
         squeeze = False
 
         if x.dim() == 3:
@@ -42,7 +51,9 @@ class PermuteWrapper(Module):
 
         return x
 
-    def original_dims(self, ) -> Sequence[int]:
+    def original_dims(
+        self,
+    ) -> Sequence[int]:
         return sorted(range(len(self.dims)), key=lambda i: self.dims[i])
 
 
@@ -76,7 +87,12 @@ class Conv1x1Wrapper(Module):
         if hasattr(module, "bias"):
             self.bias = self.module.bias
 
-    def forward(self, x: torch.Tensor, *args, **kwargs, ) -> torch.Tensor:
+    def forward(
+        self,
+        x: Tensor,
+        *args,
+        **kwargs,
+    ) -> Tensor:
         x = self.conv1x1(x)
         x = self.module(x, *args, **kwargs)
 

@@ -41,7 +41,10 @@ class STL10(DNTDataset):
     def __init__(
         self,
         root: Path = ROOT,
-        split: Literal["train", "test", ] = "train",
+        split: Literal[
+            "train",
+            "test",
+        ] = "train",
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
@@ -57,15 +60,16 @@ class STL10(DNTDataset):
             self.checklist += self.TEST_LIST
 
         else:
-            raise ValueError(
-                f"split must be one of ['train', 'test', ], got {split}")
+            raise ValueError(f"split must be one of ['train', 'test', ], got {split}")
 
         if download:
             self.download(self.checklist + self.META_LIST)
 
         self.initialize()
 
-    def initialize(self, ) -> None:
+    def initialize(
+        self,
+    ) -> None:
         # load data
         data_fname, _ = self.checklist[1]
         data_fpath = os.fspath(os.path.join(self.root, data_fname))
@@ -73,26 +77,24 @@ class STL10(DNTDataset):
         with open(data_fpath, "rb") as f:
             self.data = np.fromfile(f, dtype=np.uint8)
             self.data = self.data.reshape((-1, 3, 96, 96))  # BCWH
-            self.data = self.data.transpose((0, 3, 2, 1))   # convert to BHWC
+            self.data = self.data.transpose((0, 3, 2, 1))  # convert to BHWC
 
         # load targets
         targets_fname, _ = self.checklist[2]
         targets_fpath = os.fspath(os.path.join(self.root, targets_fname))
 
         with open(targets_fpath, "rb") as f:
-            self.targets = [
-                target -
-                1 for target in np.fromfile(
-                    f,
-                    dtype=np.uint8)]
+            self.targets = [target - 1 for target in np.fromfile(f, dtype=np.uint8)]
 
         # load labels
         labels_fname, _ = self.META_LIST[0]
         labels_fpath = os.fspath(os.path.join(self.root, labels_fname))
 
         with open(labels_fpath, "r") as f:
-            self.labels = [label for label in f.read().split("\n")
-                           if len(label)]
+            self.labels = [label for label in f.read().split("\n") if len(label)]
 
-    def preprocess_data(self, data: np.ndarray, ) -> Image.Image:
+    def preprocess_data(
+        self,
+        data: np.ndarray,
+    ) -> Image.Image:
         return Image.fromarray(data)

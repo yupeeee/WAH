@@ -56,7 +56,11 @@ def add_preprocess(
     model: Module,
     preprocess: Union[Module, Transform],
 ) -> Module:
-    return torch.nn.Sequential(OrderedDict([
-        ("preprocess", preprocess),
-        ("model", model),
-    ]))
+    return torch.nn.Sequential(
+        OrderedDict(
+            [
+                ("preprocess", preprocess),
+                ("model", model),
+            ]
+        )
+    )

@@ -64,14 +64,11 @@ class Wrapper(L.LightningModule):
         train_metrics = load_metrics(config, train=True)
         val_metrics = load_metrics(config, train=False)
 
-        self.train_metrics = \
-            self.init_metrics(train_metrics, header="train")
-        self.val_metrics = \
-            self.init_metrics(val_metrics, header="val")
+        self.train_metrics = self.init_metrics(train_metrics, header="train")
+        self.val_metrics = self.init_metrics(val_metrics, header="val")
 
         # grad_l2
-        self.track_grad_l2 = \
-            True if "grad_l2" in self.config["track"] else False
+        self.track_grad_l2 = True if "grad_l2" in self.config["track"] else False
         self.grad_layers = {}
         self.grad_l2 = {}
 
@@ -79,8 +76,9 @@ class Wrapper(L.LightningModule):
             self.init_grad_l2()
 
         # feature_rms
-        self.track_feature_rms = \
+        self.track_feature_rms = (
             True if "feature_rms" in self.config["track"] else False
+        )
         self.feature_extractor = None
         self.feature_layers = {}
         self.train_rms = {}
@@ -114,7 +112,7 @@ class Wrapper(L.LightningModule):
             "optimizer": optimizer,
             "lr_scheduler": {
                 "scheduler": lr_scheduler,
-            }
+            },
         }
 
     def init_metrics(
@@ -125,8 +123,7 @@ class Wrapper(L.LightningModule):
         metrics_dict = {}
 
         for metric in metrics:
-            name = "_".join([header, metric.label]) \
-                if len(header) else metric.label
+            name = "_".join([header, metric.label]) if len(header) else metric.label
             name = clean(name)
 
             setattr(self, name, metric)
@@ -134,26 +131,29 @@ class Wrapper(L.LightningModule):
 
         return metrics_dict
 
-    def init_grad_l2(self, ) -> None:
+    def init_grad_l2(
+        self,
+    ) -> None:
         for i, (name, _) in enumerate(self.model.named_parameters()):
             self.grad_layers[name] = f"{i}_{name}"
             self.grad_l2[f"{i}_{name}"] = []
 
-    def init_feature_rms(self, ) -> None:
+    def init_feature_rms(
+        self,
+    ) -> None:
         _, layers = get_graph_node_names(self.model)
         self.feature_layers = dict(
-            (layer, f"{i}_{layer}") for i, layer in enumerate(layers))
+            (layer, f"{i}_{layer}") for i, layer in enumerate(layers)
+        )
 
         self.feature_extractor = create_feature_extractor(
             model=self.model,
             return_nodes=self.feature_layers,
         )
 
-        self.train_rms = dict(
-            (layer, []) for layer in self.feature_layers.values())
-        self.val_rms = dict(
-            (layer, []) for layer in self.feature_layers.values())
-    
+        self.train_rms = dict((layer, []) for layer in self.feature_layers.values())
+        self.val_rms = dict((layer, []) for layer in self.feature_layers.values())
+
     @staticmethod
     def flatten_feature(feature, batch) -> torch.Tensor:
         # vit: self_attention
@@ -190,17 +190,16 @@ class Wrapper(L.LightningModule):
                         continue
 
             self.feature_layers = dict(
-                (layer, f"{i}_{layer}") for i, layer in enumerate(layers))
+                (layer, f"{i}_{layer}") for i, layer in enumerate(layers)
+            )
 
             self.feature_extractor = create_feature_extractor(
                 model=self.model,
                 return_nodes=self.feature_layers,
             )
 
-            self.train_rms = dict(
-                (layer, []) for layer in self.feature_layers.values())
-            self.val_rms = dict(
-                (layer, []) for layer in self.feature_layers.values())
+            self.train_rms = dict((layer, []) for layer in self.feature_layers.values())
+            self.val_rms = dict((layer, []) for layer in self.feature_layers.values())
 
             self.checked_layers = True
 
@@ -227,7 +226,9 @@ class Wrapper(L.LightningModule):
                     feature = features[i_layer]
                     feature = self.flatten_feature(feature, batch)
 
-                    f_rms = torch.norm(feature, p=2, dim=-1) / math.sqrt(feature.size(-1))
+                    f_rms = torch.norm(feature, p=2, dim=-1) / math.sqrt(
+                        feature.size(-1)
+                    )
                     self.train_rms[i_layer].append(f_rms)
 
                     del feature
@@ -306,7 +307,9 @@ class Wrapper(L.LightningModule):
                     feature = features[i_layer]
                     feature = self.flatten_feature(feature, batch)
 
-                    f_rms = torch.norm(feature, p=2, dim=-1) / math.sqrt(feature.size(-1))
+                    f_rms = torch.norm(feature, p=2, dim=-1) / math.sqrt(
+                        feature.size(-1)
+                    )
                     self.val_rms[i_layer].append(f_rms)
 
                     del feature
@@ -366,8 +369,13 @@ def load_trainer(
     return L.Trainer(
         accelerator=accelerator,
         devices=devices,
-        logger=[tensorboard_logger, ],
-        callbacks=[lr_monitor, checkpoint_callback, ],
+        logger=[
+            tensorboard_logger,
+        ],
+        callbacks=[
+            lr_monitor,
+            checkpoint_callback,
+        ],
         max_epochs=config["epochs"],
         log_every_n_steps=1,
         deterministic="warn" if config["seed"] is not None else False,

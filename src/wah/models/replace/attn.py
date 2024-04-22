@@ -1,4 +1,6 @@
-from ...typing import Module
+from ...typing import (
+    Module,
+)
 from .misc import ReplaceModule, get_module_name
 from .wrapper import Conv1x1Wrapper
 
@@ -32,10 +34,7 @@ class ATTN2PATTN(ReplaceModule):
 
         return pattn
 
-    def replacement_module(
-            self,
-            module: Module,
-            use_cuda: bool = False) -> Module:
+    def replacement_module(self, module: Module, use_cuda: bool = False) -> Module:
         raise NotImplementedError
 
 

@@ -41,16 +41,20 @@ class CIFAR100(CIFAR10):
     NORMALIZE = tf.Normalize(MEAN, STD)
 
     TRANSFORM = {
-        "train": tf.Compose([
-            tf.RandomHorizontalFlip(),
-            tf.RandomCrop(32, 4),
-            tf.ToTensor(),
-            NORMALIZE,
-        ]),
-        "test": tf.Compose([
-            tf.ToTensor(),
-            NORMALIZE,
-        ])
+        "train": tf.Compose(
+            [
+                tf.RandomHorizontalFlip(),
+                tf.RandomCrop(32, 4),
+                tf.ToTensor(),
+                NORMALIZE,
+            ]
+        ),
+        "test": tf.Compose(
+            [
+                tf.ToTensor(),
+                NORMALIZE,
+            ]
+        ),
     }
     TARGET_TRANSFORM = {
         "train": None,
@@ -60,14 +64,25 @@ class CIFAR100(CIFAR10):
     def __init__(
         self,
         root: Path = ROOT,
-        split: Literal["train", "test", ] = "train",
-        transform: Union[Optional[Callable], Literal["auto", "tt", ]] = None,
-        target_transform: Union[Optional[Callable], Literal["auto", ]] = None,
+        split: Literal[
+            "train",
+            "test",
+        ] = "train",
+        transform: Union[
+            Optional[Callable],
+            Literal[
+                "auto",
+                "tt",
+            ],
+        ] = None,
+        target_transform: Union[Optional[Callable], Literal["auto",]] = None,
         download: bool = False,
     ) -> None:
         super().__init__(root, split, transform, target_transform, download)
 
-    def initialize(self, ) -> None:
+    def initialize(
+        self,
+    ) -> None:
         self.data = []
         self.targets = []
 
@@ -82,7 +97,7 @@ class CIFAR100(CIFAR10):
                 self.targets.extend(entry["fine_labels"])
 
         self.data = np.vstack(self.data).reshape(-1, 3, 32, 32)  # BCHW
-        self.data = self.data.transpose((0, 2, 3, 1))   # convert to BHWC
+        self.data = self.data.transpose((0, 2, 3, 1))  # convert to BHWC
 
         # load labels
         labels_fname, _ = self.META_LIST[0]

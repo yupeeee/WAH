@@ -22,10 +22,10 @@ class DNTDataset(Dataset):
     MODE: str = ...
 
     def __init__(
-            self,
-            root: Path = ROOT,
-            transform: Optional[Callable] = None,
-            target_transform: Optional[Callable] = None,
+        self,
+        root: Path = ROOT,
+        transform: Optional[Callable] = None,
+        target_transform: Optional[Callable] = None,
     ) -> None:
         self.root = root
         self.transform = transform
@@ -38,7 +38,10 @@ class DNTDataset(Dataset):
 
         # self.initialize()
 
-    def __getitem__(self, index: int, ) -> None:
+    def __getitem__(
+        self,
+        index: int,
+    ) -> None:
         data, target = self.data[index], self.targets[index]
 
         data = self.preprocess_data(data)
@@ -51,17 +54,27 @@ class DNTDataset(Dataset):
 
         return data, target
 
-    def __len__(self, ) -> None:
+    def __len__(
+        self,
+    ) -> None:
         return len(self.data)
 
-    def download(self, checklist: List[Tuple[Path, str]], ) -> None:
+    def download(
+        self,
+        checklist: List[Tuple[Path, str]],
+    ) -> None:
         fpath = download_url(self.URL, self.root, checklist)
 
         if fpath != "*extracted":
             extract(fpath, self.MODE)
 
-    def initialize(self, ) -> None:
+    def initialize(
+        self,
+    ) -> None:
         raise NotImplementedError
 
-    def preprocess_data(self, data: Any, ) -> Any:
+    def preprocess_data(
+        self,
+        data: Any,
+    ) -> Any:
         raise NotImplementedError

@@ -46,16 +46,20 @@ class CIFAR10(DNTDataset):
     NORMALIZE = tf.Normalize(MEAN, STD)
 
     TRANSFORM = {
-        "train": tf.Compose([
-            tf.RandomHorizontalFlip(),
-            tf.RandomCrop(32, 4),
-            tf.ToTensor(),
-            NORMALIZE,
-        ]),
-        "test": tf.Compose([
-            tf.ToTensor(),
-            NORMALIZE,
-        ])
+        "train": tf.Compose(
+            [
+                tf.RandomHorizontalFlip(),
+                tf.RandomCrop(32, 4),
+                tf.ToTensor(),
+                NORMALIZE,
+            ]
+        ),
+        "test": tf.Compose(
+            [
+                tf.ToTensor(),
+                NORMALIZE,
+            ]
+        ),
     }
     TARGET_TRANSFORM = {
         "train": None,
@@ -65,9 +69,18 @@ class CIFAR10(DNTDataset):
     def __init__(
         self,
         root: Path = ROOT,
-        split: Literal["train", "test", ] = "train",
-        transform: Union[Optional[Callable], Literal["auto", "tt", ]] = None,
-        target_transform: Union[Optional[Callable], Literal["auto", ]] = None,
+        split: Literal[
+            "train",
+            "test",
+        ] = "train",
+        transform: Union[
+            Optional[Callable],
+            Literal[
+                "auto",
+                "tt",
+            ],
+        ] = None,
+        target_transform: Union[Optional[Callable], Literal["auto",]] = None,
         download: bool = False,
     ) -> None:
         super().__init__(root, transform, target_transform)
@@ -81,8 +94,7 @@ class CIFAR10(DNTDataset):
             self.checklist += self.TEST_LIST
 
         else:
-            raise ValueError(
-                f"split must be one of ['train', 'test', ], got {split}")
+            raise ValueError(f"split must be one of ['train', 'test', ], got {split}")
 
         if self.transform == "auto":
             self.transform = self.TRANSFORM[split]
@@ -99,7 +111,9 @@ class CIFAR10(DNTDataset):
 
         self.initialize()
 
-    def initialize(self, ) -> None:
+    def initialize(
+        self,
+    ) -> None:
         self.data = []
         self.targets = []
 
@@ -114,7 +128,7 @@ class CIFAR10(DNTDataset):
                 self.targets.extend(entry["labels"])
 
         self.data = np.vstack(self.data).reshape(-1, 3, 32, 32)  # BCHW
-        self.data = self.data.transpose((0, 2, 3, 1))   # convert to BHWC
+        self.data = self.data.transpose((0, 2, 3, 1))  # convert to BHWC
 
         # load labels
         labels_fname, _ = self.META_LIST[0]
@@ -124,5 +138,8 @@ class CIFAR10(DNTDataset):
             data = pickle.load(f, encoding="latin1")
             self.labels = data["label_names"]
 
-    def preprocess_data(self, data: np.ndarray, ) -> Image.Image:
+    def preprocess_data(
+        self,
+        data: np.ndarray,
+    ) -> Image.Image:
         return Image.fromarray(data)

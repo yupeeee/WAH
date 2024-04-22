@@ -13,9 +13,9 @@ __all__ = [
 
 
 def load_tensorboard_logger(
-        config: Config,
-        save_dir: str,
-        name: str,
+    config: Config,
+    save_dir: str,
+    name: str,
 ) -> TensorBoardLogger:
     return TensorBoardLogger(
         save_dir=save_dir,
@@ -29,7 +29,7 @@ def load_lr_monitor() -> LearningRateMonitor:
 
 
 def load_checkpoint_callback(
-        every_n_epochs: int,
+    every_n_epochs: int,
 ) -> ModelCheckpoint:
     return ModelCheckpoint(
         # monitor="val/acc@1",

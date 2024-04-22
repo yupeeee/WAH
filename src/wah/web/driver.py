@@ -10,7 +10,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from webdriver_manager.chrome import ChromeDriverManager
 
-from ..typing import Any
+from ..typing import (
+    Any,
+)
 
 __all__ = [
     "ChromeDriver",
@@ -22,8 +24,9 @@ time_to_sleep = 1  # sec
 
 def load_driver() -> Chrome:
     subprocess.Popen(
-        r'C:\Program Files\Google\Chrome\Application\chrome.exe '
-        r'--remote-debugging-port=9222 --user-data-dir="C:\chrometemp"')
+        r"C:\Program Files\Google\Chrome\Application\chrome.exe "
+        r'--remote-debugging-port=9222 --user-data-dir="C:\chrometemp"'
+    )
 
     options = Options()
     options.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
@@ -169,8 +172,7 @@ class ChromeDriver:
             elements_value=elements_value,
         )
 
-        return [element.get_attribute(elements_attribute)
-                for element in elements]
+        return [element.get_attribute(elements_attribute) for element in elements]
 
     def get_text(
         self,

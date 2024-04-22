@@ -21,11 +21,15 @@ def load_dataloader(
     config: Config,
     train: Optional[bool] = False,
 ) -> DataLoader:
-    collate_fn = CollateFunction(
-        mixup_alpha=config["mixup_alpha"],
-        cutmix_alpha=config["cutmix_alpha"],
-        num_classes=config["num_classes"],
-    ) if train else None
+    collate_fn = (
+        CollateFunction(
+            mixup_alpha=config["mixup_alpha"],
+            cutmix_alpha=config["cutmix_alpha"],
+            num_classes=config["num_classes"],
+        )
+        if train
+        else None
+    )
 
     return DataLoader(
         dataset=dataset,
@@ -43,12 +47,12 @@ def portion_dataset(
     balanced: Optional[bool] = True,
     random_sample: Optional[bool] = False,
 ) -> Subset:
-    assert 0 < portion <= 1, \
-        f"Expected 0 < portion <= 1, got {portion}"
+    assert 0 < portion <= 1, f"Expected 0 < portion <= 1, got {portion}"
 
     if balanced:
-        assert hasattr(dataset, "targets"), \
-            f"Unable to create a balanced dataset as there are no targets in the dataset."
+        assert hasattr(
+            dataset, "targets"
+        ), f"Unable to create a balanced dataset as there are no targets in the dataset."
 
         targets = dataset.targets
         classes = list(set(targets))
