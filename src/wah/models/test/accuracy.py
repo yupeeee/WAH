@@ -65,7 +65,7 @@ def dist_run(
     dataloader = dist.load_dataloader(rank, nprocs, dataset, batch_size=batch_size)
     model = dist.load_model(rank, model)
 
-    acc = 0.0
+    acc = torch.zeros(size=(1,)).to(rank)
 
     for data, targets in tqdm.tqdm(
         dataloader,
@@ -81,11 +81,11 @@ def dist_run(
         _, preds = outputs.topk(k=top_k, dim=-1)
 
         for k in range(top_k):
-            acc += float(preds[:, k].eq(targets).sum().cpu())
+            acc += preds[:, k].eq(targets).sum()
 
     acc = acc / len(dataloader.dataset)
 
-    return acc
+    return float(acc.to(torch.device("cpu")))
 
 
 class AccuracyTest:
