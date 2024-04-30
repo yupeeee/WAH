@@ -38,13 +38,12 @@ def cpu_run(
         data: Tensor = data.to(device)
         targets: Tensor = targets.to(device)
 
-        with torch.no_grad():
-            outputs: Tensor = model(data)
+        outputs: Tensor = model(data)
 
         _, preds = outputs.topk(k=top_k, dim=-1)
 
         for k in range(top_k):
-            acc += float(preds[:, k].eq(targets).sum())
+            acc += float(preds[:, k].eq(targets).detach().sum())
 
     acc = acc / len(dataloader.dataset)
 
@@ -75,13 +74,12 @@ def dist_run(
         data: Tensor = data.to(rank)
         targets: Tensor = targets.to(rank)
 
-        with torch.no_grad():
-            outputs: Tensor = model(data)
+        outputs: Tensor = model(data)
 
         _, preds = outputs.topk(k=top_k, dim=-1)
 
         for k in range(top_k):
-            acc += preds[:, k].eq(targets).sum()
+            acc += preds[:, k].eq(targets).detach().sum()
 
     acc = acc / len(dataloader.dataset)
 
