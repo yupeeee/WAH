@@ -16,6 +16,7 @@ from ..typing import (
 from ..utils.random import seed_everything
 
 __all__ = [
+    "DirectionGenerator",
     "Traveler",
 ]
 
@@ -29,7 +30,7 @@ class DirectionGenerator:
         self,
         model: Module,
         method: Literal["fgsm", ] = "fgsm",
-        seed: Optional[int] = 0,
+        seed: Optional[int] = -1,
         use_cuda: Optional[bool] = False,
     ) -> None:
         assert method in methods, \
@@ -73,6 +74,7 @@ class Traveler:
         init_eps: float = 1.e-3,
         stride: float = 1.e-3,
         stride_decay: float = 0.5,
+        bound: bool = True,
         tol: float = 1.e-10,
         max_iter: int = 10000,
         turnaround: float = 0.1,
@@ -105,6 +107,7 @@ class Traveler:
         self.stride: float = stride                 # travel stride
         self._stride: float = stride                # original stride
         self.stride_decay: float = stride_decay     # ratio to decay stride
+        self.bound: bool = bound                    # if bound, clip data to [0, 1]
         self.tol: int = tol                         # tolerance for early stop; if stride < tol, stop travel
         self.max_iter: int = max_iter               # maximum number of iterations
         self.turnaround: float = turnaround         # if travel does not cross the decision boundary
@@ -181,7 +184,9 @@ class Traveler:
             self._correct = self.correct
 
             _data = data + direction * self.epsilon
-            _data = _data.clamp(0, 1)
+
+            if self.bound:
+                _data = _data.clamp(0, 1)
 
             self.correct = self.test_data(_data, target)[0][0]
             # print(f'[{self.epsilon}, {self.stride}] {bool(self._correct)}->{bool(self.correct)}')

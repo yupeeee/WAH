@@ -11,7 +11,11 @@ __all__ = [
 def seed_everything(
     seed: int,
 ) -> None:
-    L.seed_everything(seed if seed >= 0 else None)
+    if seed is None:
+        seed = -1
+
+    if seed >= 0:
+        L.seed_everything(seed)
 
 
 def unseed_everything() -> None:

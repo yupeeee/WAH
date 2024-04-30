@@ -19,6 +19,7 @@ from ..typing import (
     Module,
     Optional,
     Path,
+    Tensor,
 )
 from ..utils.random import seed_everything
 from .log import (
@@ -155,7 +156,7 @@ class Wrapper(L.LightningModule):
         self.val_rms = dict((layer, []) for layer in self.feature_layers.values())
 
     @staticmethod
-    def flatten_feature(feature, batch) -> torch.Tensor:
+    def flatten_feature(feature, batch) -> Tensor:
         # vit: self_attention
         if isinstance(feature, tuple):
             feature = [f for f in feature if f is not None]
@@ -165,7 +166,7 @@ class Wrapper(L.LightningModule):
 
         return feature
 
-    def check_layers(self, batch, batch_idx) -> None:
+    def check_layers(self, batch) -> None:
         assert self.track_feature_rms
 
         if not self.checked_layers:
@@ -266,7 +267,7 @@ class Wrapper(L.LightningModule):
                 )
 
                 # reset
-                self.grad_l2[layer] = []
+                self.grad_l2[layer].clear()
 
         # feature_rms
         if self.track_feature_rms:
@@ -279,7 +280,7 @@ class Wrapper(L.LightningModule):
                 )
 
                 # reset
-                self.train_rms[layer] = []
+                self.train_rms[layer].clear()
 
     def validation_step(self, batch, batch_idx):
         data, targets = batch
@@ -298,7 +299,7 @@ class Wrapper(L.LightningModule):
 
         if self.track_feature_rms:
             if self.current_epoch == 0:
-                self.check_layers(batch, batch_idx)
+                self.check_layers(batch)
 
             with torch.no_grad():
                 features = self.feature_extractor(data)
@@ -342,7 +343,7 @@ class Wrapper(L.LightningModule):
                 )
 
                 # reset
-                self.val_rms[layer] = []
+                self.val_rms[layer].clear()
 
 
 def load_trainer(

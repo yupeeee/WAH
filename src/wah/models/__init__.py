@@ -10,6 +10,7 @@ from ..typing import (
 )
 from .modules import *
 from .replace import Replacer
+from .test import *
 from .travel import Traveler
 
 __all__ = [
@@ -26,6 +27,9 @@ __all__ = [
 
     # replace
     "Replacer",
+
+    # test
+    "AccuracyTest",
 
     # travel
     "Traveler",

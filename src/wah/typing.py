@@ -38,6 +38,7 @@ __all__ = [
     "DataLoader",
     "Dataset",
     "Device",
+    "Devices",
     "Dict",
     "Iterable",
     "List",
@@ -57,4 +58,5 @@ __all__ = [
 ]
 
 Config = Dict[str, Any]
+Devices = Union[int, str, List[Union[int, str]]]
 Path = Union[str, bytes, os.PathLike]
