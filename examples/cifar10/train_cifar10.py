@@ -8,8 +8,8 @@ from torchvision import models
 
 import wah
 
-CIFAR10_ROOT = wah.path.join(".", "dataset") # directory to download CIFAR-10 dataset
-TRAIN_LOG_ROOT = wah.path.join(".", "logs")  # directory to save train logs
+CIFAR10_ROOT = wah.path.join(".", "dataset")    # directory to download CIFAR-10 dataset
+TRAIN_LOG_ROOT = wah.path.join(".", "logs")     # directory to save train logs
 
 
 if __name__ == "__main__":

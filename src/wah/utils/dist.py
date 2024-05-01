@@ -1,4 +1,5 @@
 import os
+import platform
 
 import torch
 import torch.distributed as dist
@@ -21,6 +22,7 @@ __all__ = [
     "init_os_env",
     "init_dist",
     "cleanup",
+    "Queue",
     "run_fn",
     "load_dataloader",
     "load_model",
@@ -78,6 +80,21 @@ def parse_devices(
     return devices
 
 
+def set_backend() -> str:
+    current_os = platform.system()
+
+    if current_os == "Linux":
+        return "nccl"
+
+    elif current_os == "Windows":
+        return "gloo"
+
+    else:
+        raise SystemError(
+            f"backend auto init is supported only for Linux and Windows (current os: {current_os})"
+        )
+
+
 def init_os_env(
     devices: List[int],
     master_addr: str = "localhost",
@@ -91,9 +108,11 @@ def init_os_env(
 def init_dist(
     rank: int,
     nprocs: int,
-    backend: str = "nccl",
+    # backend: str = "nccl",
     init_method: str = "env://",
 ) -> None:
+    backend = set_backend()
+
     dist.init_process_group(
         backend=backend,
         init_method=init_method,
@@ -106,6 +125,9 @@ def init_dist(
 
 def cleanup() -> None:
     dist.destroy_process_group()
+
+
+Queue = mp.Queue
 
 
 def run_fn(

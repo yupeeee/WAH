@@ -1,5 +1,5 @@
 """
-e.g., python travel_cifar10.py --model resnet50 --cuda
+e.g., python eval_cifar10.py --model resnet50 --cuda
 """
 import argparse
 
@@ -10,7 +10,6 @@ import wah
 
 CIFAR10_ROOT = wah.path.join(".", "dataset")    # directory to download CIFAR-10 dataset
 CKPT_ROOT = wah.path.join(".", "logs")          # directory where model checkpoints (i.e., weights) are saved
-TRAVEL_ROOT = wah.path.join(".", "travel_res")  # directory to save travel results
 
 
 if __name__ == "__main__":
@@ -18,7 +17,7 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str, required=True)
     parser.add_argument("--tag", type=str, required=False, default="base")
     parser.add_argument("--portion", type=float, required=False, default=1.)
-    parser.add_argument("--config", type=str, required=False, default="travel_cfg.yaml")
+    parser.add_argument("--config", type=str, required=False, default="config.yaml")
     parser.add_argument("--cuda", action="store_true", required=False, default=False)
     args = parser.parse_args()
 
@@ -32,23 +31,24 @@ if __name__ == "__main__":
     config = wah.load_config(args.config)
 
     # load dataset/dataloader
-    dataset = wah.CIFAR10(
+    train_dataset = wah.CIFAR10(
         root=CIFAR10_ROOT,
-        split="test",
-        transform="tt",
-        target_transform=None,
+        split="train",
+        transform="test",
+        target_transform="auto",
         download=True,
     )
-    normalize = dataset.NORMALIZE
+    test_dataset = wah.CIFAR10(
+        root=CIFAR10_ROOT,
+        split="test",
+        transform="test",
+        target_transform="auto",
+        download=True,
+    )
 
     if args.portion < 1:
-        dataset = wah.portion_dataset(dataset, args.portion)
-
-    dataloader = wah.load_dataloader(
-        dataset=dataset,
-        config=config,
-        train=False,
-    )
+        train_dataset = wah.portion_dataset(train_dataset, args.portion)
+        test_dataset = wah.portion_dataset(test_dataset, args.portion)
 
     # load model
     kwargs = {
@@ -73,25 +73,31 @@ if __name__ == "__main__":
         state_dict_path=wah.path.join(ckpt_dir, ckpt_fname),
         map_location=torch.device("cuda" if args.cuda else "cpu"),
     )
-    model = wah.add_preprocess(model, preprocess=normalize)
     model.eval()
 
-    # travel
-    travel_id = f"{config['travel']['method']}_travel-cifar10"
-    travel_id += f"x{args.portion}" if args.portion < 1. else ""
-    travel_id += f"-{args.model}-{args.tag}"
-
-    traveler = wah.Traveler(
-        model,
-        seed=config["seed"],
+    # evaluation: acc@1 test
+    test = wah.AccuracyTest(
+        top_k=1,
+        batch_size=config["batch_size"],
+        num_workers=config["num_workers"],
         use_cuda=args.cuda,
-        **config["travel"],
+        devices="auto",
     )
-    travel_res = traveler.travel(dataloader, verbose=True)
+    
+    train_acc1 = test(
+        model=model,
+        dataset=train_dataset,
+        verbose=True,
+        desc="Computing acc@1 on train dataset...",
+    )
+    test_acc1 = test(
+        model=model,
+        dataset=test_dataset,
+        verbose=True,
+        desc="Computing acc@1 on test dataset..."
+    )
 
-    wah.dictionary.save_in_csv(
-        dictionary=travel_res,
-        save_dir=wah.path.join(TRAVEL_ROOT, train_id, args.tag),
-        save_name=travel_id,
-        index_col="gt",
-    )
+    dataset_id = train_id.split('-')[0]
+
+    print(f"acc@1 of {args.model} on {dataset_id} (train): {train_acc1 * 100:.2f}%")
+    print(f"acc@1 of {args.model} on {dataset_id} (test): {test_acc1 * 100:.2f}%")

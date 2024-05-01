@@ -7,6 +7,7 @@ from ...typing import (
     Devices,
     Module,
     Optional,
+    ResQueue,
     Tensor,
 )
 from ...utils import dist
@@ -21,18 +22,25 @@ def cpu_run(
     dataset: Dataset,
     top_k: int = 1,
     batch_size: int = 1,
+    num_workers: int = 0,
     verbose: bool = False,
+    desc: Optional[str] = None,
 ):
     device = torch.device("cpu")
 
-    dataloader = DataLoader(dataset, batch_size=batch_size)
+    dataloader = DataLoader(
+        dataset=dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+    )
     model = model.to(device)
 
     acc = 0.0
 
     for data, targets in tqdm.tqdm(
         dataloader,
-        desc=f"acc@{top_k}",
+        desc=f"acc@{top_k}" if desc is None else desc,
         disable=not verbose,
     ):
         data: Tensor = data.to(device)
@@ -45,7 +53,7 @@ def cpu_run(
         for k in range(top_k):
             acc += float(preds[:, k].eq(targets).detach().sum())
 
-    acc = acc / len(dataloader.dataset)
+    acc = acc / len(dataset)
 
     return acc
 
@@ -53,22 +61,32 @@ def cpu_run(
 def dist_run(
     rank: int,
     nprocs: int,
+    res_queue: ResQueue,
     model: Module,
     dataset: Dataset,
     top_k: int = 1,
     batch_size: int = 1,
+    num_workers: int = 0,
     verbose: bool = False,
+    desc: Optional[str] = None,
 ):
     dist.init_dist(rank, nprocs)
 
-    dataloader = dist.load_dataloader(rank, nprocs, dataset, batch_size=batch_size)
+    dataloader = dist.load_dataloader(
+        rank,
+        nprocs,
+        dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+    )
     model = dist.load_model(rank, model)
 
-    acc = torch.zeros(size=(1,)).to(rank)
+    corrects: int = 0
 
     for data, targets in tqdm.tqdm(
         dataloader,
-        desc=f"acc@{top_k}",
+        desc=f"acc@{top_k}" if desc is None else desc,
         disable=not verbose,
     ):
         data: Tensor = data.to(rank)
@@ -79,11 +97,11 @@ def dist_run(
         _, preds = outputs.topk(k=top_k, dim=-1)
 
         for k in range(top_k):
-            acc += preds[:, k].eq(targets).detach().sum()
+            corrects += int(preds[:, k].eq(targets).detach().sum())
 
-    acc = acc / len(dataloader.dataset)
+    res_queue.put(corrects)
 
-    return float(acc.to(torch.device("cpu")))
+    dist.cleanup()
 
 
 class AccuracyTest:
@@ -91,11 +109,13 @@ class AccuracyTest:
         self,
         top_k: int = 1,
         batch_size: int = 1,
+        num_workers: int = 0,
         use_cuda: bool = False,
         devices: Optional[Devices] = "auto",
     ) -> None:
         self.top_k = top_k
         self.batch_size = batch_size
+        self.num_workers = num_workers
 
         self.use_cuda = use_cuda
         self.devices = "cpu"
@@ -108,17 +128,44 @@ class AccuracyTest:
         model: Module,
         dataset: Dataset,
         verbose: bool = False,
+        desc: Optional[str] = None,
     ) -> float:
         if self.use_cuda:
             nprocs = len(self.devices)
+            res_queue = dist.Queue()
 
-            acc = dist.run_fn(
+            dist.run_fn(
                 fn=dist_run,
-                args=(nprocs, model, dataset, self.top_k, self.batch_size, verbose),
+                args=(
+                    nprocs,
+                    res_queue,
+                    model,
+                    dataset,
+                    self.top_k,
+                    self.batch_size,
+                    self.num_workers,
+                    verbose,
+                    desc,
+                ),
                 nprocs=nprocs,
             )
-        
+
+            corrects: int = 0
+
+            for _ in range(nprocs):
+                corrects += res_queue.get()
+
+            acc: float = corrects / len(dataset)
+
         else:
-            acc = cpu_run(model, dataset, self.top_k, self.batch_size, verbose)
-        
+            acc: float = cpu_run(
+                model,
+                dataset,
+                self.top_k,
+                self.batch_size,
+                self.num_workers,
+                verbose,
+                desc,
+            )
+
         return acc

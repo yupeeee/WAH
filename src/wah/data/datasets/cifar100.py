@@ -73,6 +73,8 @@ class CIFAR100(CIFAR10):
             Literal[
                 "auto",
                 "tt",
+                "train",
+                "test",
             ],
         ] = None,
         target_transform: Union[Optional[Callable], Literal["auto",]] = None,

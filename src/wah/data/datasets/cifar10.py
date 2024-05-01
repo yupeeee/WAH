@@ -78,6 +78,8 @@ class CIFAR10(DNTDataset):
             Literal[
                 "auto",
                 "tt",
+                "train",
+                "test",
             ],
         ] = None,
         target_transform: Union[Optional[Callable], Literal["auto",]] = None,
@@ -100,6 +102,10 @@ class CIFAR10(DNTDataset):
             self.transform = self.TRANSFORM[split]
         elif self.transform == "tt":
             self.transform = tf.ToTensor()
+        elif self.transform == "train":
+            self.transform = self.TRANSFORM["train"]
+        elif self.transform == "test":
+            self.transform == self.TRANSFORM["test"]
         else:
             pass
 
