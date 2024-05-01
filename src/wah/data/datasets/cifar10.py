@@ -105,7 +105,7 @@ class CIFAR10(DNTDataset):
         elif self.transform == "train":
             self.transform = self.TRANSFORM["train"]
         elif self.transform == "test":
-            self.transform == self.TRANSFORM["test"]
+            self.transform = self.TRANSFORM["test"]
         else:
             pass
 

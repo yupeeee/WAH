@@ -88,13 +88,13 @@ if __name__ == "__main__":
         model=model,
         dataset=train_dataset,
         verbose=True,
-        desc="Computing acc@1 on train dataset...",
+        desc="Computing acc@1 on cifar10 train dataset...",
     )
     test_acc1 = test(
         model=model,
         dataset=test_dataset,
         verbose=True,
-        desc="Computing acc@1 on test dataset..."
+        desc="Computing acc@1 on cifar10 test dataset..."
     )
 
     dataset_id = train_id.split('-')[0]
