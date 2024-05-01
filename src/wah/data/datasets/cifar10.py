@@ -87,7 +87,9 @@ class CIFAR10(DNTDataset):
     ) -> None:
         super().__init__(root, transform, target_transform)
 
-        self.checklist = self.ZIP_LIST
+        self.checklist = []
+
+        self.checklist += self.ZIP_LIST
 
         if split == "train":
             self.checklist += self.TRAIN_LIST

@@ -55,8 +55,6 @@ def cpu_run(
 
     acc = acc / len(dataset)
 
-    del dataloader
-
     return acc
 
 
@@ -103,7 +101,6 @@ def dist_run(
 
     res_queue.put(corrects)
 
-    del dataloader
     dist.cleanup()
 
 
