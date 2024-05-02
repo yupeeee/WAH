@@ -6,7 +6,7 @@ import argparse
 import torch
 from torchvision import models
 
-import wah
+from src import wah
 
 CIFAR10_ROOT = wah.path.join(".", "dataset")    # directory to download CIFAR-10 dataset
 CKPT_ROOT = wah.path.join(".", "logs")          # directory where model checkpoints (i.e., weights) are saved
@@ -16,7 +16,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, required=True)
     parser.add_argument("--tag", type=str, required=False, default="base")
-    parser.add_argument("--portion", type=float, required=False, default=1.)
+    parser.add_argument("--portion", type=float, required=False, default=1.0)
     parser.add_argument("--config", type=str, required=False, default="config.yaml")
     parser.add_argument("--cuda", action="store_true", required=False, default=False)
     args = parser.parse_args()
@@ -62,7 +62,7 @@ if __name__ == "__main__":
 
     # load weights
     train_id = "cifar10"
-    train_id += f"x{args.portion}" if args.portion < 1. else ""
+    train_id += f"x{args.portion}" if args.portion < 1.0 else ""
     train_id += f"-{args.model}"
 
     ckpt_dir = wah.path.join(CKPT_ROOT, train_id, args.tag, "checkpoints")
@@ -81,9 +81,9 @@ if __name__ == "__main__":
         batch_size=config["batch_size"],
         num_workers=config["num_workers"],
         use_cuda=args.cuda,
-        devices="auto",
+        devices=config["gpu"] if "gpu" in config.keys() else "auto",
     )
-    
+
     train_acc1 = test(
         model=model,
         dataset=train_dataset,
@@ -94,10 +94,10 @@ if __name__ == "__main__":
         model=model,
         dataset=test_dataset,
         verbose=True,
-        desc="Computing acc@1 on cifar10 test dataset..."
+        desc="Computing acc@1 on cifar10 test dataset...",
     )
 
-    dataset_id = train_id.split('-')[0]
+    dataset_id = train_id.split("-")[0]
 
     print(f"acc@1 of {args.model} on {dataset_id} (train): {train_acc1 * 100:.2f}%")
     print(f"acc@1 of {args.model} on {dataset_id} (test): {test_acc1 * 100:.2f}%")

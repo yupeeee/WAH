@@ -16,7 +16,7 @@ from matplotlib.pyplot import Axes
 from pandas import DataFrame
 from torch import Tensor
 from torch import device as Device
-from torch.multiprocessing import Queue
+from torch.multiprocessing import Process, Queue
 from torch.nn import Module, Parameter
 from torch.optim import Optimizer
 
@@ -51,6 +51,7 @@ __all__ = [
     "Optional",
     "Parameter",
     "Path",
+    "Process",
     "ResQueue",
     "Sequence",
     "Tensor",

@@ -14,6 +14,7 @@ from ..typing import (
     Devices,
     List,
     Module,
+    Process,
     Union,
 )
 
@@ -136,7 +137,19 @@ def run_fn(
     nprocs: int,
     **kwargs,
 ) -> None:
-    mp.spawn(fn, args, nprocs, **kwargs)
+    # Replace mp.spawn to start/join due to SIGSEGV error
+    # mp.spawn(fn, args, nprocs, **kwargs)
+
+    children: List[Process] = []
+
+    for i in range(nprocs):
+        subargs = tuple([i] + list(args))
+        subproc = mp.Process(target=fn, args=subargs)
+        children.append(subproc)
+        subproc.start()
+
+    for i in range(nprocs):
+        children[i].join()
 
 
 def load_dataloader(
