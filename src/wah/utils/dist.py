@@ -137,28 +137,30 @@ def run_fn(
     nprocs: int,
     **kwargs,
 ) -> None:
-    # [FIX1] Replace mp.spawn to start/join due to SIGSEGV error
-    # mp.spawn(fn, args, nprocs, **kwargs)
-
-    # [FIX2] Add set_start_method("spawn") due to RuntimeError:
-    # Cannot re-initialize CUDA in forked subprocess.
-    # To use CUDA with multiprocessing, you must use the 'spawn' start method
     try:
-        torch.multiprocessing.set_start_method("spawn")
-    # RuntimeError: context has already been set
-    except RuntimeError:
-        pass
+        mp.spawn(fn, args, nprocs, **kwargs)
 
-    children: List[Process] = []
+    # [FIX1] Replace mp.spawn to start/join due to SIGSEGV error
+    except Exception:
+        # [FIX2] Add set_start_method("spawn") due to RuntimeError:
+        # Cannot re-initialize CUDA in forked subprocess.
+        # To use CUDA with multiprocessing, you must use the 'spawn' start method
+        try:
+            torch.multiprocessing.set_start_method("spawn")
+        # RuntimeError: context has already been set
+        except RuntimeError:
+            pass
 
-    for i in range(nprocs):
-        subargs = tuple([i] + list(args))
-        subproc = mp.Process(target=fn, args=subargs)
-        children.append(subproc)
-        subproc.start()
+        children: List[Process] = []
 
-    for i in range(nprocs):
-        children[i].join()
+        for i in range(nprocs):
+            subargs = tuple([i] + list(args))
+            subproc = mp.Process(target=fn, args=subargs)
+            children.append(subproc)
+            subproc.start()
+
+        for i in range(nprocs):
+            children[i].join()
 
 
 def load_dataloader(
@@ -181,3 +183,7 @@ def load_model(
     model = DDP(model, device_ids=[rank])
 
     return model
+
+
+if __name__ == "__main__":
+    torch.multiprocessing.set_start_method("spawn")
