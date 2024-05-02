@@ -6,7 +6,7 @@ import argparse
 import torch
 from torchvision import models
 
-from src import wah
+import wah
 
 CIFAR10_ROOT = wah.path.join(".", "dataset")    # directory to download CIFAR-10 dataset
 CKPT_ROOT = wah.path.join(".", "logs")          # directory where model checkpoints (i.e., weights) are saved

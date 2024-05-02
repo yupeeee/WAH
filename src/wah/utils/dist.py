@@ -143,7 +143,11 @@ def run_fn(
     # [FIX2] Add set_start_method("spawn") due to RuntimeError:
     # Cannot re-initialize CUDA in forked subprocess.
     # To use CUDA with multiprocessing, you must use the 'spawn' start method
-    torch.multiprocessing.set_start_method("spawn")
+    try:
+        torch.multiprocessing.set_start_method("spawn")
+    # RuntimeError: context has already been set
+    except RuntimeError:
+        pass
 
     children: List[Process] = []
 
