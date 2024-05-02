@@ -137,8 +137,13 @@ def run_fn(
     nprocs: int,
     **kwargs,
 ) -> None:
-    # Replace mp.spawn to start/join due to SIGSEGV error
+    # [FIX1] Replace mp.spawn to start/join due to SIGSEGV error
     # mp.spawn(fn, args, nprocs, **kwargs)
+
+    # [FIX2] Add set_start_method("spawn") due to RuntimeError:
+    # Cannot re-initialize CUDA in forked subprocess.
+    # To use CUDA with multiprocessing, you must use the 'spawn' start method
+    torch.multiprocessing.set_start_method("spawn")
 
     children: List[Process] = []
 
