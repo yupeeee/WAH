@@ -1,5 +1,5 @@
 """
-e.g., python eval_cifar10.py --model resnet50 --cuda
+e.g., python eval_cifar10.py --model resnet50
 """
 import argparse
 
@@ -18,7 +18,6 @@ if __name__ == "__main__":
     parser.add_argument("--tag", type=str, required=False, default="base")
     parser.add_argument("--portion", type=float, required=False, default=1.0)
     parser.add_argument("--config", type=str, required=False, default="config.yaml")
-    parser.add_argument("--cuda", action="store_true", required=False, default=False)
     args = parser.parse_args()
 
     if args.model not in models.list_models():
@@ -32,6 +31,7 @@ if __name__ == "__main__":
 
     # load config
     config = wah.load_config(args.config)
+    use_cuda = True if "gpu" in config.keys() else False
 
     # load dataset/dataloader
     train_dataset = wah.CIFAR10(
@@ -74,7 +74,7 @@ if __name__ == "__main__":
     wah.load_state_dict(
         model=model,
         state_dict_path=wah.path.join(ckpt_dir, ckpt_fname),
-        map_location=torch.device("cuda" if args.cuda else "cpu"),
+        map_location=torch.device("cuda" if use_cuda else "cpu"),
     )
     model.eval()
 
@@ -83,7 +83,7 @@ if __name__ == "__main__":
         top_k=1,
         batch_size=config["batch_size"],
         num_workers=config["num_workers"],
-        use_cuda=args.cuda,
+        use_cuda=use_cuda,
         devices=config["gpu"] if "gpu" in config.keys() else "auto",
     )
 
