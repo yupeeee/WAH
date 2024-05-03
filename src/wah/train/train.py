@@ -2,14 +2,11 @@ import math
 
 import lightning as L
 import torch
-from torch import nn
 import torch.optim as _optim
+from torch import nn
 from torchmetrics import MeanMetric
-from torchvision.models.feature_extraction import (
-    get_graph_node_names,
-    create_feature_extractor,
-)
 
+from ..models.feature_extractor import FeatureExtractor
 from ..typing import (
     Callable,
     Config,
@@ -28,10 +25,7 @@ from .log import (
     load_tensorboard_logger,
 )
 from .scheduler import load_scheduler
-from .utils import (
-    clean,
-    load_metrics,
-)
+from .utils import clean, load_metrics
 
 __all__ = [
     "Wrapper",
@@ -84,7 +78,6 @@ class Wrapper(L.LightningModule):
         self.feature_layers = {}
         self.train_rms = {}
         self.val_rms = {}
-        self.checked_layers = False
 
         if self.track_feature_rms:
             self.init_feature_rms()
@@ -142,15 +135,8 @@ class Wrapper(L.LightningModule):
     def init_feature_rms(
         self,
     ) -> None:
-        _, layers = get_graph_node_names(self.model)
-        self.feature_layers = dict(
-            (layer, f"{i}_{layer}") for i, layer in enumerate(layers)
-        )
-
-        self.feature_extractor = create_feature_extractor(
-            model=self.model,
-            return_nodes=self.feature_layers,
-        )
+        self.feature_extractor = FeatureExtractor(self.model)
+        self.feature_layers = self.feature_extractor.feature_layers
 
         self.train_rms = dict((layer, []) for layer in self.feature_layers.values())
         self.val_rms = dict((layer, []) for layer in self.feature_layers.values())
@@ -166,44 +152,6 @@ class Wrapper(L.LightningModule):
 
         return feature
 
-    def check_layers(self, batch) -> None:
-        assert self.track_feature_rms
-
-        if not self.checked_layers:
-            data, _ = batch
-
-            layers = []
-
-            with torch.no_grad():
-                features = self.feature_extractor(data)
-
-                for layer, i_layer in self.feature_layers.items():
-                    if layer == "x":
-                        continue
-
-                    try:
-                        _ = self.flatten_feature(features[i_layer], batch)
-                        torch.cuda.empty_cache()
-
-                        layers.append(layer)
-
-                    except BaseException:
-                        continue
-
-            self.feature_layers = dict(
-                (layer, f"{i}_{layer}") for i, layer in enumerate(layers)
-            )
-
-            self.feature_extractor = create_feature_extractor(
-                model=self.model,
-                return_nodes=self.feature_layers,
-            )
-
-            self.train_rms = dict((layer, []) for layer in self.feature_layers.values())
-            self.val_rms = dict((layer, []) for layer in self.feature_layers.values())
-
-            self.checked_layers = True
-
     def training_step(self, batch, batch_idx):
         data, targets = batch
 
@@ -217,7 +165,7 @@ class Wrapper(L.LightningModule):
             if len(targets.shape) == 2:
                 targets = targets.argmax(dim=1)
 
-            metric.to(self.device)(outputs, targets)
+            metric.to(self.global_rank)(outputs, targets)
 
         if self.track_feature_rms:
             with torch.no_grad():
@@ -295,12 +243,9 @@ class Wrapper(L.LightningModule):
             if len(targets.shape) == 2:
                 targets = targets.argmax(dim=1)
 
-            metric.to(self.device)(outputs, targets)
+            metric.to(self.global_rank)(outputs, targets)
 
         if self.track_feature_rms:
-            if self.current_epoch == 0:
-                self.check_layers(batch)
-
             with torch.no_grad():
                 features = self.feature_extractor(data)
 
