@@ -8,6 +8,7 @@ from ..typing import (
     Transform,
     Union,
 )
+from .feature_extractor import FeatureExtractor
 from .modules import *
 from .replace import Replacer
 from .test import *
@@ -16,6 +17,9 @@ from .travel import Traveler
 __all__ = [
     "load_state_dict",
     "add_preprocess",
+
+    # feature_extractor
+    "FeatureExtractor",
 
     # modules
     "_getattr",

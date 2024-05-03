@@ -2,12 +2,14 @@ import os
 
 import numpy as np
 from PIL import Image
+import torchvision.transforms as T
 
 from ...typing import (
     Callable,
     Literal,
     Optional,
     Path,
+    Union,
 )
 from .utils import DNTDataset
 
@@ -38,6 +40,32 @@ class STL10(DNTDataset):
         # ("stl10_binary/unlabeled_X.bin", "MEMORYERROR"),
     ]
 
+    MEAN = [0.5, 0.5, 0.5]
+    STD = [0.5, 0.5, 0.5]
+    NORMALIZE = T.Normalize(MEAN, STD)
+
+    TRANSFORM = {
+        "train": T.Compose(
+            [
+                T.RandomResizedCrop(96),
+                T.RandomHorizontalFlip(),
+                # T.AutoAugment(T.AutoAugmentPolicy(None)),
+                T.ToTensor(),
+                NORMALIZE,
+            ]
+        ),
+        "test": T.Compose(
+            [
+                T.ToTensor(),
+                NORMALIZE,
+            ]
+        ),
+    }
+    TARGET_TRANSFORM = {
+        "train": None,
+        "test": None,
+    }
+
     def __init__(
         self,
         root: Path = ROOT,
@@ -45,8 +73,16 @@ class STL10(DNTDataset):
             "train",
             "test",
         ] = "train",
-        transform: Optional[Callable] = None,
-        target_transform: Optional[Callable] = None,
+        transform: Union[
+            Optional[Callable],
+            Literal[
+                "auto",
+                "tt",
+                "train",
+                "test",
+            ],
+        ] = None,
+        target_transform: Union[Optional[Callable], Literal["auto",]] = None,
         download: bool = False,
     ) -> None:
         super().__init__(root, transform, target_transform)
@@ -63,6 +99,20 @@ class STL10(DNTDataset):
 
         else:
             raise ValueError(f"split must be one of ['train', 'test', ], got {split}")
+
+        if self.transform == "auto":
+            self.transform = self.TRANSFORM[split]
+        elif self.transform == "tt":
+            self.transform = T.ToTensor()
+        elif self.transform == "train":
+            self.transform = self.TRANSFORM["train"]
+        elif self.transform == "test":
+            self.transform = self.TRANSFORM["test"]
+        else:
+            pass
+
+        if self.target_transform == "auto":
+            self.target_transform = self.TARGET_TRANSFORM[split]
 
         if download:
             self.download(self.checklist + self.META_LIST)

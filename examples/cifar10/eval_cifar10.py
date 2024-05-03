@@ -26,6 +26,9 @@ if __name__ == "__main__":
             f"PyTorch does not support {args.model}. "
             f"Check torchvision.models.list_models() for supported models."
         )
+    
+    # set start method for ddp
+    wah.dist.set_start_method()
 
     # load config
     config = wah.load_config(args.config)

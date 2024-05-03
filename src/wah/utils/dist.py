@@ -24,6 +24,7 @@ __all__ = [
     "init_dist",
     "cleanup",
     "Queue",
+    "set_start_method",
     "run_fn",
     "load_dataloader",
     "load_model",
@@ -131,6 +132,13 @@ def cleanup() -> None:
 Queue = mp.Queue
 
 
+def set_start_method() -> None:
+    # [FIX2] Add set_start_method("spawn") due to RuntimeError:
+    # Cannot re-initialize CUDA in forked subprocess.
+    # To use CUDA with multiprocessing, you must use the 'spawn' start method
+    torch.multiprocessing.set_start_method("spawn")
+
+
 def run_fn(
     fn: Any,
     args: Any,
@@ -142,15 +150,6 @@ def run_fn(
 
     # [FIX1] Replace mp.spawn to start/join due to SIGSEGV error
     except Exception:
-        # [FIX2] Add set_start_method("spawn") due to RuntimeError:
-        # Cannot re-initialize CUDA in forked subprocess.
-        # To use CUDA with multiprocessing, you must use the 'spawn' start method
-        try:
-            torch.multiprocessing.set_start_method("spawn")
-        # RuntimeError: context has already been set
-        except RuntimeError:
-            pass
-
         children: List[Process] = []
 
         for i in range(nprocs):
@@ -183,7 +182,3 @@ def load_model(
     model = DDP(model, device_ids=[rank])
 
     return model
-
-
-if __name__ == "__main__":
-    torch.multiprocessing.set_start_method("spawn")

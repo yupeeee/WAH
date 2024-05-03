@@ -2,7 +2,7 @@ import os
 import pickle
 
 import numpy as np
-import torchvision.transforms as tf
+import torchvision.transforms as T
 
 from ...typing import (
     Callable,
@@ -38,20 +38,20 @@ class CIFAR100(CIFAR10):
 
     MEAN = [0.5071, 0.4865, 0.4409]
     STD = [0.2673, 0.2564, 0.2762]
-    NORMALIZE = tf.Normalize(MEAN, STD)
+    NORMALIZE = T.Normalize(MEAN, STD)
 
     TRANSFORM = {
-        "train": tf.Compose(
+        "train": T.Compose(
             [
-                tf.RandomHorizontalFlip(),
-                tf.RandomCrop(32, 4),
-                tf.ToTensor(),
+                T.RandomHorizontalFlip(),
+                T.RandomCrop(32, 4),
+                T.ToTensor(),
                 NORMALIZE,
             ]
         ),
-        "test": tf.Compose(
+        "test": T.Compose(
             [
-                tf.ToTensor(),
+                T.ToTensor(),
                 NORMALIZE,
             ]
         ),

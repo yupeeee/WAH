@@ -3,7 +3,7 @@ import pickle
 
 import numpy as np
 from PIL import Image
-import torchvision.transforms as tf
+import torchvision.transforms as T
 
 from ...typing import (
     Callable,
@@ -43,20 +43,20 @@ class CIFAR10(DNTDataset):
 
     MEAN = [0.4914, 0.4822, 0.4465]
     STD = [0.2470, 0.2435, 0.2616]
-    NORMALIZE = tf.Normalize(MEAN, STD)
+    NORMALIZE = T.Normalize(MEAN, STD)
 
     TRANSFORM = {
-        "train": tf.Compose(
+        "train": T.Compose(
             [
-                tf.RandomHorizontalFlip(),
-                tf.RandomCrop(32, 4),
-                tf.ToTensor(),
+                T.RandomHorizontalFlip(),
+                T.RandomCrop(32, 4),
+                T.ToTensor(),
                 NORMALIZE,
             ]
         ),
-        "test": tf.Compose(
+        "test": T.Compose(
             [
-                tf.ToTensor(),
+                T.ToTensor(),
                 NORMALIZE,
             ]
         ),
@@ -103,7 +103,7 @@ class CIFAR10(DNTDataset):
         if self.transform == "auto":
             self.transform = self.TRANSFORM[split]
         elif self.transform == "tt":
-            self.transform = tf.ToTensor()
+            self.transform = T.ToTensor()
         elif self.transform == "train":
             self.transform = self.TRANSFORM["train"]
         elif self.transform == "test":

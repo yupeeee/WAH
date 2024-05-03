@@ -66,7 +66,7 @@ class DNTDataset(Dataset):
         fpath = download_url(self.URL, self.root, checklist)
 
         if fpath != "*extracted":
-            extract(fpath, self.MODE)
+            extract(fpath, mode=self.MODE)
 
     def initialize(
         self,

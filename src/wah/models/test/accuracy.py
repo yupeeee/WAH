@@ -25,7 +25,7 @@ def cpu_run(
     num_workers: int = 0,
     verbose: bool = False,
     desc: Optional[str] = None,
-):
+) -> float:
     device = torch.device("cpu")
 
     dataloader = DataLoader(
@@ -69,7 +69,7 @@ def dist_run(
     num_workers: int = 0,
     verbose: bool = False,
     desc: Optional[str] = None,
-):
+) -> None:
     dist.init_dist(rank, nprocs)
 
     dataloader = dist.load_dataloader(
