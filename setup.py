@@ -6,7 +6,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name="wah",
-    version="0.1.41",
+    version="0.1.42",
     description="a library so simple you will learn Within An Hour",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -25,6 +25,7 @@ setup(
         "PyYAML",
         "selenium",
         "tensorboard",
+        "timm",
         "torch",
         "torchaudio",
         "torchmetrics",

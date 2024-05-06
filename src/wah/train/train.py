@@ -59,28 +59,37 @@ class Wrapper(L.LightningModule):
         train_metrics = load_metrics(config, train=True)
         val_metrics = load_metrics(config, train=False)
 
-        self.train_metrics = self.init_metrics(train_metrics, header="train")
-        self.val_metrics = self.init_metrics(val_metrics, header="val")
-
-        # grad_l2
-        self.track_grad_l2 = True if "grad_l2" in self.config["track"] else False
-        self.grad_layers = {}
-        self.grad_l2 = {}
-
-        if self.track_grad_l2:
-            self.init_grad_l2()
-
-        # feature_rms
-        self.track_feature_rms = (
-            True if "feature_rms" in self.config["track"] else False
+        self.train_metrics: Dict[str, Metric] = self.init_metrics(
+            train_metrics, header="train",
         )
-        self.feature_extractor = None
-        self.feature_layers = {}
-        self.train_rms = {}
-        self.val_rms = {}
+        self.val_metrics: Dict[str, Metric] = self.init_metrics(
+            val_metrics, header="val",
+        )
 
-        if self.track_feature_rms:
-            self.init_feature_rms()
+        self.track_grad_l2: bool = False
+        self.track_feature_rms: bool = False
+
+        if "track" in self.config.keys():
+            # grad_l2
+            self.track_grad_l2 = (
+                True if "grad_l2" in self.config["track"] else False
+            )
+            self.grad_layers: Dict[str, str] = {}
+            self.grad_l2: Dict[str, List[Tensor]] = {}
+
+            if self.track_grad_l2:
+                self.init_grad_l2()
+
+            # feature_rms
+            self.track_feature_rms = (
+                True if "feature_rms" in self.config["track"] else False
+            )
+            self.feature_extractor: Module = None
+            self.train_rms: Dict[str, List[Tensor]] = {}
+            self.val_rms: Dict[str, List[Tensor]] = {}
+
+            if self.track_feature_rms:
+                self.init_feature_rms()
 
     def load_criterion(self) -> Callable:
         criterion = getattr(nn, self.config["criterion"])
@@ -136,10 +145,13 @@ class Wrapper(L.LightningModule):
         self,
     ) -> None:
         self.feature_extractor = FeatureExtractor(self.model)
-        self.feature_layers = self.feature_extractor.feature_layers
 
-        self.train_rms = dict((layer, []) for layer in self.feature_layers.values())
-        self.val_rms = dict((layer, []) for layer in self.feature_layers.values())
+        self.train_rms = dict(
+            (layer, []) for layer in self.feature_extractor.feature_layers.values()
+        )
+        self.val_rms = dict(
+            (layer, []) for layer in self.feature_extractor.feature_layers.values()
+        )
 
     @staticmethod
     def flatten_feature(feature, batch) -> Tensor:
@@ -153,10 +165,14 @@ class Wrapper(L.LightningModule):
         return feature
 
     def training_step(self, batch, batch_idx):
-        data, targets = batch
+        rank = self.local_rank
 
-        outputs = self.model(data)
-        loss = self.criterion(outputs, targets)
+        data, targets = batch
+        # data: Tensor = data.to(rank)
+        # targets: Tensor = targets.to(rank)
+
+        outputs: Tensor = self.model(data)
+        loss: Tensor = self.criterion(outputs, targets)
 
         self.train_loss(loss / data.size(0))
 
@@ -165,14 +181,13 @@ class Wrapper(L.LightningModule):
             if len(targets.shape) == 2:
                 targets = targets.argmax(dim=1)
 
-            metric.to(self.global_rank)(outputs, targets)
+            metric(outputs, targets)
 
         if self.track_feature_rms:
             with torch.no_grad():
-                features = self.feature_extractor(data)
+                features: Dict[str, Tensor] = self.feature_extractor(data)
 
-                for i_layer in self.feature_layers.values():
-                    feature = features[i_layer]
+                for i_layer, feature in features.items():
                     feature = self.flatten_feature(feature, batch)
 
                     f_rms = torch.norm(feature, p=2, dim=-1) / math.sqrt(
@@ -243,14 +258,24 @@ class Wrapper(L.LightningModule):
             if len(targets.shape) == 2:
                 targets = targets.argmax(dim=1)
 
-            metric.to(self.global_rank)(outputs, targets)
+            metric(outputs, targets)
 
         if self.track_feature_rms:
             with torch.no_grad():
+                if self.feature_extractor.checked_layers is False:
+                    _ = self.feature_extractor(data)
+                    self.train_rms = dict(
+                        (layer, [])
+                        for layer in self.feature_extractor.feature_layers.values()
+                    )
+                    self.val_rms = dict(
+                        (layer, [])
+                        for layer in self.feature_extractor.feature_layers.values()
+                    )
+
                 features = self.feature_extractor(data)
 
-                for i_layer in self.feature_layers.values():
-                    feature = features[i_layer]
+                for i_layer, feature in features.items():
                     feature = self.flatten_feature(feature, batch)
 
                     f_rms = torch.norm(feature, p=2, dim=-1) / math.sqrt(

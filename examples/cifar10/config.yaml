@@ -5,7 +5,7 @@
 # Dataset
 #
 num_classes: 10
-batch_size: 64
+batch_size: 128
 num_workers: 2
 mixup_alpha: 0.
 cutmix_alpha: 0.

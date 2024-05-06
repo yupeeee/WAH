@@ -4,7 +4,6 @@ e.g., python travel_cifar10.py --model resnet50 --cuda
 import argparse
 
 import torch
-from torchvision import models
 
 import wah
 
@@ -21,12 +20,6 @@ if __name__ == "__main__":
     parser.add_argument("--config", type=str, required=False, default="travel_cfg.yaml")
     parser.add_argument("--cuda", action="store_true", required=False, default=False)
     args = parser.parse_args()
-
-    if args.model not in models.list_models():
-        raise AttributeError(
-            f"PyTorch does not support {args.model}. "
-            f"Check torchvision.models.list_models() for supported models."
-        )
 
     # load config
     config = wah.load_config(args.config)
@@ -51,14 +44,13 @@ if __name__ == "__main__":
     )
 
     # load model
-    kwargs = {
-        "weights": None,
-        "num_classes": config["num_classes"],
-    }
-    if "vit" in args.model:
-        kwargs["image_size"] = 32
-
-    model = getattr(models, args.model)(**kwargs)
+    model = wah.load_timm_model(
+        name=args.model,
+        pretrained=False,
+        num_classes=10,
+        image_size=32,
+        num_channels=3,
+    )
 
     # load weights
     train_id = "cifar10"

@@ -37,6 +37,13 @@ def load_metrics(
 ) -> List[Metric]:
     metrics = []
 
+    if (
+        "metrics" not in config.keys()
+        or config["metrics"] == "None"
+        or "None" in config["metrics"]
+    ):
+        return metrics
+
     for m in config["metrics"]:
         if not train and m in train_only_metrics:
             continue

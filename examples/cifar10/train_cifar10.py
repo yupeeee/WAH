@@ -4,8 +4,6 @@ CHECK TRAIN LOGS:   tensorboard --logdir logs
 """
 import argparse
 
-from torchvision import models
-
 import wah
 
 CIFAR10_ROOT = wah.path.join(".", "dataset")    # directory to download CIFAR-10 dataset
@@ -18,12 +16,6 @@ if __name__ == "__main__":
     parser.add_argument("--portion", type=float, required=False, default=1.)
     parser.add_argument("--config", type=str, required=False, default="config.yaml")
     args = parser.parse_args()
-
-    if args.model not in models.list_models():
-        raise AttributeError(
-            f"PyTorch does not support {args.model}. "
-            f"Check torchvision.models.list_models() for supported models."
-        )
 
     # load config
     config = wah.load_config(args.config)
@@ -60,14 +52,13 @@ if __name__ == "__main__":
     )
 
     # load model
-    kwargs = {
-        "weights": None,
-        "num_classes": config["num_classes"],
-    }
-    if "vit" in args.model:
-        kwargs["image_size"] = 32
-
-    model = getattr(models, args.model)(**kwargs)
+    model = wah.load_timm_model(
+        name=args.model,
+        pretrained=False,
+        num_classes=10,
+        image_size=32,
+        num_channels=3,
+    )
     model = wah.Wrapper(model, config)
 
     # train
