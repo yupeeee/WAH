@@ -12,7 +12,7 @@ from ..typing import (
     Transform,
     Union,
 )
-from ..utils.lst import load_txt
+from .timm_cfg import _timm_need_img_size
 
 __all__ = [
     "model_family_name",
@@ -21,9 +21,6 @@ __all__ = [
     "load_timm_model",
     "add_preprocess",
 ]
-
-_timm_family = load_txt("./timm_family.txt")
-_timm_need_img_size = load_txt("./timm_need_img_size.txt")
 
 
 def model_family_name(
