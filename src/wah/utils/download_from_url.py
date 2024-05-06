@@ -1,6 +1,10 @@
 import hashlib
 import os
-from urllib.request import Request, urlopen
+import ssl
+from urllib.request import (
+    Request,
+    urlopen,
+)
 
 from tqdm import tqdm
 
@@ -14,6 +18,7 @@ __all__ = [
     "urlretrieve",
     "check",
     "download_url",
+    "disable_verification",
 ]
 
 
@@ -111,3 +116,7 @@ def download_url(
                 print("Files already downloaded and verified.")
 
     return fpath
+
+
+def disable_verification() -> None:
+    ssl._create_default_https_context = ssl._create_unverified_context
