@@ -88,6 +88,7 @@ class FeatureExtractor(Module):
             return_nodes=self.feature_layers,
         )
 
+        delattr(self, "model")
         self.checked_layers = True
 
     @staticmethod

@@ -1,10 +1,6 @@
 """
 e.g., python eval_cifar10.py --model resnet50
 """
-import argparse
-
-import torch
-
 import wah
 
 CIFAR10_ROOT = wah.path.join(".", "dataset")    # directory to download CIFAR-10 dataset
@@ -12,7 +8,7 @@ CKPT_ROOT = wah.path.join(".", "logs")          # directory where model checkpoi
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+    parser = wah.ArgumentParser()
     parser.add_argument("--model", type=str, required=True)
     parser.add_argument("--tag", type=str, required=False, default="base")
     parser.add_argument("--portion", type=float, required=False, default=1.0)
@@ -66,7 +62,7 @@ if __name__ == "__main__":
     wah.load_state_dict(
         model=model,
         state_dict_path=wah.path.join(ckpt_dir, ckpt_fname),
-        map_location=torch.device("cuda" if use_cuda else "cpu"),
+        map_location=wah.device("cuda" if use_cuda else "cpu"),
     )
     model.eval()
 

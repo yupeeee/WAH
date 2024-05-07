@@ -2,8 +2,6 @@
 TRAIN:              python train_cifar10.py --model MODEL_TO_TRAIN
 CHECK TRAIN LOGS:   tensorboard --logdir logs
 """
-import argparse
-
 import wah
 
 CIFAR10_ROOT = wah.path.join(".", "dataset")    # directory to download CIFAR-10 dataset
@@ -11,7 +9,7 @@ TRAIN_LOG_ROOT = wah.path.join(".", "logs")     # directory to save train logs
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+    parser = wah.ArgumentParser()
     parser.add_argument("--model", type=str, required=True)
     parser.add_argument("--portion", type=float, required=False, default=1.)
     parser.add_argument("--config", type=str, required=False, default="config.yaml")

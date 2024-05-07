@@ -1,21 +1,21 @@
 from collections import OrderedDict
-import re
 
 import timm
 import torch
 from torchvision import models
 
 from ..typing import (
+    Dict,
     Module,
     Optional,
     Path,
+    Tensor,
     Transform,
     Union,
 )
 from .timm_cfg import _timm_need_img_size
 
 __all__ = [
-    "model_family_name",
     "load_state_dict",
     "load_pytorch_model",
     "load_timm_model",
@@ -23,40 +23,19 @@ __all__ = [
 ]
 
 
-def model_family_name(
-    name: str,
-) -> str:
-    name = name.split("_")[0]
-
-    match = re.match(r"([a-z]+)([0-9]+)", name, re.I)
-
-    if match:
-        name, num = match.groups()
-
-        # consider ~v2, ~v3, ~v4 as family name
-        if name[-1] == "v" and num in [
-            "2",
-            "3",
-            "4",
-        ]:
-            name += num
-
-    return name
-
-
 def load_state_dict(
     model: Module,
     state_dict_path: Path,
     **kwargs,
 ) -> None:
-    state_dict = torch.load(state_dict_path, **kwargs)["state_dict"]
+    state_dict: Dict[str, Tensor] = torch.load(state_dict_path, **kwargs)["state_dict"]
 
     for key in state_dict.copy().keys():
-        if "model." in key:
-            state_dict[key.replace("model.", "")] = state_dict.pop(key)
-
-        elif "feature_extractor." in key:
+        if "feature_extractor." in key:
             del state_dict[key]
+
+        elif "model." in key:
+            state_dict[key.replace("model.", "")] = state_dict.pop(key)
 
         else:
             continue

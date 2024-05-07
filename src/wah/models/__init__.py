@@ -10,7 +10,6 @@ __all__ = [
     "FeatureExtractor",
 
     # load
-    "model_family_name",
     "load_state_dict",
     "load_pytorch_model",
     "load_timm_model",

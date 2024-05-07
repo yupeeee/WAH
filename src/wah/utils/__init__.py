@@ -1,5 +1,8 @@
-from .config import load_config
+from argparse import ArgumentParser
 
+from torch import device
+
+from .config import load_config
 from . import (
     dictionary,
     dist,
@@ -23,4 +26,7 @@ __all__ = [
     "sort",
     "tensor",
     "zip",
+
+    "ArgumentParser",
+    "device",
 ]
