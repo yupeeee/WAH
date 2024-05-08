@@ -1,6 +1,7 @@
 lightning
 matplotlib
 pandas
+paramiko
 pyperclip
 PyYAML
 selenium
