@@ -1,7 +1,7 @@
 """
 e.g., python travel_cifar10.py --model resnet50 --cuda
 """
-import wah
+from src import wah
 
 CIFAR10_ROOT = wah.path.join(".", "dataset")    # directory to download CIFAR-10 dataset
 CKPT_ROOT = wah.path.join(".", "logs")          # directory where model checkpoints (i.e., weights) are saved
@@ -13,8 +13,9 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str, required=True)
     parser.add_argument("--tag", type=str, required=False, default="base")
     parser.add_argument("--portion", type=float, required=False, default=1.)
-    parser.add_argument("--config", type=str, required=False, default="travel_cfg.yaml")
+    parser.add_argument("--config", type=str, required=False, default="config.yaml")
     parser.add_argument("--cuda", action="store_true", required=False, default=False)
+    parser.add_argument("--nprocs", type=int, required=False, default=1)
     args = parser.parse_args()
 
     # load config
@@ -75,7 +76,7 @@ if __name__ == "__main__":
         use_cuda=args.cuda,
         **config["travel"],
     )
-    travel_res = traveler.travel(dataloader, verbose=True)
+    travel_res = traveler.travel(dataloader, nprocs=args.nprocs, verbose=True)
 
     wah.dictionary.save_in_csv(
         dictionary=travel_res,
