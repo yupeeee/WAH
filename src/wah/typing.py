@@ -14,7 +14,7 @@ from typing import (
 
 from matplotlib.pyplot import Axes
 from pandas import DataFrame
-from paramiko import Transport
+from paramiko import SFTPClient, Transport
 from torch import Tensor
 from torch import device as Device
 from torch.multiprocessing import Process, Queue
@@ -55,6 +55,7 @@ __all__ = [
     "Process",
     "ResQueue",
     "Sequence",
+    "SFTPClient",
     "Tensor",
     "Transform",
     "Transport",
