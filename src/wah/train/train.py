@@ -1,4 +1,4 @@
-import math
+# import math
 
 import lightning as L
 import torch
@@ -6,7 +6,7 @@ import torch.optim as _optim
 from torch import nn
 from torchmetrics import MeanMetric
 
-from ..models.feature_extractor import FeatureExtractor
+# from ..models.feature_extractor import FeatureExtractor
 from ..typing import (
     Callable,
     Config,
@@ -66,30 +66,36 @@ class Wrapper(L.LightningModule):
             val_metrics, header="val",
         )
 
-        self.track_grad_l2: bool = False
-        self.track_feature_rms: bool = False
+        # grad_l2
+        self.grad_layers: Dict[str, str] = {}
+        self.grad_l2: Dict[str, List[Tensor]] = {}
 
-        if "track" in self.config.keys():
-            # grad_l2
-            self.track_grad_l2 = (
-                True if "grad_l2" in self.config["track"] else False
-            )
-            self.grad_layers: Dict[str, str] = {}
-            self.grad_l2: Dict[str, List[Tensor]] = {}
+        self.init_grad_l2()
 
-            if self.track_grad_l2:
-                self.init_grad_l2()
+        # self.track_grad_l2: bool = False
+        # self.track_feature_rms: bool = False
 
-            # feature_rms
-            self.track_feature_rms = (
-                True if "feature_rms" in self.config["track"] else False
-            )
-            self.feature_extractor: Module = None
-            self.train_rms: Dict[str, List[Tensor]] = {}
-            self.val_rms: Dict[str, List[Tensor]] = {}
+        # if "track" in self.config.keys():
+        #     # grad_l2
+        #     self.track_grad_l2 = (
+        #         True if "grad_l2" in self.config["track"] else False
+        #     )
+        #     self.grad_layers: Dict[str, str] = {}
+        #     self.grad_l2: Dict[str, List[Tensor]] = {}
 
-            if self.track_feature_rms:
-                self.init_feature_rms()
+        #     if self.track_grad_l2:
+        #         self.init_grad_l2()
+
+        #     # feature_rms
+        #     self.track_feature_rms = (
+        #         True if "feature_rms" in self.config["track"] else False
+        #     )
+        #     self.feature_extractor: Module = None
+        #     self.train_rms: Dict[str, List[Tensor]] = {}
+        #     self.val_rms: Dict[str, List[Tensor]] = {}
+
+        #     if self.track_feature_rms:
+        #         self.init_feature_rms()
 
     def load_criterion(self) -> Callable:
         criterion = getattr(nn, self.config["criterion"])
@@ -141,28 +147,28 @@ class Wrapper(L.LightningModule):
             self.grad_layers[name] = f"{i}_{name}"
             self.grad_l2[f"{i}_{name}"] = []
 
-    def init_feature_rms(
-        self,
-    ) -> None:
-        self.feature_extractor = FeatureExtractor(self.model)
+    # def init_feature_rms(
+    #     self,
+    # ) -> None:
+    #     self.feature_extractor = FeatureExtractor(self.model)
 
-        self.train_rms = dict(
-            (layer, []) for layer in self.feature_extractor.feature_layers.values()
-        )
-        self.val_rms = dict(
-            (layer, []) for layer in self.feature_extractor.feature_layers.values()
-        )
+    #     self.train_rms = dict(
+    #         (layer, []) for layer in self.feature_extractor.feature_layers.values()
+    #     )
+    #     self.val_rms = dict(
+    #         (layer, []) for layer in self.feature_extractor.feature_layers.values()
+    #     )
 
-    @staticmethod
-    def flatten_feature(feature, batch) -> Tensor:
-        # vit: self_attention
-        if isinstance(feature, tuple):
-            feature = [f for f in feature if f is not None]
-            feature = torch.cat(feature, dim=0)
+    # @staticmethod
+    # def flatten_feature(feature, batch) -> Tensor:
+    #     # vit: self_attention
+    #     if isinstance(feature, tuple):
+    #         feature = [f for f in feature if f is not None]
+    #         feature = torch.cat(feature, dim=0)
 
-        feature = feature.reshape(len(batch), -1)
+    #     feature = feature.reshape(len(batch), -1)
 
-        return feature
+    #     return feature
 
     def training_step(self, batch, batch_idx):
         rank = self.local_rank
@@ -183,28 +189,28 @@ class Wrapper(L.LightningModule):
 
             metric(outputs, targets)
 
-        if self.track_feature_rms:
-            with torch.no_grad():
-                features: Dict[str, Tensor] = self.feature_extractor(data)
+        # if self.track_feature_rms:
+        #     with torch.no_grad():
+        #         features: Dict[str, Tensor] = self.feature_extractor(data)
 
-                for i_layer, feature in features.items():
-                    feature = self.flatten_feature(feature, batch)
+        #         for i_layer, feature in features.items():
+        #             feature = self.flatten_feature(feature, batch)
 
-                    f_rms = torch.norm(feature, p=2, dim=-1) / math.sqrt(
-                        feature.size(-1)
-                    )
-                    self.train_rms[i_layer].append(f_rms)
+        #             f_rms = torch.norm(feature, p=2, dim=-1) / math.sqrt(
+        #                 feature.size(-1)
+        #             )
+        #             self.train_rms[i_layer].append(f_rms)
 
-                    del feature
-                    torch.cuda.empty_cache()
+        #             del feature
+        #             torch.cuda.empty_cache()
 
         return loss
 
     def on_after_backward(self) -> None:
-        if self.track_grad_l2:
-            for i, (name, param) in enumerate(self.model.named_parameters()):
-                grad_l2 = torch.norm(param.grad.flatten(), p=2)
-                self.grad_l2[f"{i}_{name}"].append(grad_l2.view(1))
+        # if self.track_grad_l2:
+        for i, (name, param) in enumerate(self.model.named_parameters()):
+            grad_l2 = torch.norm(param.grad.flatten(), p=2)
+            self.grad_l2[f"{i}_{name}"].append(grad_l2.view(1))
 
     def on_train_epoch_end(self) -> None:
         current_epoch = self.current_epoch + 1
@@ -220,30 +226,30 @@ class Wrapper(L.LightningModule):
         tensorboard = self.logger.experiment
 
         # grad_l2
-        if self.track_grad_l2:
-            for layer, l2 in self.grad_l2.items():
-                l2 = torch.cat(l2)
-                tensorboard.add_histogram(
-                    f"grad_l2/{layer}",
-                    l2,
-                    current_epoch,
-                )
+        # if self.track_grad_l2:
+        for layer, l2 in self.grad_l2.items():
+            l2 = torch.cat(l2)
+            tensorboard.add_histogram(
+                f"grad_l2/{layer}",
+                l2,
+                current_epoch,
+            )
 
-                # reset
-                self.grad_l2[layer].clear()
+            # reset
+            self.grad_l2[layer].clear()
 
-        # feature_rms
-        if self.track_feature_rms:
-            for layer, rms in self.train_rms.items():
-                rms = torch.cat(rms)
-                tensorboard.add_histogram(
-                    f"feature_rms/train/{layer}",
-                    rms,
-                    current_epoch,
-                )
+        # # feature_rms
+        # if self.track_feature_rms:
+        #     for layer, rms in self.train_rms.items():
+        #         rms = torch.cat(rms)
+        #         tensorboard.add_histogram(
+        #             f"feature_rms/train/{layer}",
+        #             rms,
+        #             current_epoch,
+        #         )
 
-                # reset
-                self.train_rms[layer].clear()
+        #         # reset
+        #         self.train_rms[layer].clear()
 
     def validation_step(self, batch, batch_idx):
         data, targets = batch
@@ -260,31 +266,31 @@ class Wrapper(L.LightningModule):
 
             metric(outputs, targets)
 
-        if self.track_feature_rms:
-            with torch.no_grad():
-                if self.feature_extractor.checked_layers is False:
-                    _ = self.feature_extractor(data)
-                    self.train_rms = dict(
-                        (layer, [])
-                        for layer in self.feature_extractor.feature_layers.values()
-                    )
-                    self.val_rms = dict(
-                        (layer, [])
-                        for layer in self.feature_extractor.feature_layers.values()
-                    )
+        # if self.track_feature_rms:
+        #     with torch.no_grad():
+        #         if self.feature_extractor.checked_layers is False:
+        #             _ = self.feature_extractor(data)
+        #             self.train_rms = dict(
+        #                 (layer, [])
+        #                 for layer in self.feature_extractor.feature_layers.values()
+        #             )
+        #             self.val_rms = dict(
+        #                 (layer, [])
+        #                 for layer in self.feature_extractor.feature_layers.values()
+        #             )
 
-                features = self.feature_extractor(data)
+        #         features = self.feature_extractor(data)
 
-                for i_layer, feature in features.items():
-                    feature = self.flatten_feature(feature, batch)
+        #         for i_layer, feature in features.items():
+        #             feature = self.flatten_feature(feature, batch)
 
-                    f_rms = torch.norm(feature, p=2, dim=-1) / math.sqrt(
-                        feature.size(-1)
-                    )
-                    self.val_rms[i_layer].append(f_rms)
+        #             f_rms = torch.norm(feature, p=2, dim=-1) / math.sqrt(
+        #                 feature.size(-1)
+        #             )
+        #             self.val_rms[i_layer].append(f_rms)
 
-                    del feature
-                    torch.cuda.empty_cache()
+        #             del feature
+        #             torch.cuda.empty_cache()
 
         return loss
 
@@ -300,20 +306,20 @@ class Wrapper(L.LightningModule):
         for label, metric in self.val_metrics.items():
             self.log(label, metric)
 
-        tensorboard = self.logger.experiment
+        # tensorboard = self.logger.experiment
 
-        # feature_rms
-        if self.track_feature_rms:
-            for layer, rms in self.val_rms.items():
-                rms = torch.cat(rms)
-                tensorboard.add_histogram(
-                    f"feature_rms/val/{layer}",
-                    rms,
-                    current_epoch,
-                )
+        # # feature_rms
+        # if self.track_feature_rms:
+        #     for layer, rms in self.val_rms.items():
+        #         rms = torch.cat(rms)
+        #         tensorboard.add_histogram(
+        #             f"feature_rms/val/{layer}",
+        #             rms,
+        #             current_epoch,
+        #         )
 
-                # reset
-                self.val_rms[layer].clear()
+        #         # reset
+        #         self.val_rms[layer].clear()
 
 
 def load_trainer(

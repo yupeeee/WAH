@@ -46,9 +46,9 @@ metrics:
 - "ECE"
 - "sECE"
 
-track:
-- "grad_l2"
-- "feature_rms"
+# track:
+# - "grad_l2"
+# - "feature_rms"
 
 
 #
