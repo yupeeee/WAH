@@ -3,7 +3,7 @@ from .load import *
 from .modules import *
 from .replace import Replacer
 from .test import *
-from .travel import Traveler
+# from .travel import Traveler
 
 __all__ = [
     # feature_extractor
@@ -28,7 +28,8 @@ __all__ = [
 
     # test
     "AccuracyTest",
-
-    # travel
     "Traveler",
+
+    # # travel
+    # "Traveler",
 ]
