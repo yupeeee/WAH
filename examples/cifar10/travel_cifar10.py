@@ -19,7 +19,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # load config
-    config = wah.load_config(args.config)
+    config = wah.config.load(args.config)
 
     # load dataset/dataloader
     dataset = wah.CIFAR10(

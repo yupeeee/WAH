@@ -1,10 +1,11 @@
 """
 e.g., python eval_cifar10.py --model resnet50
 """
+
 import wah
 
-CIFAR10_ROOT = wah.path.join(".", "dataset")    # directory to download CIFAR-10 dataset
-CKPT_ROOT = wah.path.join(".", "logs")          # directory where model checkpoints (i.e., weights) are saved
+CIFAR10_ROOT = wah.path.join("F:/", "dataset", "cifar10")
+CKPT_ROOT = wah.path.join("F:/", "logs")
 
 
 if __name__ == "__main__":
@@ -19,7 +20,7 @@ if __name__ == "__main__":
     wah.dist.set_start_method()
 
     # load config
-    config = wah.load_config(args.config)
+    config = wah.config.load(args.config)
     use_cuda = True if "gpu" in config.keys() else False
 
     # load dataset/dataloader
@@ -54,7 +55,7 @@ if __name__ == "__main__":
     # load weights
     train_id = "cifar10"
     train_id += f"x{args.portion}" if args.portion < 1.0 else ""
-    train_id += f"-{args.model}"
+    train_id += f"/{args.model}"
 
     ckpt_dir = wah.path.join(CKPT_ROOT, train_id, args.tag, "checkpoints")
     ckpt_fname = wah.path.ls(ckpt_dir, fext="ckpt")[-1]

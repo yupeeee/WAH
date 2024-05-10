@@ -3,7 +3,7 @@ from torchmetrics.classification import (
     MulticlassCalibrationError as _MultiClassCalibrationError,
 )
 
-from ....typing import (
+from ...typing import (
     Any,
     List,
     Literal,
@@ -14,8 +14,7 @@ from ....typing import (
 )
 
 __all__ = [
-    "ECE",
-    "sECE",
+    "MultiClassCalibrationError",
 ]
 
 
@@ -143,7 +142,12 @@ class MulticlassCalibrationError(_MultiClassCalibrationError):
         self,
         num_classes: int,
         n_bins: int = 10,
-        norm: Literal["l1", "sign"] = "l1",
+        norm: Literal[
+            "l1",
+            "sign",
+            "l2",
+            "max",
+        ] = "l1",
         ignore_index: Optional[int] = None,
         validate_args: bool = False,
         **kwargs: Any,
@@ -158,33 +162,3 @@ class MulticlassCalibrationError(_MultiClassCalibrationError):
         accuracies = dim_zero_cat(self.accuracies)
 
         return _ce_compute(confidences, accuracies, self.n_bins, norm=self.norm)
-
-
-class ECE(MulticlassCalibrationError):
-    label = "ece_l1"
-
-    def __init__(
-        self,
-        num_classes: int,
-        n_bins: int = 10,
-    ) -> None:
-        super().__init__(
-            num_classes=num_classes,
-            n_bins=n_bins,
-            norm="l1",
-        )
-
-
-class sECE(MulticlassCalibrationError):
-    label = "ece_sign"
-
-    def __init__(
-        self,
-        num_classes: int,
-        n_bins: int = 10,
-    ) -> None:
-        super().__init__(
-            num_classes=num_classes,
-            n_bins=n_bins,
-            norm="sign",
-        )

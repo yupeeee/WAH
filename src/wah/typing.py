@@ -12,6 +12,7 @@ from typing import (
     Union,
 )
 
+from lightning import Trainer
 from matplotlib.pyplot import Axes
 from pandas import DataFrame
 from paramiko import SFTPClient, Transport
@@ -20,6 +21,7 @@ from torch import device as Device
 from torch.multiprocessing import Process, Queue
 from torch.nn import Module, Parameter
 from torch.optim import Optimizer
+from torch.utils.tensorboard.writer import SummaryWriter
 
 # ImportError: cannot import name 'LRScheduler' from 'torch.optim.lr_scheduler'
 try:
@@ -56,7 +58,9 @@ __all__ = [
     "ResQueue",
     "Sequence",
     "SFTPClient",
+    "SummaryWriter",
     "Tensor",
+    "Trainer",
     "Transform",
     "Transport",
     "Tuple",

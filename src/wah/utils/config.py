@@ -6,11 +6,11 @@ from ..typing import (
 )
 
 __all__ = [
-    "load_config",
+    "load",
 ]
 
 
-def load_config(
+def load(
     path: Path,
 ) -> Config:
     with open(path, "r") as f:

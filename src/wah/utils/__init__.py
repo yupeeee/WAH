@@ -2,9 +2,9 @@ from argparse import ArgumentParser
 
 from torch import device
 
-from .config import load_config
 from . import (
     cmd,
+    config,
     dictionary,
     dist,
     download_from_url,
@@ -19,8 +19,8 @@ from . import (
 )
 
 __all__ = [
-    "load_config",
     "cmd",
+    "config",
     "dictionary",
     "dist",
     "download_from_url",

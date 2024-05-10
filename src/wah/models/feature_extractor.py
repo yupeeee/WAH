@@ -6,8 +6,8 @@ from torchvision.models.feature_extraction import (
 
 from ..typing import (
     Module,
-    Tensor,
 )
+from .utils import flatten_feature
 
 __all__ = [
     "FeatureExtractor",
@@ -71,7 +71,7 @@ class FeatureExtractor(Module):
                     continue
 
                 try:
-                    _ = self.flatten_feature(features[i_layer], x)
+                    _ = flatten_feature(features[i_layer], batch_size=len(x))
                     torch.cuda.empty_cache()
 
                     layers.append(layer)
@@ -90,14 +90,3 @@ class FeatureExtractor(Module):
 
         delattr(self, "model")
         self.checked_layers = True
-
-    @staticmethod
-    def flatten_feature(feature, x) -> Tensor:
-        # vit: self_attention
-        if isinstance(feature, tuple):
-            feature = [f for f in feature if f is not None]
-            feature = torch.cat(feature, dim=0)
-
-        feature = feature.reshape(len(x), -1)
-
-        return feature

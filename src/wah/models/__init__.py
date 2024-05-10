@@ -3,6 +3,7 @@ from .load import *
 from .modules import *
 from .replace import Replacer
 from .test import *
+from .train import *
 # from .travel import Traveler
 
 __all__ = [
@@ -29,6 +30,10 @@ __all__ = [
     # test
     "AccuracyTest",
     "Traveler",
+
+    # train
+    "Wrapper",
+    "load_trainer",
 
     # # travel
     # "Traveler",
