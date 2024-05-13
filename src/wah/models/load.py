@@ -28,7 +28,10 @@ def load_state_dict(
     state_dict_path: Path,
     **kwargs,
 ) -> None:
-    state_dict: Dict[str, Tensor] = torch.load(state_dict_path, **kwargs)["state_dict"]
+    state_dict: Dict[str, Tensor] = torch.load(state_dict_path, **kwargs)
+
+    if "state_dict" in state_dict.keys():
+        state_dict = state_dict["state_dict"]
 
     for key in state_dict.copy().keys():
         if "feature_extractor." in key:

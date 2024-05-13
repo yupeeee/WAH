@@ -6,6 +6,7 @@ from . import (
     feature_rms,
     grad_l2,
     param_svdval_max,
+    state_dict,
 )
 
 
@@ -15,6 +16,7 @@ __all__ = [
     "feature_rms",
     "grad_l2",
     "param_svdval_max",
+    "state_dict",
 ]
 
 
@@ -22,6 +24,7 @@ class Track:
     FEATURE_RMS = False
     GRAD_L2 = False
     PARAM_SVDVAL_MAX = False
+    STATE_DICT = False
 
 
 def load_track(

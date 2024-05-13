@@ -69,7 +69,6 @@ if __name__ == "__main__":
         config=config,
         save_dir=TRAIN_LOG_ROOT,
         name=train_id,
-        every_n_epochs=1,
     )
     trainer.fit(
         model=model,

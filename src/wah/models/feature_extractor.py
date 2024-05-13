@@ -71,7 +71,7 @@ class FeatureExtractor(Module):
                     continue
 
                 try:
-                    _ = flatten_feature(features[i_layer], batch_size=len(x))
+                    _ = flatten_feature(features[i_layer])
                     torch.cuda.empty_cache()
 
                     layers.append(layer)

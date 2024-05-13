@@ -1,6 +1,7 @@
 from ...typing import (
     Config,
     LRScheduler,
+    Path,
     Trainer,
 )
 from . import config_requirements
@@ -9,6 +10,7 @@ __all__ = [
     "check_config",
     "init_seed",
     "get_lr",
+    "get_tag",
 ]
 
 
@@ -78,3 +80,11 @@ def get_lr(
     lr = scheduler.get_last_lr()[0]
 
     return lr
+
+
+def get_tag(
+    trainer: Trainer,
+) -> Path:
+    tag = trainer.logger.name
+
+    return tag

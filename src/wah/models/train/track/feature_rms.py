@@ -44,7 +44,7 @@ def compute(
         features: Dict[str, Tensor] = feature_extractor(data)
 
     for i_layer, feature in features.items():
-        feature = flatten_feature(feature, batch_size=len(data))
+        feature = flatten_feature(feature)
 
         f_rms = torch.norm(feature, p=2, dim=-1) / math.sqrt(feature.size(-1))
         feature_rms_dict[i_layer].append(f_rms)

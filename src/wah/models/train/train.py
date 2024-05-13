@@ -1,9 +1,9 @@
 from datetime import datetime
 
 import lightning as L
-from lightning.pytorch.callbacks import ModelCheckpoint  # , LearningRateMonitor
-from lightning.pytorch.loggers import TensorBoardLogger
 import torch
+from lightning.pytorch.callbacks import ModelCheckpoint
+from lightning.pytorch.loggers import TensorBoardLogger
 from torchmetrics import MeanMetric
 
 from ... import utils
@@ -24,7 +24,12 @@ from .criterion import load_criterion
 from .metric import as_attr, load_metrics
 from .optimizer import load_optimizer
 from .scheduler import load_scheduler
-from .utils import check_config, get_lr, init_seed
+from .utils import (
+    check_config,
+    get_lr,
+    get_tag,
+    init_seed,
+)
 
 __all__ = [
     "Wrapper",
@@ -160,19 +165,21 @@ class Wrapper(L.LightningModule):
 
         # log: track
         tensorboard: SummaryWriter = self.logger.experiment
+        tag = get_tag(self.trainer)
+
         if self._track.FEATURE_RMS:
             track.feature_rms.track(
                 epoch=current_epoch,
                 tensorboard=tensorboard,
                 feature_rms_dict=self.train_rms,
-                header="feature_rms/train",
+                header=f"feature_rms/{tag}/train",
             )
         if self._track.GRAD_L2:
             track.grad_l2.track(
                 epoch=current_epoch,
                 tensorboard=tensorboard,
                 grad_l2_dict=self.grad_l2_dict,
-                header="grad_l2",
+                header=f"grad_l2/{tag}",
             )
         if self._track.PARAM_SVDVAL_MAX:
             track.param_svdval_max.compute(
@@ -183,7 +190,14 @@ class Wrapper(L.LightningModule):
                 epoch=current_epoch,
                 tensorboard=tensorboard,
                 param_svdval_max_dict=self.param_svdval_max_dict,
-                header="param_svdval_max",
+                header=f"param_svdval_max/{tag}",
+            )
+        if self._track.STATE_DICT:
+            track.state_dict.save(
+                model=self.model,
+                epoch=current_epoch,
+                every_n_epochs=1,
+                tensorboard=tensorboard,
             )
 
     def validation_step(self, batch, batch_idx):
@@ -242,13 +256,14 @@ class Wrapper(L.LightningModule):
 
         # log: track
         tensorboard: SummaryWriter = self.logger.experiment
+        tag = get_tag(self.trainer)
 
         if self._track.FEATURE_RMS:
             track.feature_rms.track(
                 epoch=current_epoch,
                 tensorboard=tensorboard,
                 feature_rms_dict=self.val_rms,
-                header="feature_rms/val",
+                header=f"feature_rms/{tag}/val",
             )
 
 
@@ -264,21 +279,11 @@ def load_tensorboard_logger(
     )
 
 
-# def load_lr_monitor() -> LearningRateMonitor:
-#     return LearningRateMonitor(logging_interval="epoch")
-
-
-def load_checkpoint_callback(
-    every_n_epochs: int,
-) -> ModelCheckpoint:
+def load_checkpoint_callback() -> ModelCheckpoint:
     return ModelCheckpoint(
-        filename="epoch={epoch:03d}-val_acc={val/acc@1:.4f}",
-        # monitor="val/acc@1",
-        save_top_k=-1,
-        # mode="max",
-        auto_insert_metric_name=False,
-        every_n_epochs=every_n_epochs,
-        save_on_train_epoch_end=False,
+        save_last=True,
+        save_top_k=0,
+        save_on_train_epoch_end=True,
     )
 
 
@@ -304,7 +309,6 @@ def load_trainer(
     config: Config,
     save_dir: Path,
     name: str,
-    every_n_epochs: int,
 ) -> L.Trainer:
     accelerator, devices = load_accelerator_and_devices(config)
 
@@ -313,8 +317,7 @@ def load_trainer(
         save_dir=save_dir,
         name=name,
     )
-    # lr_monitor = load_lr_monitor()
-    checkpoint_callback = load_checkpoint_callback(every_n_epochs)
+    checkpoint_callback = load_checkpoint_callback()
 
     return L.Trainer(
         accelerator=accelerator,
@@ -323,7 +326,6 @@ def load_trainer(
             tensorboard_logger,
         ],
         callbacks=[
-            # lr_monitor,
             checkpoint_callback,
         ],
         max_epochs=config["epochs"],

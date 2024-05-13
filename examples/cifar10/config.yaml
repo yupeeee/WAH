@@ -51,6 +51,7 @@ track:
 # - "feature_rms"
 - "grad_l2"
 - "param_svdval_max"
+- "state_dict"
 
 
 #
