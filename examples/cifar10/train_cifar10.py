@@ -14,6 +14,8 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str, required=True)
     parser.add_argument("--portion", type=float, required=False, default=1.0)
     parser.add_argument("--config", type=str, required=False, default="config.yaml")
+    parser.add_argument("--version", type=str, required=False, default=None)
+    parser.add_argument("--resume", action="store_true", required=False, default=False)
     args = parser.parse_args()
 
     # load config
@@ -69,9 +71,21 @@ if __name__ == "__main__":
         config=config,
         save_dir=TRAIN_LOG_ROOT,
         name=train_id,
+        version=args.version if args.version is not None else None,
     )
     trainer.fit(
         model=model,
         train_dataloaders=train_dataloader,
         val_dataloaders=val_dataloader,
+        ckpt_path=(
+            wah.path.join(
+                TRAIN_LOG_ROOT,
+                train_id,
+                args.version,
+                "checkpoints",
+                "last.ckpt",
+            )
+            if args.resume
+            else None
+        ),
     )

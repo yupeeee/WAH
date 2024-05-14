@@ -271,11 +271,16 @@ def load_tensorboard_logger(
     config: Config,
     save_dir: Path,
     name: str,
+    version: Optional[str] = None,
 ) -> TensorBoardLogger:
     return TensorBoardLogger(
         save_dir=save_dir,
         name=name,
-        version=f"{config['seed']}-{datetime.now().strftime('%y%m%d%H%M%S')}",
+        version=(
+            f"{config['seed']}-{datetime.now().strftime('%y%m%d%H%M%S')}"
+            if version is None
+            else version
+        ),
     )
 
 
@@ -309,6 +314,7 @@ def load_trainer(
     config: Config,
     save_dir: Path,
     name: str,
+    version: Optional[str] = None,
 ) -> L.Trainer:
     accelerator, devices = load_accelerator_and_devices(config)
 
@@ -316,6 +322,7 @@ def load_trainer(
         config=config,
         save_dir=save_dir,
         name=name,
+        version=version,
     )
     checkpoint_callback = load_checkpoint_callback()
 
