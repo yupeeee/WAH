@@ -14,113 +14,11 @@ from ...typing import (
     Tensor,
     Tuple,
 )
-from ...utils.mp import MPManager
 from .utils import DirectionGenerator
 
 __all__ = [
     "Traveler",
 ]
-
-methods = [
-    "fgsm",
-]
-
-
-class Traveler:
-    def __init__(
-        self,
-        model: Module,
-        method: Literal["fgsm",] = "fgsm",
-        seed: Optional[int] = 0,
-        use_cuda: Optional[bool] = False,
-        init_eps: float = 1.0e-3,
-        stride: float = 1.0e-3,
-        stride_decay: float = 0.5,
-        bound: bool = True,
-        tol: float = 1.0e-10,
-        max_iter: int = 10000,
-        turnaround: float = 0.1,
-    ) -> None:
-        assert 0 < stride, f"Expected 0 < stride, got {stride}"
-        assert (
-            0 < stride_decay < 1
-        ), f"Expected 0 < stride_decay < 1, got {stride_decay}"
-        assert 0 < turnaround <= 1, f"Expected 0 < turnaround <= 1, got {turnaround}"
-
-        self.model = model
-        self.method = method
-        self.use_cuda = use_cuda
-        self.device = torch.device("cuda" if use_cuda else "cpu")
-        self.model.to(self.device)
-
-        self.softmax = nn.Softmax(dim=-1)
-
-        self.direction_generator = DirectionGenerator(model, method, seed, use_cuda)
-
-        # travel hyperparameters
-        """
-        init_eps: initial length of travel
-        stride: travel stride
-        stride decay: ratio to decay stride
-        bound: if bound, clip data to [0, 1]
-        tol: tolerance for early stop; if stride < tol, stop travel
-        max_iter: maximum number of iterations
-        turnaround: if travel does not cross the decision boundary
-                    at turnaround*100% of max_iter, stop travel (diverged)
-        """
-        self.params: Dict[str, Any] = {
-            "init_eps": init_eps,
-            "stride": stride,
-            "stride_decay": stride_decay,
-            "bound": bound,
-            "tol": tol,
-            "max_iter": max_iter,
-            "turnaround": turnaround,
-        }
-
-    def travel(
-        self,
-        dataloader: DataLoader,
-        nprocs: int = 1,
-        verbose: Optional[bool] = True,
-    ) -> Dict[str, List[float]]:
-        traveled_res: Dict[str, List[float]] = {
-            "gt": [],
-            "conf": [],
-            "eps": [],
-        }
-
-        if verbose:
-            print(f"{self.method} travel of {len(dataloader.dataset)} data")
-
-        for batch_idx, (data, targets) in enumerate(dataloader):
-            print(f"BATCH {batch_idx}/{len(dataloader)}")
-            results, signed_confs = test_data(data, targets, self.model, self.device)
-            directions = self.direction_generator(data, targets)
-
-            mp = MPManager(nprocs=nprocs, tasks=list(range(len(data))))
-            results = mp.run(
-                work=work,
-                work_args=(
-                    data,
-                    targets,
-                    directions,
-                    results,
-                    signed_confs,
-                    self.model,
-                    self.device,
-                    self.params,
-                ),
-            )
-
-            for proc_id, res in results:
-                gt, conf, eps = res
-
-                traveled_res["gt"].append(gt)
-                traveled_res["conf"].append(conf)
-                traveled_res["eps"].append(eps)
-
-        return traveled_res
 
 
 def test_data(
@@ -129,14 +27,19 @@ def test_data(
     model: Module,
     device: Device,
 ) -> Tuple[List[bool], List[float]]:
-    outputs: Tensor = model(data.to(device)).to(torch.device("cpu"))
-    confs: Tensor = nn.Softmax(dim=-1)(outputs.detach())
+    with torch.no_grad():
+        outputs: Tensor = model(data.to(device))
+
+    confs: Tensor = nn.Softmax(dim=-1)(outputs)
     preds: Tensor = torch.argmax(confs, dim=-1)
 
-    results: Tensor = torch.eq(preds, targets)
+    results: Tensor = torch.eq(preds, targets.to(device))
     signed_confs: Tensor = confs[:, targets].diag() * (results.int() - 0.5).sign()
 
-    return [bool(result) for result in results], [float(conf) for conf in signed_confs]
+    return (
+        [bool(result) for result in results.cpu()],
+        [float(conf) for conf in signed_confs.cpu()],
+    )
 
 
 def travel_data(
@@ -273,7 +176,7 @@ def work(
     model,
     device,
     params,
-):
+) -> Tuple[int, float, float]:
     gt = int(targets[i])
     correct = results[i]
     conf = signed_confs[i]
@@ -289,3 +192,97 @@ def work(
     eps = travel_data(x, t, d, model, device, params)
 
     return (gt, conf, eps)
+
+
+class Traveler:
+    def __init__(
+        self,
+        model: Module,
+        method: Literal["fgsm",] = "fgsm",
+        seed: Optional[int] = 0,
+        use_cuda: Optional[bool] = False,
+        init_eps: float = 1.0e-3,
+        stride: float = 1.0e-3,
+        stride_decay: float = 0.5,
+        bound: bool = True,
+        tol: float = 1.0e-10,
+        max_iter: int = 10000,
+        turnaround: float = 0.1,
+    ) -> None:
+        assert 0 < stride, f"Expected 0 < stride, got {stride}"
+        assert (
+            0 < stride_decay < 1
+        ), f"Expected 0 < stride_decay < 1, got {stride_decay}"
+        assert 0 < turnaround <= 1, f"Expected 0 < turnaround <= 1, got {turnaround}"
+
+        self.model = model
+        self.method = method
+        self.use_cuda = use_cuda
+        self.device = torch.device("cuda" if use_cuda else "cpu")
+        self.model.to(self.device)
+
+        self.softmax = nn.Softmax(dim=-1)
+
+        self.direction_generator = DirectionGenerator(model, method, seed, use_cuda)
+
+        # travel hyperparameters
+        """
+        init_eps: initial length of travel
+        stride: travel stride
+        stride decay: ratio to decay stride
+        bound: if bound, clip data to [0, 1]
+        tol: tolerance for early stop; if stride < tol, stop travel
+        max_iter: maximum number of iterations
+        turnaround: if travel does not cross the decision boundary
+                    at turnaround*100% of max_iter, stop travel (diverged)
+        """
+        self.params: Dict[str, Any] = {
+            "init_eps": init_eps,
+            "stride": stride,
+            "stride_decay": stride_decay,
+            "bound": bound,
+            "tol": tol,
+            "max_iter": max_iter,
+            "turnaround": turnaround,
+        }
+
+    def travel(
+        self,
+        dataloader: DataLoader,
+        verbose: Optional[bool] = True,
+    ) -> Dict[str, List[float]]:
+        traveled_res: Dict[str, List[float]] = {
+            "gt": [],
+            "conf": [],
+            "eps": [],
+        }
+
+        if verbose:
+            print(f"{self.method} travel of {len(dataloader.dataset)} data")
+
+        for batch_idx, (data, targets) in enumerate(dataloader):
+            results, signed_confs = test_data(data, targets, self.model, self.device)
+            directions = self.direction_generator(data, targets)
+
+            for i in tqdm.trange(
+                len(data),
+                desc=f"BATCH {batch_idx + 1}/{len(dataloader)}",
+                disable=not verbose,
+            ):
+                gt, conf, eps = work(
+                    i,
+                    data,
+                    targets,
+                    directions,
+                    results,
+                    signed_confs,
+                    self.model,
+                    self.device,
+                    self.params,
+                )
+
+                traveled_res["gt"].append(gt)
+                traveled_res["conf"].append(conf)
+                traveled_res["eps"].append(eps)
+
+        return traveled_res

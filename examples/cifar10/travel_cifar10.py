@@ -1,25 +1,25 @@
 """
-e.g., python travel_cifar10.py --model resnet50 --cuda
+e.g., python travel_cifar10.py --model resnet50 --version base --method fgsm
 """
-from src import wah
 
-CIFAR10_ROOT = wah.path.join(".", "dataset")    # directory to download CIFAR-10 dataset
-CKPT_ROOT = wah.path.join(".", "logs")          # directory where model checkpoints (i.e., weights) are saved
-TRAVEL_ROOT = wah.path.join(".", "travel_res")  # directory to save travel results
+import wah
+
+CIFAR10_ROOT = wah.path.join("F:/", "datasets", "cifar10")
+CKPT_ROOT = wah.path.join("F:/", "logs")
+TRAVEL_ROOT = wah.path.join("F:/", "travel_res")
 
 
 if __name__ == "__main__":
     parser = wah.ArgumentParser()
     parser.add_argument("--model", type=str, required=True)
-    parser.add_argument("--tag", type=str, required=False, default="base")
-    parser.add_argument("--portion", type=float, required=False, default=1.)
-    parser.add_argument("--config", type=str, required=False, default="config.yaml")
-    parser.add_argument("--cuda", action="store_true", required=False, default=False)
-    parser.add_argument("--nprocs", type=int, required=False, default=1)
+    parser.add_argument("--version", type=str, required=True)
+    parser.add_argument("--portion", type=float, required=False, default=1.0)
+    parser.add_argument("--method", type=str, required=False, default="fgsm")
     args = parser.parse_args()
 
     # load config
-    config = wah.config.load(args.config)
+    config_path = wah.path.join(".", "cfgs", "travel", f"{args.method}.yaml")
+    config = wah.config.load(config_path)
 
     # load dataset/dataloader
     dataset = wah.CIFAR10(
@@ -30,6 +30,7 @@ if __name__ == "__main__":
         download=True,
     )
     normalize = dataset.NORMALIZE
+    use_cuda = True if "gpu" in config["devices"] else False
 
     if args.portion < 1:
         dataset = wah.portion_dataset(dataset, args.portion)
@@ -51,36 +52,37 @@ if __name__ == "__main__":
 
     # load weights
     train_id = "cifar10"
-    train_id += f"x{args.portion}" if args.portion < 1. else ""
-    train_id += f"-{args.model}"
+    train_id += f"x{args.portion}" if args.portion < 1.0 else ""
+    train_id += f"/{args.model}"
 
-    ckpt_dir = wah.path.join(CKPT_ROOT, train_id, args.tag, "checkpoints")
-    ckpt_fname = wah.path.ls(ckpt_dir, fext="ckpt")[-1]
+    ckpt_dir = wah.path.join(CKPT_ROOT, train_id, args.version, "checkpoints")
+    ckpt_fname = wah.path.ls(ckpt_dir, fext=f"ckpt")[-1]
+    # ckpt_fname = [f for f in wah.path.ls(ckpt_dir, fext="ckpt") if "epoch=" in f][-1]
 
     wah.load_state_dict(
         model=model,
         state_dict_path=wah.path.join(ckpt_dir, ckpt_fname),
-        map_location=wah.device("cuda" if args.cuda else "cpu"),
+        map_location=wah.device("cuda" if use_cuda else "cpu"),
     )
     model = wah.add_preprocess(model, preprocess=normalize)
     model.eval()
 
     # travel
     travel_id = f"{config['travel']['method']}_travel-cifar10"
-    travel_id += f"x{args.portion}" if args.portion < 1. else ""
-    travel_id += f"-{args.model}-{args.tag}"
+    travel_id += f"x{args.portion}" if args.portion < 1.0 else ""
+    travel_id += f"-{args.model}-{args.version}"
 
     traveler = wah.Traveler(
         model,
         seed=config["seed"],
-        use_cuda=args.cuda,
+        use_cuda=use_cuda,
         **config["travel"],
     )
-    travel_res = traveler.travel(dataloader, nprocs=args.nprocs, verbose=True)
+    travel_res = traveler.travel(dataloader, verbose=True)
 
     wah.dictionary.save_in_csv(
         dictionary=travel_res,
-        save_dir=wah.path.join(TRAVEL_ROOT, train_id, args.tag),
+        save_dir=wah.path.join(TRAVEL_ROOT, train_id, args.version),
         save_name=travel_id,
         index_col="gt",
     )

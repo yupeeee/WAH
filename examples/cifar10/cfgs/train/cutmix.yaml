@@ -8,10 +8,10 @@ devices: gpu:0
 # Dataset
 #
 num_classes: 10
-batch_size: 16
-num_workers: 2
+batch_size: 64
+num_workers: 4
 mixup_alpha: 0.
-cutmix_alpha: 0.
+cutmix_alpha: 1.0
 
 
 #
@@ -50,21 +50,8 @@ metrics:
 track:
 # - "feature_rms"
 - "grad_l2"
-# - "param_svdval_max"
+- "param_svdval_max"
 - "state_dict"
-
-
-#
-# Travel
-#
-travel:
-  method: "fgsm"
-  init_eps: 1.e-3
-  stride: 1.e-3
-  stride_decay: 0.5
-  tol: 1.e-10
-  max_iter: 10000
-  turnaround: 0.1
 
 
 ... # end

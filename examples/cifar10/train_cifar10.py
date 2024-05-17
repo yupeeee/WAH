@@ -1,9 +1,9 @@
 """
-TRAIN:              python train_cifar10.py --model MODEL_TO_TRAIN
+TRAIN (RESUME):     python train_cifar10.py --model MODEL_TO_TRAIN --version {base|label_smoothing|mixup|cutmix} (--resume)
 CHECK TRAIN LOGS:   tensorboard --logdir logs
 """
 
-from src import wah
+import wah
 
 CIFAR10_ROOT = wah.path.join("F:/", "datasets", "cifar10")
 TRAIN_LOG_ROOT = wah.path.join("F:/", "logs")
@@ -12,14 +12,14 @@ TRAIN_LOG_ROOT = wah.path.join("F:/", "logs")
 if __name__ == "__main__":
     parser = wah.ArgumentParser()
     parser.add_argument("--model", type=str, required=True)
+    parser.add_argument("--version", type=str, required=True)
     parser.add_argument("--portion", type=float, required=False, default=1.0)
-    parser.add_argument("--config", type=str, required=False, default="config.yaml")
-    parser.add_argument("--version", type=str, required=False, default=None)
     parser.add_argument("--resume", action="store_true", required=False, default=False)
     args = parser.parse_args()
 
     # load config
-    config = wah.config.load(args.config)
+    config_path = wah.path.join(".", "cfgs", "train", f"{args.version}.yaml")
+    config = wah.config.load(config_path)
 
     # load dataset/dataloader
     train_dataset = wah.CIFAR10(

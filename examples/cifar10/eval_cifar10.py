@@ -1,27 +1,27 @@
 """
-e.g., python eval_cifar10.py --model resnet50
+e.g., python eval_cifar10.py --model resnet50 --version base
 """
 
 import wah
 
-CIFAR10_ROOT = wah.path.join("F:/", "dataset", "cifar10")
+CIFAR10_ROOT = wah.path.join("F:/", "datasets", "cifar10")
 CKPT_ROOT = wah.path.join("F:/", "logs")
 
 
 if __name__ == "__main__":
     parser = wah.ArgumentParser()
     parser.add_argument("--model", type=str, required=True)
-    parser.add_argument("--tag", type=str, required=False, default="base")
+    parser.add_argument("--version", type=str, required=True)
     parser.add_argument("--portion", type=float, required=False, default=1.0)
-    parser.add_argument("--config", type=str, required=False, default="config.yaml")
     args = parser.parse_args()
 
     # set start method for ddp
     wah.dist.set_start_method()
 
     # load config
-    config = wah.config.load(args.config)
-    use_cuda = True if "gpu" in config.keys() else False
+    config_path = wah.path.join(".", "cfgs", "train", f"{args.version}.yaml")
+    config = wah.config.load(config_path)
+    use_cuda = True if "gpu" in config["devices"] else False
 
     # load dataset/dataloader
     train_dataset = wah.CIFAR10(
@@ -57,8 +57,9 @@ if __name__ == "__main__":
     train_id += f"x{args.portion}" if args.portion < 1.0 else ""
     train_id += f"/{args.model}"
 
-    ckpt_dir = wah.path.join(CKPT_ROOT, train_id, args.tag, "checkpoints")
-    ckpt_fname = wah.path.ls(ckpt_dir, fext="ckpt")[-1]
+    ckpt_dir = wah.path.join(CKPT_ROOT, train_id, args.version, "checkpoints")
+    ckpt_fname = wah.path.ls(ckpt_dir, fext=f"ckpt")[-1]
+    # ckpt_fname = [f for f in wah.path.ls(ckpt_dir, fext="ckpt") if "epoch=" in f][-1]
 
     wah.load_state_dict(
         model=model,
