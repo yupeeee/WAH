@@ -4,7 +4,6 @@ from .modules import *
 from .replace import Replacer
 from .test import *
 from .train import *
-# from .travel import Traveler
 
 __all__ = [
     # feature_extractor
@@ -29,12 +28,10 @@ __all__ = [
 
     # test
     "AccuracyTest",
+    "LinearityTest",
     "Traveler",
 
     # train
     "Wrapper",
     "load_trainer",
-
-    # # travel
-    # "Traveler",
 ]

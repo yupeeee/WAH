@@ -1,12 +1,12 @@
 """
-e.g., python travel_cifar10.py --model resnet50 --version base --method fgsm
+e.g., python linearity_test_cifar10.py --model resnet50 --version base --method fgsm
 """
 
 import wah
 
 CIFAR10_ROOT = wah.path.join("F:/", "datasets", "cifar10")
 CKPT_ROOT = wah.path.join("F:/", "logs")
-TRAVEL_ROOT = wah.path.join("F:/", "travel_res")
+RES_ROOT = wah.path.join("F:/", "linearity")
 
 
 if __name__ == "__main__":
@@ -18,7 +18,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # load config
-    config_path = wah.path.join(".", "cfgs", "travel", f"{args.method}.yaml")
+    config_path = wah.path.join(".", "cfgs", "linearity", f"{args.method}.yaml")
     config = wah.config.load(config_path)
 
     # load dataset/dataloader
@@ -34,12 +34,6 @@ if __name__ == "__main__":
 
     if args.portion < 1:
         dataset = wah.portion_dataset(dataset, args.portion)
-
-    dataloader = wah.load_dataloader(
-        dataset=dataset,
-        config=config,
-        train=False,
-    )
 
     # load model
     model = wah.load_timm_model(
@@ -67,22 +61,23 @@ if __name__ == "__main__":
     model = wah.add_preprocess(model, preprocess=normalize)
     model.eval()
 
-    # travel
-    travel_id = f"{config['travel']['method']}_travel-cifar10"
+    # linearity test
+    travel_id = f"{args.method}_travel-cifar10"
     travel_id += f"x{args.portion}" if args.portion < 1.0 else ""
     travel_id += f"-{args.model}-{args.version}"
 
-    traveler = wah.Traveler(
-        model,
+    test = wah.LinearityTest(
+        batch_size=config["batch_size"],
+        num_workers=config["num_workers"],
         seed=config["seed"],
         use_cuda=use_cuda,
-        **config["travel"],
+        **config["test"],
     )
-    travel_res = traveler.travel(dataloader, verbose=True)
+    cossims = test(model, dataset, verbose=True)
 
     wah.dictionary.save_in_csv(
-        dictionary=travel_res,
-        save_dir=wah.path.join(TRAVEL_ROOT, train_id),
+        dictionary=cossims,
+        save_dir=wah.path.join(RES_ROOT, train_id),
         save_name=travel_id,
-        index_col="gt",
+        index_col=None,
     )

@@ -1,0 +1,22 @@
+--- # config.yaml
+
+devices: gpu:0
+
+
+num_classes: 10
+batch_size: 64
+num_workers: 4
+seed: 0
+
+
+#
+# LinearityTest
+#
+test:
+  method: "fgsm"
+  max_eps: 0
+  num_steps: 0
+  delta: 1.0e-3
+
+
+... # end
