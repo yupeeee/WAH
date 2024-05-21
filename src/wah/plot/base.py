@@ -63,9 +63,10 @@ class Plot2D:
     def plot(self, *args, **kwargs) -> None:
         params = [p for p in dir(self) if p[0] != "_" and p != "plot"]
 
-        for kw in kwargs.keys():
+        for kw in list(kwargs.keys()):
             if kw in params:
                 setattr(self, kw, kwargs[kw])
+                del kwargs[kw]
 
         if self.fontsize is not None:
             plt.rcParams.update({"font.size": self.fontsize})
