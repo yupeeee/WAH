@@ -6,7 +6,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name="wah",
-    version="0.1.63",
+    version="0.1.64",
     description="a library so simple you will learn Within An Hour",
     long_description=long_description,
     long_description_content_type="text/markdown",

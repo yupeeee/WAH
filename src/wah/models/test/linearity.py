@@ -58,14 +58,16 @@ def compute_cossim(
     with torch.no_grad():
         # model is timm model
         if hasattr(model, "forward_features"):
+            preprocess = torch.nn.Identity()
             feature_extractor = model.forward_features
         # model is timm model w/ preprocess added
         else:
+            preprocess = model.preprocess
             feature_extractor = model.model.forward_features
 
-        out_eps: Tensor = feature_extractor(data_eps)
-        out_eps_l: Tensor = feature_extractor(data_eps_l)
-        out_eps_r: Tensor = feature_extractor(data_eps_r)
+        out_eps: Tensor = feature_extractor(preprocess(data_eps))
+        out_eps_l: Tensor = feature_extractor(preprocess(data_eps_l))
+        out_eps_r: Tensor = feature_extractor(preprocess(data_eps_r))
 
     # compute/normalize movement vectors
     vl = (out_eps_l - out_eps).reshape(batch_size, -1)
