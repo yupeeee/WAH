@@ -56,9 +56,9 @@ def compute_cossim(
 
     # compute features
     with torch.no_grad():
-        out_eps: Tensor = model(data_eps)
-        out_eps_l: Tensor = model(data_eps_l)
-        out_eps_r: Tensor = model(data_eps_r)
+        out_eps: Tensor = model.forward_features(data_eps)
+        out_eps_l: Tensor = model.forward_features(data_eps_l)
+        out_eps_r: Tensor = model.forward_features(data_eps_r)
 
     # compute/normalize movement vectors
     vl = (out_eps_l - out_eps).reshape(batch_size, -1)
