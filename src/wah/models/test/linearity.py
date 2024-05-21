@@ -12,7 +12,6 @@ from ...typing import (
     Optional,
     Tensor,
 )
-from ..load import remove_last_layer
 from .utils import DirectionGenerator
 
 __all__ = [
@@ -57,9 +56,16 @@ def compute_cossim(
 
     # compute features
     with torch.no_grad():
-        out_eps: Tensor = model(data_eps)
-        out_eps_l: Tensor = model(data_eps_l)
-        out_eps_r: Tensor = model(data_eps_r)
+        # model is timm model
+        if hasattr(model, "forward_features"):
+            feature_extractor = model.forward_features
+        # model is timm model w/ preprocess added
+        else:
+            feature_extractor = model.model.forward_features
+
+        out_eps: Tensor = feature_extractor(data_eps)
+        out_eps_l: Tensor = feature_extractor(data_eps_l)
+        out_eps_r: Tensor = feature_extractor(data_eps_r)
 
     # compute/normalize movement vectors
     vl = (out_eps_l - out_eps).reshape(batch_size, -1)
@@ -125,7 +131,6 @@ class LinearityTest:
             seed=self.seed,
             use_cuda=self.use_cuda,
         )
-        feature_extractor = remove_last_layer(model)
 
         # init cossims
         cossims: Dict[float, List[float]] = dict()
@@ -147,7 +152,7 @@ class LinearityTest:
                 directions = direction_generator(data, targets)
 
                 cossims[eps] += compute_cossim(
-                    model=feature_extractor,
+                    model=model,
                     data=data,
                     directions=directions,
                     eps=eps,

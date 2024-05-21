@@ -20,7 +20,6 @@ __all__ = [
     "load_pytorch_model",
     "load_timm_model",
     "add_preprocess",
-    "remove_last_layer",
 ]
 
 
@@ -116,21 +115,11 @@ def add_preprocess(
     model: Module,
     preprocess: Union[Module, Transform],
 ) -> Module:
-    layers = OrderedDict()
-    layers["preprocess"] = preprocess
-
-    for name, module in list(model.named_children()):
-        layers[name] = module
-
-    return torch.nn.Sequential(layers)
-
-
-def remove_last_layer(
-    model: Module,
-) -> Module:
-    layers = OrderedDict()
-
-    for name, module in list(model.named_children())[:-1]:
-        layers[name] = module
-
-    return torch.nn.Sequential(layers)
+    return torch.nn.Sequential(
+        OrderedDict(
+            [
+                ("preprocess", preprocess),
+                ("model", model),
+            ]
+        )
+    )

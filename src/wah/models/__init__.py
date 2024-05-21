@@ -14,8 +14,7 @@ __all__ = [
     "load_pytorch_model",
     "load_timm_model",
     "add_preprocess",
-    "remove_last_layer",
-
+ 
     # modules
     "_getattr",
     "get_valid_attr",
