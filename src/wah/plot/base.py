@@ -61,6 +61,12 @@ class Plot2D:
         raise NotImplementedError
 
     def plot(self, *args, **kwargs) -> None:
+        params = [p for p in dir(self) if p[0] != "_" and p != "plot"]
+
+        for kw in kwargs.keys():
+            if kw in params:
+                setattr(self, kw, kwargs[kw])
+
         if self.fontsize is not None:
             plt.rcParams.update({"font.size": self.fontsize})
 
@@ -102,7 +108,7 @@ class Plot2D:
             kwargs["dpi"] = 300
             kwargs["bbox_inches"] = "tight"
             kwargs["pad_inches"] = 0.01
-        
+
         save_dir, _ = os.path.split(save_path)
         save_dir = os.path.normpath(save_dir)
         os.makedirs(save_dir, exist_ok=True)
