@@ -36,11 +36,18 @@ def load_state_dict(
     required_keys = list(model.state_dict().keys())
 
     for key in list(state_dict.keys()):
-        if key not in required_keys:
+        if "feature_extractor." in key:
             del state_dict[key]
+
+        elif "model." in key:
+            state_dict[key.replace("model.", "")] = state_dict.pop(key)
 
         else:
             continue
+
+    for key in list(state_dict.keys()):
+        if key not in required_keys:
+            del state_dict[key]
 
     model.load_state_dict(state_dict)
 
