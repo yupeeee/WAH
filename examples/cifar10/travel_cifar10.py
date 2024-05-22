@@ -45,7 +45,7 @@ if __name__ == "__main__":
     model = wah.load_timm_model(
         name=args.model,
         pretrained=False,
-        num_classes=10,
+        num_classes=config["num_classes"],
         image_size=32,
         num_channels=3,
     )

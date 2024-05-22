@@ -28,6 +28,7 @@ __all__ = [
 
     # test
     "AccuracyTest",
+    "FeatureRMSTest",
     "LinearityTest",
     "Traveler",
 
