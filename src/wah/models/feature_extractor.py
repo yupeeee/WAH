@@ -67,7 +67,12 @@ class FeatureExtractor(Module):
             features = self.feature_extractor(x)
 
             for layer, i_layer in self.feature_layers.items():
+                # skip input
                 if layer == "x":
+                    continue
+
+                # skip weight/bias/gamma/etc
+                if len(features[i_layer]) != len(x):
                     continue
 
                 try:
