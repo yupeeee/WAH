@@ -71,6 +71,13 @@ class FeatureExtractor(Module):
                 if layer == "x":
                     continue
 
+                # skip if output type has no attr len
+                # TypeError: object of type 'int' has no len()
+                try:
+                    _ = len(features[i_layer])
+                except TypeError:
+                    continue
+
                 # skip weight/bias/gamma/etc
                 if len(features[i_layer]) != len(x):
                     continue
