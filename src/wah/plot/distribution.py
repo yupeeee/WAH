@@ -71,12 +71,12 @@ class DistPlot2D(Plot2D):
     ) -> None:
         x, y = _dict_to_mat(data_dict)
 
-        means = np.mean(y, axis=0)
-        maxs = np.max(y, axis=0)
-        mins = np.min(y, axis=0)
-        q1s = np.quantile(y, 0.25, axis=0)
-        q2s = np.quantile(y, 0.50, axis=0)
-        q3s = np.quantile(y, 0.75, axis=0)
+        means = np.mean(y, axis=-1)
+        maxs = np.max(y, axis=-1)
+        mins = np.min(y, axis=-1)
+        q1s = np.quantile(y, 0.25, axis=-1)
+        q2s = np.quantile(y, 0.50, axis=-1)
+        q3s = np.quantile(y, 0.75, axis=-1)
 
         # means
         ax.scatter(
