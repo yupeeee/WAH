@@ -11,8 +11,13 @@ __all__ = [
 
 class ATTN2PATTN(ReplaceModule):
     target_module_name = [
-        "MultiheadAttention",
-        "ShiftedWindowAttention",
+        # pytorch
+        "MultiheadAttention",       # vit
+        "ShiftedWindowAttention",   # swin
+
+        # timm
+        "Attention",                # vit
+        "WindowAttention",          # swin
     ]
     keymaps = None
     _replacement_module = None
