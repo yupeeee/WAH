@@ -11,7 +11,7 @@ from ....typing import (
     Tuple,
 )
 from ...feature_extractor import FeatureExtractor
-from ...utils import flatten_feature
+from ....utils.tensor import flatten_batch
 
 __all__ = [
     "init",
@@ -44,7 +44,7 @@ def compute(
         features: Dict[str, Tensor] = feature_extractor(data)
 
     for i_layer, feature in features.items():
-        feature = flatten_feature(feature)
+        feature = flatten_batch(feature)
 
         f_rms = torch.norm(feature, p=2, dim=-1) / math.sqrt(feature.size(-1))
         feature_rms_dict[i_layer].append(f_rms)
