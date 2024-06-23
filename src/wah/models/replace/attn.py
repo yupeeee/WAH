@@ -1,7 +1,7 @@
 from ...typing import (
     Module,
 )
-from .misc import ReplaceModule, get_module_name
+from .utils import ReplaceModule, get_module_name
 from .wrapper import Conv1x1Wrapper
 
 __all__ = [

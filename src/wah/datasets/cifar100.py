@@ -4,7 +4,7 @@ import pickle
 import numpy as np
 import torchvision.transforms as T
 
-from ...typing import (
+from ..typing import (
     Callable,
     Literal,
     Optional,
@@ -19,6 +19,52 @@ __all__ = [
 
 
 class CIFAR100(CIFAR10):
+    """
+    [CIFAR-100](https://www.cs.toronto.edu/~kriz/cifar.html) dataset.
+
+    ### Attributes
+    - `root` (path):
+      Root directory where the dataset exists or will be saved to.
+    - `transform` (callable, optional):
+      A function/transform that takes in the data (PIL image, numpy.ndarray, etc.) and transforms it.
+      If None, no transformation is applied.
+      Defaults to None.
+    - `target_transform` (callable, optional):
+      A function/transform that takes in the target (int, etc.) and transforms it.
+      If None, no transformation is applied.
+      Defaults to None.
+    - `data`:
+      Data of the dataset.
+    - `targets`:
+      Targets of the dataset.
+    - `labels`:
+      Labels of the dataset.
+    - `MEAN` (list):
+      mean of dataset; [0.5071, 0.4866, 0.4409].
+    - `STD` (list):
+      std of dataset; [0.2673, 0.2564, 0.2762].
+    - `NORMALIZE` (callable):
+      transform for dataset normalization.
+
+    ### Methods
+    - `__getitem__`:
+      Returns (data, target) of dataset using the specified index.
+
+      Example:
+      ```python
+      dataset = CIFAR100(root="path/to/dataset")
+      data, target = dataset[0]
+      ```
+    - `__len__`:
+      Returns the size of the dataset.
+
+      Example:
+      ```python
+      dataset = CIFAR100(root="path/to/dataset")
+      num_data = len(dataset)
+      ```
+    """
+
     URL = "https://www.cs.toronto.edu/~kriz/cifar-100-python.tar.gz"
     ROOT = "./datasets/cifar100"
     MODE = "r:gz"
@@ -36,7 +82,7 @@ class CIFAR100(CIFAR10):
         ("cifar-100-python/meta", "7973b15100ade9c7d40fb424638fde48"),
     ]
 
-    MEAN = [0.5071, 0.4865, 0.4409]
+    MEAN = [0.5071, 0.4866, 0.4409]
     STD = [0.2673, 0.2564, 0.2762]
     NORMALIZE = T.Normalize(MEAN, STD)
 
@@ -82,7 +128,7 @@ class CIFAR100(CIFAR10):
     ) -> None:
         super().__init__(root, split, transform, target_transform, download)
 
-    def initialize(
+    def _initialize(
         self,
     ) -> None:
         self.data = []

@@ -3,7 +3,7 @@ from torch import nn
 from ...typing import (
     Module,
 )
-from .misc import ReplaceModule
+from .utils import ReplaceModule
 
 __all__ = [
     "relu2gelu",

@@ -1,6 +1,6 @@
-from .distribution import *
-from .hist import *
-from .scatter import *
+from .distribution import DistPlot2D
+from .hist import HistPlot2D
+from .scatter import ScatterPlot2D
 from .tensorboard import TensorBoard
 
 __all__ = [

@@ -12,6 +12,18 @@ __all__ = [
 
 
 class ScatterPlot2D(Plot2D):
+    """
+    A class for creating 2D scatter plots with customizable settings.
+
+    ### Methods
+    - `plot`:
+      Creates the plot with the specified settings.
+    - `show`:
+      Displays the plot.
+    - `save`:
+      Saves the plot to the specified path with optional settings.
+    """
+
     def __init__(
         self,
         figsize: Optional[Tuple[float, float]] = None,

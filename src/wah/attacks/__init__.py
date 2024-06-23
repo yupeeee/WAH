@@ -4,7 +4,6 @@ from .fgsm import (
 )
 
 __all__ = [
-    # fgsm
     "FGSM",
     "IFGSM",
 ]

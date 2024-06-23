@@ -2,26 +2,72 @@ import os
 import pickle
 
 import numpy as np
-from PIL import Image
 import torchvision.transforms as T
+from PIL import Image
 
-from ...typing import (
+from ..typing import (
     Callable,
     Literal,
     Optional,
     Path,
     Union,
 )
-from .utils import DNTDataset
+from .base import ClassificationDataset
 
 __all__ = [
     "CIFAR10",
 ]
 
 
-class CIFAR10(DNTDataset):
+class CIFAR10(ClassificationDataset):
+    """
+    [CIFAR-10](https://www.cs.toronto.edu/~kriz/cifar.html) dataset.
+
+    ### Attributes
+    - `root` (path):
+      Root directory where the dataset exists or will be saved to.
+    - `transform` (callable, optional):
+      A function/transform that takes in the data (PIL image, numpy.ndarray, etc.) and transforms it.
+      If None, no transformation is applied.
+      Defaults to None.
+    - `target_transform` (callable, optional):
+      A function/transform that takes in the target (int, etc.) and transforms it.
+      If None, no transformation is applied.
+      Defaults to None.
+    - `data`:
+      Data of the dataset.
+    - `targets`:
+      Targets of the dataset.
+    - `labels`:
+      Labels of the dataset.
+    - `MEAN` (list):
+      mean of dataset; [0.4914, 0.4822, 0.4465].
+    - `STD` (list):
+      std of dataset; [0.2470, 0.2435, 0.2616].
+    - `NORMALIZE` (callable):
+      transform for dataset normalization.
+
+    ### Methods
+    - `__getitem__`:
+      Returns (data, target) of dataset using the specified index.
+
+      Example:
+      ```python
+      dataset = CIFAR10(root="path/to/dataset")
+      data, target = dataset[0]
+      ```
+    - `__len__`:
+      Returns the size of the dataset.
+
+      Example:
+      ```python
+      dataset = CIFAR10(root="path/to/dataset")
+      num_data = len(dataset)
+      ```
+    """
+
     URL = "https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz"
-    ROOT = "./datasets/cifar10"
+    ROOT = os.path.normpath("./datasets/cifar10")
     MODE = "r:gz"
 
     ZIP_LIST = [
@@ -85,6 +131,28 @@ class CIFAR10(DNTDataset):
         target_transform: Union[Optional[Callable], Literal["auto",]] = None,
         download: bool = False,
     ) -> None:
+        """
+        - `root` (path):
+          Root directory where the dataset exists or will be saved to.
+        - `split` (str):
+          The dataset split; supports "train" (default), and "test".
+        - `transform` (str):
+          A function/transform that takes in the data (PIL image, numpy.ndarray, etc.) and transforms it;
+          supports "auto", "tt", "train", "test", and None (default).
+          - "auto": Automatically initializes the transform based on the dataset type and `split`.
+          - "tt": Converts data into a tensor image.
+          - "train": Transform to use in train stage.
+          - "test": Transform to use in test stage.
+          - None (default): No transformation is applied.
+        - `target_transform` (str):
+          A function/transform that takes in the target (int, etc.) and transforms it;
+          supports "auto", and None (default).
+          - "auto": Automatically initializes the transform based on the dataset type and `split`.
+          - None (default): No transformation is applied.
+        - `download` (bool):
+          If True, downloads the dataset from the internet and puts it into the `root` directory.
+          If dataset is already downloaded, it is not downloaded again.
+        """
         super().__init__(root, transform, target_transform)
 
         self.checklist = []
@@ -115,11 +183,11 @@ class CIFAR10(DNTDataset):
             self.target_transform = self.TARGET_TRANSFORM[split]
 
         if download:
-            self.download(self.checklist + self.META_LIST)
+            self._download(self.checklist + self.META_LIST)
 
-        self.initialize()
+        self._initialize()
 
-    def initialize(
+    def _initialize(
         self,
     ) -> None:
         self.data = []
@@ -146,7 +214,7 @@ class CIFAR10(DNTDataset):
             data = pickle.load(f, encoding="latin1")
             self.labels = data["label_names"]
 
-    def preprocess_data(
+    def _preprocess_data(
         self,
         data: np.ndarray,
     ) -> Image.Image:

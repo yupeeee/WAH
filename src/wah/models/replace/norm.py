@@ -4,7 +4,7 @@ from ...typing import (
     Module,
 )
 from ..modules import get_module_name
-from .misc import ReplaceModule
+from .utils import ReplaceModule
 from .wrapper import PermuteWrapper
 
 __all__ = [

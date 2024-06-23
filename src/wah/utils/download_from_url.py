@@ -28,6 +28,27 @@ def urlretrieve(
     chunk_size: int = 1024 * 32,
     **kwargs,
 ) -> None:
+    """
+    Downloads a file from a URL and saves it to the specified path with a progress bar.
+
+    ### Parameters
+    - `url` (str):
+      The URL of the file to download.
+    - `fpath` (Path):
+      The path where the downloaded file will be saved.
+    - `chunk_size` (int):
+      The size of each chunk to read during download.
+      Defaults to 32 KB.
+    - `**kwargs`:
+      Additional keyword arguments to pass to `tqdm`.
+
+    ### Returns
+    - `None`
+
+    ### Notes
+    - This function uses `urlopen` to download the file in chunks, displaying a progress bar with `tqdm`.
+    - A custom user-agent is used for the request headers.
+    """
     headers = {"user-agent": "yupeeee/wah"}
     request = Request(url, headers=headers)
 
@@ -42,6 +63,23 @@ def check(
     fpath: Path,
     checksum: str,
 ) -> bool:
+    """
+    Verifies the checksum of a file.
+
+    ### Parameters
+    - `fpath` (Path):
+      The path to the file to check.
+    - `checksum` (str):
+      The expected MD5 checksum of the file.
+
+    ### Returns
+    - `bool`:
+      `True` if the file's checksum matches the expected checksum, otherwise `False`.
+
+    ### Notes
+    - This function reads the file in binary mode and computes its MD5 checksum.
+    - It compares the computed checksum with the expected checksum.
+    """
     with open(fpath, "rb") as f:
         md5 = hashlib.md5(f.read()).hexdigest()
         # print(fpath, md5)
@@ -58,6 +96,27 @@ def download_url(
     root: Path,
     checklist: List[Tuple[Path, str]],
 ) -> str:
+    """
+    Downloads and verifies a file from a URL, checking its integrity against provided checksums.
+
+    ### Parameters
+    - `url` (str):
+      The URL of the file to download.
+    - `root` (Path):
+      The directory where the file will be saved.
+    - `checklist` (List[Tuple[Path, str]]):
+      A list of tuples containing file paths and their corresponding checksums to verify.
+
+    ### Returns
+    - `str`:
+      The path to the downloaded file or "*extracted" if the files were already verified.
+
+    ### Notes
+    - This function checks if the file already exists and verifies its integrity.
+    - If the file or its extracted contents are corrupted or missing, it redownloads the file.
+    - It calls `urlretrieve` to handle the file download and `check` to verify file integrity.
+    """
+
     def check_extracted_files(
         root: Path,
         checklist: List[Tuple[Path, str]],
@@ -119,4 +178,17 @@ def download_url(
 
 
 def disable_verification() -> None:
+    """
+    Disables SSL certificate verification.
+
+    ### Parameters
+    - `None`
+
+    ### Returns
+    - `None`
+
+    ### Notes
+    - This function sets the default SSL context to an unverified context, disabling SSL certificate verification.
+    - This is useful for downloading files from servers with self-signed certificates or other SSL issues.
+    """
     ssl._create_default_https_context = ssl._create_unverified_context

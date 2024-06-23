@@ -7,7 +7,7 @@ from torchvision.models.feature_extraction import (
 from ..typing import (
     Module,
 )
-from .utils import flatten_feature
+from ..utils.tensor import flatten_batch
 
 __all__ = [
     "FeatureExtractor",
@@ -15,11 +15,38 @@ __all__ = [
 
 
 class FeatureExtractor(Module):
+    """
+    A feature extractor class for extracting features from a specified model.
+
+    ### Parameters
+    - `model` (Module):
+      The PyTorch model from which to extract features.
+    - `penultimate_only` (bool, optional):
+      If `True`, only extracts features from the penultimate layer.
+      Defaults to `False`.
+
+    ### Methods
+    - `forward`:
+      Performs a forward pass through the feature extractor and returns the extracted features.
+
+    ### Notes
+    - This class uses the `torchvision.models.feature_extraction.create_feature_extractor` to create a feature extractor for the given model.
+    - If `penultimate_only` is `True`, only the penultimate layer's features are extracted.
+    - If `penultimate_only` is `False`, features from all layers are extracted.
+    """
+
     def __init__(
         self,
         model: Module,
         penultimate_only: bool = False,
     ) -> None:
+        """
+        - `model` (Module):
+          The PyTorch model from which to extract features.
+        - `penultimate_only` (bool, optional):
+          If `True`, only extracts features from the penultimate layer.
+          Defaults to `False`.
+        """
         super().__init__()
 
         self.model = model
@@ -41,11 +68,26 @@ class FeatureExtractor(Module):
             return_nodes=self.feature_layers,
         )
 
-        self.checked_layers = False
+        self.checked_layers: bool = False
 
     def forward(self, x):
+        """
+        Performs a forward pass through the feature extractor and returns the extracted features.
+
+        ### Parameters
+        - `x` (Tensor):
+          The input tensor.
+
+        ### Returns
+        - `Dict[str, Tensor]`:
+          A dictionary of extracted features with layer names as keys.
+
+        ### Notes
+        - If the layers have not been checked yet, this method will call `_check_layers` first.
+        - Handles cases where the feature output is a tuple by concatenating non-`None` elements.
+        """
         if not self.checked_layers:
-            self.check_layers(x)
+            self._check_layers(x)
 
         features = self.feature_extractor(x)
 
@@ -58,7 +100,22 @@ class FeatureExtractor(Module):
 
         return features
 
-    def check_layers(self, x) -> None:
+    def _check_layers(self, x) -> None:
+        """
+        Checks and filters the layers for feature extraction.
+
+        ### Parameters
+        - `x` (Tensor):
+          The input tensor.
+
+        ### Returns
+        - `None`
+
+        ### Notes
+        - This method filters out layers that are not suitable for feature extraction.
+        - Layers with outputs that do not match the input length or that cause errors during flattening are excluded.
+        - The `feature_layers` attribute is updated to include only the valid layers.
+        """
         assert not self.checked_layers
 
         layers = []
@@ -83,7 +140,7 @@ class FeatureExtractor(Module):
                     continue
 
                 try:
-                    _ = flatten_feature(features[i_layer])
+                    _ = flatten_batch(features[i_layer])
                     torch.cuda.empty_cache()
 
                     layers.append(layer)

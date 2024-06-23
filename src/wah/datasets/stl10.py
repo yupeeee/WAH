@@ -1,26 +1,70 @@
 import os
 
 import numpy as np
-from PIL import Image
 import torchvision.transforms as T
+from PIL import Image
 
-from ...typing import (
+from ..typing import (
     Callable,
     Literal,
     Optional,
     Path,
     Union,
 )
-from .utils import DNTDataset
+from .base import ClassificationDataset
 
 __all__ = [
     "STL10",
 ]
 
 
-class STL10(DNTDataset):
+class STL10(ClassificationDataset):
+    """
+    [STL-10](https://ai.stanford.edu/~acoates/stl10/) dataset.
+
+    ### Attributes
+    - `root` (path):
+      Root directory where the dataset exists or will be saved to.
+    - `transform` (callable, optional):
+      A function/transform that takes in the data (PIL image, numpy.ndarray, etc.) and transforms it.
+      If None, no transformation is applied.
+    - `target_transform` (callable, optional):
+      A function/transform that takes in the target (int, etc.) and transforms it.
+      If None, no transformation is applied.
+    - `data`:
+      Data of the dataset.
+    - `targets`:
+      Targets of the dataset.
+    - `labels`:
+      Labels of the dataset.
+    - `MEAN` (list):
+      mean of dataset; [0.4467, 0.4398, 0.4066].
+    - `STD` (list):
+      std of dataset; [0.2603, 0.2566, 0.2713].
+    - `NORMALIZE` (callable):
+      transform for dataset normalization.
+
+    ### Methods
+    - `__getitem__`:
+      Returns (data, target) of dataset using the specified index.
+
+      Example:
+      ```python
+      dataset = STL10(root="path/to/dataset")
+      data, target = dataset[0]
+      ```
+    - `__len__`:
+      Returns the size of the dataset.
+
+      Example:
+      ```python
+      dataset = STL10(root="path/to/dataset")
+      num_data = len(dataset)
+      ```
+    """
+
     URL = "http://ai.stanford.edu/~acoates/stl10/stl10_binary.tar.gz"
-    ROOT = "./datasets/stl10"
+    ROOT = os.path.normpath("./datasets/stl10")
     MODE = "r:gz"
 
     ZIP_LIST = [
@@ -40,8 +84,8 @@ class STL10(DNTDataset):
         # ("stl10_binary/unlabeled_X.bin", "MEMORYERROR"),
     ]
 
-    MEAN = [0.5, 0.5, 0.5]
-    STD = [0.5, 0.5, 0.5]
+    MEAN = [0.4467, 0.4398, 0.4066]
+    STD = [0.2603, 0.2566, 0.2713]
     NORMALIZE = T.Normalize(MEAN, STD)
 
     TRANSFORM = {
@@ -85,6 +129,28 @@ class STL10(DNTDataset):
         target_transform: Union[Optional[Callable], Literal["auto",]] = None,
         download: bool = False,
     ) -> None:
+        """
+        - `root` (path):
+          Root directory where the dataset exists or will be saved to.
+        - `split` (str):
+          The dataset split; supports "train" (default), and "test".
+        - `transform` (str):
+          A function/transform that takes in the data (PIL image, numpy.ndarray, etc.) and transforms it;
+          supports "auto", "tt", "train", "test", and None (default).
+          - "auto": Automatically initializes the transform based on the dataset type and `split`.
+          - "tt": Converts data into a tensor image.
+          - "train": Transform to use in train stage.
+          - "test": Transform to use in test stage.
+          - None (default): No transformation is applied.
+        - `target_transform` (str):
+          A function/transform that takes in the target (int, etc.) and transforms it;
+          supports "auto", and None (default).
+          - "auto": Automatically initializes the transform based on the dataset type and `split`.
+          - None (default): No transformation is applied.
+        - `download` (bool):
+          If True, downloads the dataset from the internet and puts it into the `root` directory.
+          If dataset is already downloaded, it is not downloaded again.
+        """
         super().__init__(root, transform, target_transform)
 
         self.checklist = []
@@ -115,11 +181,11 @@ class STL10(DNTDataset):
             self.target_transform = self.TARGET_TRANSFORM[split]
 
         if download:
-            self.download(self.checklist + self.META_LIST)
+            self._download(self.checklist + self.META_LIST)
 
-        self.initialize()
+        self._initialize()
 
-    def initialize(
+    def _initialize(
         self,
     ) -> None:
         # load data
@@ -145,7 +211,7 @@ class STL10(DNTDataset):
         with open(labels_fpath, "r") as f:
             self.labels = [label for label in f.read().split("\n") if len(label)]
 
-    def preprocess_data(
+    def _preprocess_data(
         self,
         data: np.ndarray,
     ) -> Image.Image:

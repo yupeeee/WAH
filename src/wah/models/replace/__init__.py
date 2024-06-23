@@ -1,11 +1,10 @@
-import torch
-
 from ...typing import (
     Module,
     Optional,
+    Tensor,
 )
 from ..modules import _getattr, get_attrs
-from .misc import replace_module
+from .utils import replace_module
 
 __all__ = [
     "Replacer",
@@ -13,6 +12,23 @@ __all__ = [
 
 
 class Replacer:
+    """
+    A class to replace specific types of layers in a neural network model.
+
+    ### Attributes
+    - `replacements` (dict):
+      A dictionary mapping types of layers to their possible replacements.
+
+      [**Supported replacements**]() (target -> to):
+      - "relu" (ReLU) <-> "gelu" (GELU)
+      - "attn" (Self-Attention) -> "pattn" (Conv1x1 + Self-Attention)
+      - "bn" (BatchNorm) <-> "ln" (LayerNorm)
+
+    ### Methods
+    - `__call__`:
+        Replaces specified layers in the model and optionally tests the replacement.
+    """
+
     replacements = {
         "act": [
             ("relu", "gelu"),
@@ -31,8 +47,26 @@ class Replacer:
         self,
         target: str,
         to: str,
-        test_replacement: Optional[torch.Tensor] = None,
+        test_replacement: Optional[Tensor] = None,
     ) -> None:
+        """
+        - `target` (str):
+          The type of layer to be replaced.
+        - `to` (str):
+          The type of layer to replace with.
+        - `test_replacement` (Tensor, optional):
+          An optional tensor to test the replacement.
+          Defaults to None.
+
+        ### Supported replacements (target -> to)
+        - "relu" (ReLU) <-> "gelu" (GELU)
+        - "attn" (Self-Attention) -> "pattn" (Conv1x1 + Self-Attention)
+        - "bn" (BatchNorm) <-> "ln" (LayerNorm)
+
+        ### Raises
+        - `AssertionError`:
+          If the target and replacement types are not supported.
+        """
         assert (target, to) in [
             item for sublist in self.replacements.values() for item in sublist
         ], f"{target}->{to} not supported."
@@ -44,7 +78,22 @@ class Replacer:
     def __call__(
         self,
         model: Module,
-    ):
+    ) -> Module:
+        """
+        Replaces specified layers in the model and optionally tests the replacement.
+
+        ### Parameters
+        - `model` (Module):
+          The neural network model to be modified.
+
+        ### Returns
+        - `Module`:
+          The modified neural network model.
+
+        ### Raises
+        - `ValueError`:
+          If the target and replacement types are not found in the `replacements` dictionary.
+        """
         use_cuda = next(model.parameters()).is_cuda
 
         if (self.target, self.to) in self.replacements["act"]:

@@ -163,3 +163,4 @@ logs/
 travel_res/
 temp*
 *.ckpt
+_*/
