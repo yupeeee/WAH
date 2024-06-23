@@ -239,7 +239,9 @@ def load_model(
     - This function supports loading models from either the timm or torchvision library.
     - If weights are specified and exist, the function loads them into the model.
     """
-    weights_path: Path = weights if os.path.exists(weights) else None
+    weights_path: Path = (
+        weights if weights is not None and os.path.exists(weights) else None
+    )
     pretrained = True if weights == "auto" else False
 
     if load_from == "timm":
