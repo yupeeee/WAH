@@ -1,6 +1,5 @@
 from . import (
     attacks,
-    dataloader,
     datasets,
     models,
     plot,
@@ -10,7 +9,6 @@ from .utils import *
 
 __all__ = [
     "attacks",
-    "dataloader",
     "datasets",
     "models",
     "plot",
