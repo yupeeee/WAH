@@ -63,12 +63,13 @@ class STL10(ClassificationDataset):
       ```
     """
 
-    URL = "http://ai.stanford.edu/~acoates/stl10/stl10_binary.tar.gz"
+    URLS = [
+        "http://ai.stanford.edu/~acoates/stl10/stl10_binary.tar.gz",
+    ]
     ROOT = os.path.normpath("./datasets/stl10")
-    MODE = "r:gz"
 
     ZIP_LIST = [
-        ("stl10_binary.tar.gz", "c58f30108f718f92721af3b95e74349a"),
+        ("stl10_binary.tar.gz", "91f7769df0f17e558f3565bffb0c7dfb"),
     ]
     TRAIN_LIST = [
         ("stl10_binary/train_X.bin", "918c2871b30a85fa023e0c44e0bee87f"),
@@ -179,9 +180,15 @@ class STL10(ClassificationDataset):
 
         if self.target_transform == "auto":
             self.target_transform = self.TARGET_TRANSFORM[split]
+        else:
+            pass
 
         if download:
-            self._download(self.checklist + self.META_LIST)
+            self._download(
+                urls=self.URLS,
+                checklist=self.checklist + self.META_LIST,
+                ext_dir_name=".",
+            )
 
         self._initialize()
 

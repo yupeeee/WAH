@@ -66,12 +66,13 @@ class CIFAR10(ClassificationDataset):
       ```
     """
 
-    URL = "https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz"
+    URLS = [
+        "https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz",
+    ]
     ROOT = os.path.normpath("./datasets/cifar10")
-    MODE = "r:gz"
 
     ZIP_LIST = [
-        ("cifar-10-batches-py.tar.gz", "c58f30108f718f92721af3b95e74349a"),
+        ("cifar-10-python.tar.gz", "c58f30108f718f92721af3b95e74349a"),
     ]
     TRAIN_LIST = [
         ("cifar-10-batches-py/data_batch_1", "c99cafc152244af753f735de768cd75f"),
@@ -181,9 +182,15 @@ class CIFAR10(ClassificationDataset):
 
         if self.target_transform == "auto":
             self.target_transform = self.TARGET_TRANSFORM[split]
+        else:
+            pass
 
         if download:
-            self._download(self.checklist + self.META_LIST)
+            self._download(
+                urls=self.URLS,
+                checklist=self.checklist + self.META_LIST,
+                ext_dir_name=".",
+            )
 
         self._initialize()
 

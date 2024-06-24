@@ -12,32 +12,59 @@ __all__ = [
 ]
 
 
+def unzip_mode(
+    ext: str,
+) -> str:
+    """
+    Determines the mode to use for extracting archives based on their file extension.
+
+    ### Parameters
+    - `ext` (str):
+      The file extension of the archive.
+
+    ### Returns
+    - `str`:
+      The mode to use for extracting the archive.
+
+    ### Notes
+    - Supports `.zip`, `.tar`, `.gz`, and `.xz` extensions.
+    - Returns `"r"` for unknown extensions.
+    """
+    if ext == ".zip":
+        return "r"
+    elif ext == ".tar":
+        return "r"
+    elif ext == ".gz":
+        return "r:gz"
+    elif ext == ".xz":
+        return "r:xz"
+    else:
+        return "r"
+
+
 def extract(
     fpath: Path,
     save_dir: Optional[Path] = None,
-    mode: Optional[str] = "r",
 ) -> None:
     """
-    Extracts the contents of a compressed file to a specified directory.
+    Extracts the contents of an archive to the specified directory.
 
     ### Parameters
     - `fpath` (Path):
-      The path to the compressed file to extract.
-    - `save_dir` (Optional[Path]):
-      The directory to extract the contents to. Defaults to the directory of `fpath`.
-    - `mode` (Optional[str]):
-      The mode to open the file. Defaults to `"r"`.
+      The path to the archive file.
+    - `save_dir` (Path, optional):
+      The directory where the contents will be extracted. Defaults to the directory of the archive file.
 
     ### Returns
     - `None`
 
     ### Notes
-    - This function handles both `.zip` and tar-like files (e.g., `.tar`, `.tar.gz`, `.tgz`).
-    - If `save_dir` is not provided, the contents are extracted to the directory containing `fpath`.
-    - The function creates `save_dir` if it does not exist.
-    - The function uses `zipfile.ZipFile` for `.zip` files and `tarfile.open` for tar-like files.
+    - The function determines the extraction mode based on the file extension.
+    - Supports `.zip`, `.tar`, `.gz`, and `.xz` archives.
+    - Creates the save directory if it does not exist.
     """
     ext = os.path.splitext(fpath)[-1]
+    mode = unzip_mode(ext)
 
     if save_dir is None:
         save_dir = os.path.dirname(fpath)

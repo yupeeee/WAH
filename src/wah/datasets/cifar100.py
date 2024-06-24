@@ -65,12 +65,13 @@ class CIFAR100(CIFAR10):
       ```
     """
 
-    URL = "https://www.cs.toronto.edu/~kriz/cifar-100-python.tar.gz"
-    ROOT = "./datasets/cifar100"
-    MODE = "r:gz"
+    URLS = [
+        "https://www.cs.toronto.edu/~kriz/cifar-100-python.tar.gz",
+    ]
+    ROOT = os.path.normpath("./datasets/cifar100")
 
     ZIP_LIST = [
-        ("cifar-100-batches-py.tar.gz", "eb9058c3a382ffc7106e4002c42a8d85"),
+        ("cifar-100-python.tar.gz", "eb9058c3a382ffc7106e4002c42a8d85"),
     ]
     TRAIN_LIST = [
         ("cifar-100-python/train", "16019d7e3df5f24257cddd939b257f8d"),

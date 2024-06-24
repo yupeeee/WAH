@@ -1,3 +1,5 @@
+import os
+
 from torch.utils.data import Dataset
 
 from ..typing import (
@@ -8,7 +10,7 @@ from ..typing import (
     Path,
     Tuple,
 )
-from ..utils.download_from_url import download_url
+from ..utils.download import check, download_url
 from ..utils.zip import extract
 
 __all__ = [
@@ -61,13 +63,9 @@ class ClassificationDataset(Dataset):
       ```
     """
 
-    URL: str = ...
-    ROOT: Path = ...
-    MODE: str = ...
-
     def __init__(
         self,
-        root: Path = ROOT,
+        root: Path,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
     ) -> None:
@@ -112,17 +110,76 @@ class ClassificationDataset(Dataset):
 
     def __len__(
         self,
-    ) -> None:
+    ) -> int:
         return len(self.data)
+
+    def _check(
+        self,
+        checklist: List[Tuple[Path, str]],
+        dataset_root: Path,
+    ) -> bool:
+        # skip check
+        if checklist is None:
+            return True
+
+        else:
+            for fpath, checksum in checklist:
+                if not check(
+                    fpath=os.path.join(dataset_root, fpath),
+                    checksum=checksum,
+                ):
+                    return False
+
+            return True
 
     def _download(
         self,
+        urls: List[str],
         checklist: List[Tuple[Path, str]],
+        ext_dir_name: Optional[Path] = ".",
     ) -> None:
-        fpath = download_url(self.URL, self.root, checklist)
+        dataset_root = os.path.normpath(os.path.join(self.root, ext_dir_name))
 
-        if fpath != "*extracted":
-            extract(fpath, mode=self.MODE)
+        # if dataset folder exists,
+        if os.path.exists(dataset_root):
+            # check if dataset exists inside the folder
+            exist = True
+            for fname, _ in checklist[len(urls) :]:
+                if not os.path.exists(os.path.join(dataset_root, fname)):
+                    exist = False
+                    break
+        # otherwise dataset does not exist
+        else:
+            exist = False
+
+        # return if dataset exists and is verified
+        if exist and self._check(checklist[len(urls) :], dataset_root):
+            return
+
+        # else, download dataset
+        fpaths = []
+        for url in urls:
+            fpath = download_url(url, self.root)
+            fpaths.append(fpath)
+
+        # download again if download was unsuccessful
+        while not self._check(checklist[: len(urls)], self.root):
+            print("Dataset corrupted. Redownloading dataset.")
+            # first, delete files
+            for fpath in fpaths:
+                os.remove(fpath)
+            # then, download again
+            fpaths = []
+            for url in urls:
+                fpath = download_url(url, self.root)
+                fpaths.append(fpath)
+
+        # unzip dataset
+        for fpath in fpaths:
+            extract(fpath, dataset_root)
+
+        # check downloaded file
+        assert self._check(checklist[len(urls) :], dataset_root)
 
     def _initialize(
         self,

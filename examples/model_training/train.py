@@ -1,6 +1,6 @@
 import wah
 
-wah.download_from_url.disable_verification()
+wah.download.disable_verification()
 
 
 if __name__ == "__main__":
