@@ -222,7 +222,7 @@ class ImageNetVal(ClassificationDataset):
             # download devkit
             self._download(
                 urls=self.URLS[1:],
-                checklist=self.checklist[1:] + self.DEV_LIST,
+                checklist=self.checklist[1:],
                 ext_dir_name=".",
             )
 
