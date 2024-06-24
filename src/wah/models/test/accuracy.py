@@ -195,6 +195,7 @@ class AccuracyTest:
         - `float`:
           The computed accuracy.
         """
+        model.eval()
         res_queue = dist.Queue()
 
         # GPU

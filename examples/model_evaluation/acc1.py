@@ -10,7 +10,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     dataset = wah.datasets.ImageNetVal(
-        root="F:/datasets/imagenet",
+        root="./datasets/imagenet",
         transform="auto",
         target_transform="auto",
         download=True,
@@ -20,7 +20,7 @@ if __name__ == "__main__":
         name=args.model,
         weights="IMAGENET1K_V1",
         load_from="torchvision",
-    ).eval()
+    )
 
     test = wah.models.AccuracyTest(
         top_k=1,

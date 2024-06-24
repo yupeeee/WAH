@@ -77,7 +77,7 @@ class DirectionGenerator:
             method in travel_methods
         ), f"Expected method to be one of {travel_methods}, got {method}"
 
-        self.model = model
+        self.model = model.eval()
         self.method = method
         self.seed = seed
         self.use_cuda = use_cuda
@@ -510,7 +510,7 @@ class Traveler:
         ), f"Expected 0 < stride_decay < 1, got {stride_decay}"
         assert 0 < turnaround <= 1, f"Expected 0 < turnaround <= 1, got {turnaround}"
 
-        self.model = model
+        self.model = model.eval()
         self.method = method
         self.use_cuda = use_cuda
         self.device = torch.device("cuda" if use_cuda else "cpu")

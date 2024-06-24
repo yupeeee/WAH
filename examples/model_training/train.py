@@ -15,14 +15,14 @@ if __name__ == "__main__":
 
     # load dataset/dataloader
     train_dataset = wah.datasets.CIFAR10(
-        root=".",
+        root="./datasets/cifar10",
         split="train",
         transform="auto",
         target_transform="auto",
         download=True,
     )
     val_dataset = wah.datasets.CIFAR10(
-        root=".",
+        root="./datasets/cifar10",
         split="test",
         transform="auto",
         target_transform="auto",
