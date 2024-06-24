@@ -10,6 +10,7 @@ from ..typing import (
     Path,
     Union,
 )
+from ..utils.download import check, download_url
 from ..utils.lst import load_txt
 from ..utils.path import ls
 from .base import ClassificationDataset
@@ -220,11 +221,8 @@ class ImageNetVal(ClassificationDataset):
                 ext_dir_name="val",
             )
             # download devkit
-            self._download(
-                urls=self.URLS[1:],
-                checklist=self.checklist[1:],
-                ext_dir_name=".",
-            )
+            fpath = download_url(self.URLS[1], self.root)
+            check(fpath, self.checklist[1][1])
 
         self._initialize()
 
