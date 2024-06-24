@@ -147,7 +147,7 @@ class ImageNetTrain(ClassificationDataset):
 class ImageNetVal(ClassificationDataset):
     URLS = [
         "https://www.image-net.org/data/ILSVRC/2012/ILSVRC2012_img_val.tar",
-        "https://raw.githubusercontent.com/yupeeee/WAH/main/src/datasets/targets/ILSVRC2012_validation_ground_truth.txt",
+        "https://raw.githubusercontent.com/yupeeee/WAH/main/src/wah/datasets/targets/ILSVRC2012_validation_ground_truth.txt",
     ]
     ROOT = os.path.normpath("./datasets/imagenet")
 
