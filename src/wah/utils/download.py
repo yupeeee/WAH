@@ -100,7 +100,7 @@ def check(
     - It compares the computed checksum with the expected checksum.
     """
     with open(fpath, "rb") as f:
-        md5 = hashlib.md5(f.read(chunk_size)).hexdigest()
+        md5 = hashlib.md5(f.read()).hexdigest()
         # print(fpath, md5)
 
         if md5 == checksum:
