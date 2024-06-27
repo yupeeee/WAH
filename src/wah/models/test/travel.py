@@ -15,10 +15,7 @@ from ...typing import (
     Tensor,
     Tuple,
 )
-from ...utils.random import (
-    seed_everything,
-    unseed_everything,
-)
+from ...utils.random import seed_everything
 
 __all__ = [
     "Traveler",
@@ -40,8 +37,6 @@ class DirectionGenerator:
       The model to generate directions for.
     - `method` (Literal["fgsm"], optional):
       The method to use for generating travel directions. Defaults to "fgsm".
-    - `seed` (int, optional):
-      The seed for random number generation. Defaults to -1 (No seeding).
     - `device` (Device, optional):
       The device to use for computation. Defaults to "cpu".
 
@@ -54,7 +49,6 @@ class DirectionGenerator:
         self,
         model: Module,
         method: Literal["fgsm",] = "fgsm",
-        seed: Optional[int] = -1,
         device: Optional[Device] = "cpu",
     ) -> None:
         assert (
@@ -63,10 +57,7 @@ class DirectionGenerator:
 
         self.model = model.eval()
         self.method = method
-        self.seed = seed
         self.device = torch.device(device)
-
-        seed_everything(self.seed)
 
     def __call__(
         self,
@@ -101,9 +92,6 @@ class DirectionGenerator:
 
         else:
             raise
-
-        if self.seed > -1:
-            unseed_everything()
 
         return directions.to(torch.device("cpu"))
 
@@ -499,7 +487,8 @@ class Traveler:
 
         self.softmax = nn.Softmax(dim=-1)
 
-        self.direction_generator = DirectionGenerator(model, method, seed, device)
+        seed_everything(seed)
+        self.direction_generator = DirectionGenerator(model, method, device)
 
         # travel hyperparameters
         """

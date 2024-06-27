@@ -15,8 +15,10 @@ from ...typing import (
     Optional,
     ResQueue,
     Tensor,
+    Tuple,
 )
 from ...utils import dist
+from ...utils.random import seed_everything
 from .travel import DirectionGenerator
 
 __all__ = [
@@ -53,6 +55,36 @@ def move_x(
         _x = _x.clamp(0, 1)
 
     return _x
+
+
+def load_preprocess_and_feature_extractor(
+    model: Module,
+) -> Tuple[Module, Module]:
+    """
+    Loads the preprocessing and feature extractor modules from the given model.
+
+    ### Parameters
+    - `model` (Module):
+      The model from which to load the preprocessing and feature extractor modules.
+
+    ### Returns
+    - `Tuple[Module, Module]`:
+      A tuple containing the preprocessing module and the feature extractor module.
+    """
+    # model is timm model
+    try:
+        if hasattr(model, "preprocess"):
+            preprocess = model.preprocess
+            feature_extractor = model.model.forward_features
+        else:
+            preprocess = torch.nn.Identity()
+            feature_extractor = model.forward_features
+
+    # TBD
+    except AttributeError:
+        pass
+
+    return preprocess, feature_extractor
 
 
 def compute_cossim(
@@ -101,14 +133,13 @@ def compute_cossim(
 
     # compute features
     with torch.no_grad():
-        # model is timm model
-        if hasattr(model, "forward_features"):
-            preprocess = torch.nn.Identity()
-            feature_extractor = model.forward_features
-        # model is timm model w/ preprocess added
+        # DDP check & load preprocess/feature_extractor
+        if device != "cpu":
+            preprocess, feature_extractor = load_preprocess_and_feature_extractor(
+                model.module
+            )
         else:
-            preprocess = model.preprocess
-            feature_extractor = model.model.forward_features
+            preprocess, feature_extractor = load_preprocess_and_feature_extractor(model)
 
         out_eps: Tensor = feature_extractor(preprocess(data_eps))
         out_eps_l: Tensor = feature_extractor(preprocess(data_eps_l))
@@ -138,7 +169,6 @@ def run(
     batch_size: int = 1,
     num_workers: int = 0,
     method: str = "fgsm",
-    seed: int = -1,
     bound: bool = True,
     verbose: bool = False,
 ) -> None:
@@ -166,8 +196,6 @@ def run(
       The number of workers for the DataLoader. Defaults to 0.
     - `method` (str, optional):
       The method to use for generating travel directions. Defaults to "fgsm".
-    - `seed` (int, optional):
-      The seed for random number generation. Defaults to -1 (No seeding).
     - `bound` (bool, optional):
       Whether to clamp the moved data to [0, 1]. Defaults to True.
     - `verbose` (bool, optional):
@@ -208,7 +236,6 @@ def run(
     direction_generator = DirectionGenerator(
         model=model,
         method=method,
-        seed=seed,
         device=rank,
     )
 
@@ -324,6 +351,8 @@ class TravelLinearityTest:
         self.seed = seed
         self.bound = bound
 
+        seed_everything(seed)
+
         self.use_cuda = use_cuda
         if self.use_cuda:
             self.devices = dist.parse_devices(devices)
@@ -369,7 +398,6 @@ class TravelLinearityTest:
                     self.batch_size,
                     self.num_workers,
                     self.method,
-                    self.seed,
                     self.bound,
                     verbose,
                 ),
@@ -391,7 +419,6 @@ class TravelLinearityTest:
                 batch_size=self.batch_size,
                 num_workers=self.num_workers,
                 method=self.method,
-                seed=self.seed,
                 bound=self.bound,
                 verbose=verbose,
             )
