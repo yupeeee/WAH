@@ -19,46 +19,14 @@ def run(
     res_queue: ResQueue,
     model: Module,
     dataset: Dataset,
-    top_k: int = 1,
     batch_size: int = 1,
     num_workers: int = 0,
     verbose: bool = False,
     desc: Optional[str] = None,
 ) -> None:
-    """
-    Runs the evaluation of the model on the given dataset and computes top-k accuracy.
+    if hasattr(dataset, "targets"):
+        dataset.set_return_data_only()
 
-    ### Parameters
-    - `rank` (int):
-      The rank of the current process.
-      Use -1 for CPU.
-    - `nprocs` (int):
-      The total number of processes.
-    - `res_queue` (Queue):
-      A multiprocessing queue to store the results.
-    - `model` (Module):
-      The PyTorch model to evaluate.
-    - `dataset` (Dataset):
-      The dataset to evaluate the model on.
-    - `top_k` (int):
-      The top-k accuracy to compute.
-      Defaults to 1.
-    - `batch_size` (int):
-      The batch size for the DataLoader.
-      Defaults to 1.
-    - `num_workers` (int):
-      The number of workers for the DataLoader.
-      Defaults to 0.
-    - `verbose` (bool):
-      Whether to enable verbose output.
-      Defaults to False.
-    - `desc` (str, optional):
-      Description for the progress bar.
-      Defaults to None.
-
-    ### Returns
-    - `None`
-    """
     # if rank == -1: CPU
     if rank == -1:
         rank = torch.device("cpu")
@@ -85,32 +53,54 @@ def run(
         )
         model = dist.load_model(rank, model)
 
-    # compute accuracy
-    corrects: int = 0
+    # compute
+    num_data = 0
+    cumulative_mean = None
+    cumulative_m2 = None
 
-    for data, targets in tqdm.tqdm(
+    for data in tqdm.tqdm(
         dataloader,
-        desc=f"acc@{top_k}" if desc is None else desc,
+        desc=f"linearity@input_grad" if desc is None else desc,
         disable=not verbose,
     ):
         data: Tensor = data.to(rank)
-        targets: Tensor = targets.to(rank)
+        data.requires_grad()
 
+        # forward pass
         outputs: Tensor = model(data)
 
-        _, preds = outputs.topk(k=top_k, dim=-1)
+        # backward pass
+        outputs.backward(torch.ones_like(outputs))
 
-        for k in range(top_k):
-            corrects += int(preds[:, k].eq(targets).detach().sum())
+        # gradients
+        grads = data.grad.detach()
 
-    res_queue.put(corrects)
+        # batch size, mean, var
+        batch_size = grads.size(0)
+        grads = grads.reshape(batch_size, -1)
+
+        batch_mean = torch.mean(grads, dim=0)
+        batch_var = torch.var(grads, dim=0, unbiased=False)
+
+        # save results
+        num_data += batch_size
+
+        delta = batch_mean - cumulative_mean
+        cumulative_mean += delta * (batch_size / num_data)
+
+        cumulative_m2 += (
+            batch_size * batch_var
+            + (delta**2) * batch_size * (num_data - batch_size) / num_data
+        )
+
+    res_queue.put((num_data, cumulative_mean, cumulative_m2))
 
     # DDP cleanup
     if rank != torch.device("cpu"):
         dist.cleanup()
 
 
-class AccuracyTest:
+class GradLinearityTest:
     """
     A class for testing the top-k accuracy of a PyTorch model on a given dataset.
 
@@ -138,16 +128,12 @@ class AccuracyTest:
 
     def __init__(
         self,
-        top_k: int = 1,
         batch_size: int = 1,
         num_workers: int = 0,
         use_cuda: bool = False,
         devices: Optional[Devices] = "auto",
     ) -> None:
         """
-        - `top_k` (int):
-        The top-k accuracy to compute.
-        Defaults to 1.
         - `batch_size` (int):
         The batch size for the DataLoader.
         Defaults to 1.
@@ -161,7 +147,6 @@ class AccuracyTest:
         The devices to use for evaluation.
         Defaults to "auto".
         """
-        self.top_k = top_k
         self.batch_size = batch_size
         self.num_workers = num_workers
 
@@ -178,23 +163,6 @@ class AccuracyTest:
         verbose: bool = False,
         desc: Optional[str] = None,
     ) -> float:
-        """
-        Evaluates the model on the given dataset and returns the accuracy.
-
-        ### Parameters
-        - `model` (Module):
-          The PyTorch model to evaluate.
-        - `dataset` (Dataset):
-          The dataset to evaluate the model on.
-        - `verbose` (bool):
-          Whether to enable verbose output. Defaults to False.
-        - `desc` (str, optional):
-          Description for the progress bar. Defaults to None.
-
-        ### Returns
-        - `float`:
-          The computed accuracy.
-        """
         model.eval()
         res_queue = dist.Queue()
 
@@ -224,7 +192,7 @@ class AccuracyTest:
 
             run(
                 rank=-1,
-                nprocs=nprocs,
+                nprocs=1,
                 res_queue=res_queue,
                 model=model,
                 dataset=dataset,
@@ -236,9 +204,25 @@ class AccuracyTest:
             )
 
         # acc
-        corrects: int = 0
+        N = 0
+        mean = None
+        m2 = None
+
         for _ in range(nprocs):
-            corrects += res_queue.get()
+            num_data, cumulative_mean, cumulative_m2 = res_queue.get()
+
+            N += num_data
+            mean += cumulative_mean
+            m2 += cumulative_m2
+
+        overall_mean = self.cumulative_mean
+        overall_var = self.cumulative_m2 / self.total_samples
+        overall_std = torch.sqrt(overall_var)
+
+        return overall_mean, overall_std
+
+        corrects: int = 0
+        
 
         acc: float = corrects / len(dataset)
 

@@ -23,16 +23,14 @@ class CIFAR100(CIFAR10):
     [CIFAR-100](https://www.cs.toronto.edu/~kriz/cifar.html) dataset.
 
     ### Attributes
-    - `root` (path):
+    - `root` (Path):
       Root directory where the dataset exists or will be saved to.
-    - `transform` (callable, optional):
-      A function/transform that takes in the data (PIL image, numpy.ndarray, etc.) and transforms it.
-      If None, no transformation is applied.
-      Defaults to None.
-    - `target_transform` (callable, optional):
-      A function/transform that takes in the target (int, etc.) and transforms it.
-      If None, no transformation is applied.
-      Defaults to None.
+    - `transform` (Callable, optional):
+      A function/transform that takes in the data and transforms it.
+      If None, no transformation is performed. Defaults to None.
+    - `target_transform` (Callable, optional):
+      A function/transform that takes in the target and transforms it.
+      If None, no transformation is performed. Defaults to None.
     - `data`:
       Data of the dataset.
     - `targets`:
@@ -49,20 +47,19 @@ class CIFAR100(CIFAR10):
     ### Methods
     - `__getitem__`:
       Returns (data, target) of dataset using the specified index.
-
-      Example:
-      ```python
-      dataset = CIFAR100(root="path/to/dataset")
-      data, target = dataset[0]
-      ```
     - `__len__`:
       Returns the size of the dataset.
+    - `set_return_data_only`:
+      Sets the flag to return only data without targets.
+    - `unset_return_data_only`:
+      Unsets the flag to return only data without targets.
 
-      Example:
-      ```python
-      dataset = CIFAR100(root="path/to/dataset")
-      num_data = len(dataset)
-      ```
+    ### Example
+    ```python
+    dataset = CIFAR100(root="path/to/dataset")
+    data, target = dataset[0]
+    num_data = len(dataset)
+    ```
     """
 
     URLS = [
@@ -125,9 +122,17 @@ class CIFAR100(CIFAR10):
             ],
         ] = None,
         target_transform: Union[Optional[Callable], Literal["auto",]] = None,
+        return_data_only: Optional[bool] = False,
         download: bool = False,
     ) -> None:
-        super().__init__(root, split, transform, target_transform, download)
+        super().__init__(
+            root,
+            split,
+            transform,
+            target_transform,
+            return_data_only,
+            download,
+        )
 
     def _initialize(
         self,

@@ -39,14 +39,11 @@ class DirectionGenerator:
     - `model` (Module):
       The model to generate directions for.
     - `method` (Literal["fgsm"], optional):
-      The method to use for generating travel directions.
-      Defaults to "fgsm".
+      The method to use for generating travel directions. Defaults to "fgsm".
     - `seed` (int, optional):
-      The seed for random number generation.
-      Defaults to -1 (No seeding).
-    - `use_cuda` (bool, optional):
-      Whether to use CUDA for computation.
-      Defaults to False.
+      The seed for random number generation. Defaults to -1 (No seeding).
+    - `device` (Device, optional):
+      The device to use for computation. Defaults to "cpu".
 
     ### Methods
     - `__call__`:
@@ -58,21 +55,8 @@ class DirectionGenerator:
         model: Module,
         method: Literal["fgsm",] = "fgsm",
         seed: Optional[int] = -1,
-        use_cuda: Optional[bool] = False,
+        device: Optional[Device] = "cpu",
     ) -> None:
-        """
-        - `model` (Module):
-          The model to generate directions for.
-        - `method` (Literal["fgsm"], optional):
-          The method to use for generating travel directions.
-          Defaults to "fgsm".
-        - `seed` (int, optional):
-          The seed for random number generation.
-          Defaults to -1 (No seeding).
-        - `use_cuda` (bool, optional):
-          Whether to use CUDA for computation.
-          Defaults to False.
-        """
         assert (
             method in travel_methods
         ), f"Expected method to be one of {travel_methods}, got {method}"
@@ -80,9 +64,7 @@ class DirectionGenerator:
         self.model = model.eval()
         self.method = method
         self.seed = seed
-        self.use_cuda = use_cuda
-        self.device = torch.device("cuda" if use_cuda else "cpu")
-        self.model.to(self.device)
+        self.device = torch.device(device)
 
         seed_everything(self.seed)
 
@@ -109,7 +91,7 @@ class DirectionGenerator:
                 FGSM(
                     model=self.model,
                     epsilon=-1.0,  # dummy value
-                    use_cuda=self.use_cuda,
+                    device=self.device,
                 )
                 .grad(data, targets)
                 .sign()
@@ -461,7 +443,7 @@ class Traveler:
         model: Module,
         method: Literal["fgsm",] = "fgsm",
         seed: Optional[int] = 0,
-        use_cuda: Optional[bool] = False,
+        device: Optional[Device] = "cpu",
         init_eps: float = 1.0e-3,
         stride: float = 1.0e-3,
         stride_decay: float = 0.5,
@@ -512,13 +494,12 @@ class Traveler:
 
         self.model = model.eval()
         self.method = method
-        self.use_cuda = use_cuda
-        self.device = torch.device("cuda" if use_cuda else "cpu")
+        self.device = torch.device(device)
         self.model.to(self.device)
 
         self.softmax = nn.Softmax(dim=-1)
 
-        self.direction_generator = DirectionGenerator(model, method, seed, use_cuda)
+        self.direction_generator = DirectionGenerator(model, method, seed, device)
 
         # travel hyperparameters
         """

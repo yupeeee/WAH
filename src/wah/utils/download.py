@@ -77,6 +77,7 @@ def urlretrieve(
 def check(
     fpath: Path,
     checksum: str,
+    chunk_size: int = 1024 * 32,
 ) -> bool:
     """
     Verifies the checksum of a file.
@@ -86,6 +87,9 @@ def check(
       The path to the file to check.
     - `checksum` (str):
       The expected MD5 checksum of the file.
+    - `chunk_size` (int):
+      The size of each chunk to read during check.
+      Defaults to 32 KB.
 
     ### Returns
     - `bool`:
@@ -96,7 +100,7 @@ def check(
     - It compares the computed checksum with the expected checksum.
     """
     with open(fpath, "rb") as f:
-        md5 = hashlib.md5(f.read()).hexdigest()
+        md5 = hashlib.md5(f.read(chunk_size)).hexdigest()
         # print(fpath, md5)
 
         if md5 == checksum:

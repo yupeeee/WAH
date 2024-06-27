@@ -29,7 +29,7 @@ class ImageNetTrain(ClassificationDataset):
     ROOT = os.path.normpath("./datasets/imagenet")
 
     ZIP_LIST = [
-        ("ILSVRC2012_img_train.tar", "1d675b47d978889d74fa0da5fadfb00e"),
+        # ("ILSVRC2012_img_train.tar", "1d675b47d978889d74fa0da5fadfb00e"),
     ]
 
     MEAN = [0.485, 0.456, 0.406]
@@ -79,9 +79,10 @@ class ImageNetTrain(ClassificationDataset):
             ],
         ] = None,
         target_transform: Union[Optional[Callable], Literal["auto",]] = None,
+        return_data_only: Optional[bool] = False,
         download: bool = False,
     ) -> None:
-        super().__init__(root, transform, target_transform)
+        super().__init__(root, transform, target_transform, return_data_only)
 
         self.checklist = []
 
@@ -145,6 +146,49 @@ class ImageNetTrain(ClassificationDataset):
 
 
 class ImageNetVal(ClassificationDataset):
+    """
+    Dataset class for the ImageNet validation set.
+
+    ### Attributes
+    - `root` (Path):
+      Root directory where the dataset exists or will be saved to.
+    - `transform` (Callable, optional):
+      A function/transform that takes in the data and transforms it.
+      If None, no transformation is performed. Defaults to None.
+    - `target_transform` (Callable, optional):
+      A function/transform that takes in the target and transforms it.
+      If None, no transformation is performed. Defaults to None.
+    - `data`:
+      Data of the dataset.
+    - `targets`:
+      Targets of the dataset.
+    - `labels`:
+      Labels of the dataset.
+    - `MEAN` (list):
+      mean of dataset; [0.485, 0.456, 0.406].
+    - `STD` (list):
+      std of dataset; [0.229, 0.224, 0.225].
+    - `NORMALIZE` (callable):
+      transform for dataset normalization.
+
+    ### Methods
+    - `__getitem__`:
+      Returns (data, target) of dataset using the specified index.
+    - `__len__`:
+      Returns the size of the dataset.
+    - `set_return_data_only`:
+      Sets the flag to return only data without targets.
+    - `unset_return_data_only`:
+      Unsets the flag to return only data without targets.
+
+    ### Example
+    ```python
+    dataset = ImageNetVal(download=True)
+    data, target = dataset[0]
+    num_data = len(dataset)
+    ```
+    """
+
     URLS = [
         "https://www.image-net.org/data/ILSVRC/2012/ILSVRC2012_img_val.tar",
         "https://raw.githubusercontent.com/yupeeee/WAH/main/src/wah/datasets/targets/ILSVRC2012_validation_ground_truth.txt",
@@ -192,9 +236,10 @@ class ImageNetVal(ClassificationDataset):
             ],
         ] = None,
         target_transform: Union[Optional[Callable], Literal["auto",]] = None,
+        return_data_only: Optional[bool] = False,
         download: bool = False,
     ) -> None:
-        super().__init__(root, transform, target_transform)
+        super().__init__(root, transform, target_transform, return_data_only)
 
         self.checklist = []
 

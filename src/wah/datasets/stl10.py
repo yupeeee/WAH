@@ -23,14 +23,14 @@ class STL10(ClassificationDataset):
     [STL-10](https://ai.stanford.edu/~acoates/stl10/) dataset.
 
     ### Attributes
-    - `root` (path):
+    - `root` (Path):
       Root directory where the dataset exists or will be saved to.
-    - `transform` (callable, optional):
-      A function/transform that takes in the data (PIL image, numpy.ndarray, etc.) and transforms it.
-      If None, no transformation is applied.
-    - `target_transform` (callable, optional):
-      A function/transform that takes in the target (int, etc.) and transforms it.
-      If None, no transformation is applied.
+    - `transform` (Callable, optional):
+      A function/transform that takes in the data and transforms it.
+      If None, no transformation is performed. Defaults to None.
+    - `target_transform` (Callable, optional):
+      A function/transform that takes in the target and transforms it.
+      If None, no transformation is performed. Defaults to None.
     - `data`:
       Data of the dataset.
     - `targets`:
@@ -47,20 +47,19 @@ class STL10(ClassificationDataset):
     ### Methods
     - `__getitem__`:
       Returns (data, target) of dataset using the specified index.
-
-      Example:
-      ```python
-      dataset = STL10(root="path/to/dataset")
-      data, target = dataset[0]
-      ```
     - `__len__`:
       Returns the size of the dataset.
+    - `set_return_data_only`:
+      Sets the flag to return only data without targets.
+    - `unset_return_data_only`:
+      Unsets the flag to return only data without targets.
 
-      Example:
-      ```python
-      dataset = STL10(root="path/to/dataset")
-      num_data = len(dataset)
-      ```
+    ### Example
+    ```python
+    dataset = STL10(root="path/to/dataset")
+    data, target = dataset[0]
+    num_data = len(dataset)
+    ```
     """
 
     URLS = [
@@ -128,6 +127,7 @@ class STL10(ClassificationDataset):
             ],
         ] = None,
         target_transform: Union[Optional[Callable], Literal["auto",]] = None,
+        return_data_only: Optional[bool] = False,
         download: bool = False,
     ) -> None:
         """
@@ -148,11 +148,14 @@ class STL10(ClassificationDataset):
           supports "auto", and None (default).
           - "auto": Automatically initializes the transform based on the dataset type and `split`.
           - None (default): No transformation is applied.
+        - `return_data_only` (bool, optional):
+          Whether to return only data without targets.
+          Defaults to False.
         - `download` (bool):
           If True, downloads the dataset from the internet and puts it into the `root` directory.
           If dataset is already downloaded, it is not downloaded again.
         """
-        super().__init__(root, transform, target_transform)
+        super().__init__(root, transform, target_transform, return_data_only)
 
         self.checklist = []
 

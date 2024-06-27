@@ -2,6 +2,7 @@ import torch
 from torch import nn
 
 from ..typing import (
+    Device,
     Module,
     Optional,
     Tensor,
@@ -26,8 +27,6 @@ class IFGSM:
       The number of iterations to perform.
     - `alpha` (float):
       The step size for each iteration.
-    - `use_cuda` (bool):
-      Whether to use CUDA (GPU) for computation.
     - `device` (Device):
       The device (CPU or GPU) used for computation.
     - `criterion` (nn.CrossEntropyLoss):
@@ -36,35 +35,19 @@ class IFGSM:
     ### Methods
     - `__call__`:
       Generates adversarial examples for the given data and targets.
-
-      Example:
-      ```python
-      import wah
-
-      dataset = Dataset(...)
-      data, target = dataset[0]
-
-      attack = wah.attacks.IFGSM(...)
-      data_adv = attack(data.unsqueeze(dim=0), target.unsqueeze(dim=0))
-      ```
-
     - `grad`:
       Computes the gradients of the loss with respect to the input data.
-      Note that the gradients are not signed values.
 
-      Example:
-      ```python
-      import wah
+    ### Example
+    ```python
+    import wah
 
-      dataset = Dataset(...)
-      data, target = dataset[0]
+    dataset = Dataset(...)
+    data, target = dataset[0]
 
-      attack = wah.attacks.IFGSM(...)
-      grad = attack.grad(data.unsqueeze(dim=0), target.unsqueeze(dim=0))
-      ```
-
-    - `fgsm`:
-      Applies the [Fast Gradient Sign Method (FGSM)](https://arxiv.org/abs/1412.6572) to the input data.
+    attack = wah.attacks.IFGSM(...)
+    data_adv = attack(data.unsqueeze(dim=0), target.unsqueeze(dim=0))
+    ```
     """
 
     def __init__(
@@ -73,28 +56,25 @@ class IFGSM:
         epsilon: float,
         iteration: int,
         alpha: Optional[float] = None,
-        use_cuda: Optional[bool] = False,
+        device: Optional[Device] = "cpu",
     ) -> None:
         """
         - `model` (Module):
           The neural network model to attack.
         - `epsilon` (float):
-          The maximum perturbation size allowed.
+          The maximum perturbation allowed.
         - `iteration` (int):
           The number of iterations to perform.
         - `alpha` (float, optional):
-          The step size for each iteration.
-          If None, it defaults to epsilon / iteration.
-        - `use_cuda` (bool, optional):
-          Whether to use CUDA (GPU) for computation.
-          Defaults to False.
+          The step size for each iteration. Defaults to epsilon/iteration.
+        - `device` (Device, optional):
+          The device (CPU or GPU) used for computation. Defaults to "cpu".
         """
         self.model = model
         self.epsilon = epsilon
         self.iteration = iteration
         self.alpha = epsilon / iteration if alpha is None else alpha
-        self.use_cuda = use_cuda
-        self.device = torch.device("cuda" if use_cuda else "cpu")
+        self.device = torch.device(device)
 
         self.criterion = nn.CrossEntropyLoss()
 
@@ -106,13 +86,13 @@ class IFGSM:
         """
         Generates adversarial examples for the given data and targets.
 
-        Parameters:
+        ### Parameters
         - `data` (Tensor):
           The input data.
         - `targets` (Tensor):
           The target labels.
 
-        Returns:
+        ### Returns
         - `Tensor`:
           The adversarial examples generated from the input data.
         """
@@ -134,13 +114,13 @@ class IFGSM:
         """
         Computes the gradients of the loss with respect to the input data.
 
-        Parameters:
+        ### Parameters
         - `data` (Tensor):
           The input data.
         - `targets` (Tensor):
           The target labels.
 
-        Returns:
+        ### Returns
         - `Tensor`:
           The gradients of the loss with respect to the input data.
         """
@@ -169,7 +149,7 @@ class IFGSM:
         """
         Applies the [Fast Gradient Sign Method (FGSM)](https://arxiv.org/abs/1412.6572) to the input data.
 
-        Parameters:
+        ### Parameters
         - `data` (Tensor):
           The input data.
         - `targets` (Tensor):
@@ -177,7 +157,7 @@ class IFGSM:
         - `epsilon` (float):
           The perturbation magnitude.
 
-        Returns:
+        ### Returns
         - `Tensor`:
           The perturbed data.
         """
@@ -204,8 +184,6 @@ class FGSM(IFGSM):
       The neural network model to attack.
     - `epsilon` (float):
       The maximum perturbation allowed.
-    - `use_cuda` (bool):
-      Whether to use CUDA (GPU) for computation.
     - `device` (Device):
       The device (CPU or GPU) used for computation.
     - `criterion` (nn.CrossEntropyLoss):
@@ -214,47 +192,33 @@ class FGSM(IFGSM):
     ### Methods
     - `__call__`:
       Generates adversarial examples for the given data and targets.
-
-      Example:
-      ```python
-      import wah
-
-      dataset = Dataset(...)
-      data, target = dataset[0]
-
-      attack = wah.attacks.FGSM(...)
-      data_adv = attack(data.unsqueeze(dim=0), target.unsqueeze(dim=0))
-      ```
-
     - `grad`:
       Computes the gradients of the loss with respect to the input data.
-      Note that the gradients are not signed values.
 
-      Example:
-      ```python
-      import wah
+    ### Example
+    ```python
+    import wah
 
-      dataset = Dataset(...)
-      data, target = dataset[0]
+    dataset = Dataset(...)
+    data, target = dataset[0]
 
-      attack = wah.attacks.FGSM(...)
-      grad = attack.grad(data.unsqueeze(dim=0), target.unsqueeze(dim=0))
-      ```
+    attack = wah.attacks.FGSM(...)
+    data_adv = attack(data.unsqueeze(dim=0), target.unsqueeze(dim=0))
+    ```
     """
 
     def __init__(
         self,
         model: Module,
         epsilon: float,
-        use_cuda: Optional[bool] = False,
+        device: Optional[Device] = "cpu",
     ) -> None:
         """
         - `model` (Module):
           The neural network model to attack.
         - `epsilon` (float):
           The maximum perturbation size allowed.
-        - `use_cuda` (bool, optional):
-          Whether to use CUDA (GPU) for computation.
-          Defaults to False.
+        - `device` (Device, optional):
+          The device (CPU or GPU) used for computation. Defaults to "cpu".
         """
-        super().__init__(model, epsilon, 1, None, use_cuda)
+        super().__init__(model, epsilon, 1, None, device)
