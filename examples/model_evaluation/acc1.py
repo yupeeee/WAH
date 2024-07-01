@@ -27,7 +27,7 @@ if __name__ == "__main__":
         batch_size=args.batch_size,
         num_workers=args.num_workers,
         use_cuda=args.cuda,
-        devices="0",
+        devices="auto",
     )
     acc1 = test(
         model=model,

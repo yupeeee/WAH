@@ -94,7 +94,11 @@ def to_dataloader(
     num_classes = (
         kwargs["num_classes"]
         if "num_classes" in kwargs.keys()
-        else len(list(set(dataset.targets)))
+        else (
+            len(list(set(dataset.targets)))
+            if hasattr(dataset, "targets")
+            else len(list(set(dataset.dataset.targets)))
+        )
     )
     collate_fn = (
         CollateFunction(

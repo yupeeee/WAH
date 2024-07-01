@@ -99,8 +99,14 @@ def check(
     - This function reads the file in binary mode and computes its MD5 checksum.
     - It compares the computed checksum with the expected checksum.
     """
+
     with open(fpath, "rb") as f:
-        md5 = hashlib.md5(f.read()).hexdigest()
+        h = hashlib.md5()
+
+        while chunk := f.read(chunk_size):
+            h.update(chunk)
+
+        md5 = h.hexdigest()
         # print(fpath, md5)
 
         if md5 == checksum:

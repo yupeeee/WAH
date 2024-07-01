@@ -13,6 +13,7 @@ from . import (
     random,
     sort,
     tensor,
+    time,
     zip,
 )
 
@@ -27,6 +28,7 @@ __all__ = [
     "random",
     "sort",
     "tensor",
+    "time",
     "zip",
     "ArgumentParser",
     "device",

@@ -1,4 +1,4 @@
-from collections import defaultdict
+import os
 
 import torch
 import tqdm
@@ -13,17 +13,20 @@ from ...typing import (
     Literal,
     Module,
     Optional,
-    ResQueue,
     Tensor,
     Tuple,
 )
 from ...utils import dist
+from ...utils.path import ls, rmdir
 from ...utils.random import seed_everything
+from ...utils.time import current_time
 from .travel import DirectionGenerator
 
 __all__ = [
     "TravelLinearityTest",
 ]
+
+temp_dir = "wahtmpdir@TravelLinearityTest"
 
 
 def move_x(
@@ -161,7 +164,6 @@ def compute_cossim(
 def run(
     rank: int,
     nprocs: int,
-    res_queue: ResQueue,
     model: Module,
     dataset: Dataset,
     epsilons: List[float],
@@ -180,8 +182,6 @@ def run(
       The rank of the current process.
     - `nprocs` (int):
       The total number of processes.
-    - `res_queue` (ResQueue):
-      The queue to store the results.
     - `model` (Module):
       The model to test.
     - `dataset` (Dataset):
@@ -231,19 +231,16 @@ def run(
         model = dist.load_model(rank, model)
 
     # compute linearity
-    cossims: Dict[float, List[float]] = dict()
-
     direction_generator = DirectionGenerator(
         model=model,
         method=method,
         device=rank,
     )
 
-    for eps in epsilons:
-        cossims[eps] = []
-
     if verbose:
         print(f"Linearity@{method}_travel test of {len(dataloader.dataset)} data")
+
+    os.makedirs(temp_dir, exist_ok=True)
 
     for eps_idx, eps in enumerate(epsilons):
         for data, targets in tqdm.tqdm(
@@ -252,8 +249,7 @@ def run(
             disable=not verbose,
         ):
             directions = direction_generator(data, targets)
-
-            cossims[eps] += compute_cossim(
+            cossim = compute_cossim(
                 model=model,
                 data=data,
                 directions=directions,
@@ -263,7 +259,13 @@ def run(
                 bound=bound,
             )
 
-    res_queue.put(cossims)
+            torch.save(
+                cossim,
+                os.path.join(
+                    temp_dir,
+                    f"{eps_idx}-{current_time()}.pt",
+                ),
+            )
 
     # DDP cleanup
     if rank != torch.device("cpu"):
@@ -380,7 +382,6 @@ class TravelLinearityTest:
           A dictionary with epsilon values as keys and lists of cosine similarities as values.
         """
         model.eval()
-        res_queue = dist.Queue()
 
         # GPU
         if self.use_cuda:
@@ -390,7 +391,6 @@ class TravelLinearityTest:
                 fn=run,
                 args=(
                     nprocs,
-                    res_queue,
                     model,
                     dataset,
                     self.epsilons,
@@ -411,7 +411,6 @@ class TravelLinearityTest:
             run(
                 rank=-1,
                 nprocs=nprocs,
-                res_queue=res_queue,
                 model=model,
                 dataset=dataset,
                 epsilons=self.epsilons,
@@ -424,12 +423,25 @@ class TravelLinearityTest:
             )
 
         # linearity
-        linearity = defaultdict(list)
+        linearity = dict()
 
-        for _ in range(nprocs):
-            d: Dict = res_queue.get()
+        cossims_fnames = ls(
+            path=temp_dir,
+            fext=".pt",
+            sort=True,
+        )
 
-            for k, v in d.items():
-                linearity[k] += v
+        for eps_idx, eps in enumerate(self.epsilons):
+            fnames = [fname for fname in cossims_fnames if f"{eps_idx}-" in fname]
+
+            for fname in fnames:
+                cossims = torch.load(os.path.join(temp_dir, fname))
+
+                if eps in linearity:
+                    linearity[eps] += cossims
+                else:
+                    linearity[eps] = cossims
+
+        rmdir(temp_dir)
 
         return linearity

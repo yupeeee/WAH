@@ -29,7 +29,7 @@ class ImageNetTrain(ClassificationDataset):
     ROOT = os.path.normpath("./datasets/imagenet")
 
     ZIP_LIST = [
-        # ("ILSVRC2012_img_train.tar", "1d675b47d978889d74fa0da5fadfb00e"),
+        ("ILSVRC2012_img_train.tar", "1d675b47d978889d74fa0da5fadfb00e"),
     ]
 
     MEAN = [0.485, 0.456, 0.406]

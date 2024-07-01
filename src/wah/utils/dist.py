@@ -217,6 +217,10 @@ def cleanup() -> None:
     dist.destroy_process_group()
 
 
+def barrier() -> None:
+    dist.barrier()
+
+
 Queue = mp.Queue
 
 
@@ -268,20 +272,20 @@ def run_fn(
     - If an exception occurs (e.g., due to a SIGSEGV error), it falls back to manually starting and joining processes.
     """
     try:
-        mp.spawn(fn, args, nprocs, **kwargs)
+        mp.spawn(fn, args, nprocs, join=True, **kwargs)
 
     # [FIX1] Replace mp.spawn to start/join due to SIGSEGV error
-    except Exception:
-        children: List[Process] = []
+    except:
+        processes: List[Process] = []
 
         for i in range(nprocs):
             subargs = tuple([i] + list(args))
-            subproc = mp.Process(target=fn, args=subargs)
-            children.append(subproc)
+            subproc = mp.Process(target=fn, args=subargs, **kwargs)
             subproc.start()
+            processes.append(subproc)
 
-        for i in range(nprocs):
-            children[i].join()
+        for p in processes:
+            p.join()
 
 
 def load_dataloader(
