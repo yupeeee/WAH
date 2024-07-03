@@ -265,7 +265,7 @@ def run(
                 cossim,
                 os.path.join(
                     temp_dir,
-                    f"{eps_idx}-{batch_idx}.{current_time()}.pt",
+                    f"{method}-{eps_idx}-{batch_idx}-{current_time()}.pt",
                 ),
             )
             batch_idx += 1
@@ -435,7 +435,11 @@ class TravelLinearityTest:
         )
 
         for eps_idx, eps in enumerate(self.epsilons):
-            fnames = [fname for fname in cossims_fnames if f"{eps_idx}-" in fname]
+            fnames = [
+                fname
+                for fname in cossims_fnames
+                if f"{self.method}-{eps_idx}-" in fname
+            ]
 
             for fname in fnames:
                 cossims = torch.load(os.path.join(temp_dir, fname))
