@@ -265,7 +265,7 @@ def run(
                 cossim,
                 os.path.join(
                     temp_dir,
-                    f"{eps_idx}.{batch_idx}-{current_time()}.pt",
+                    f"{eps_idx}-{batch_idx}.{current_time()}.pt",
                 ),
             )
             batch_idx += 1
