@@ -243,6 +243,8 @@ def run(
     os.makedirs(temp_dir, exist_ok=True)
 
     for eps_idx, eps in enumerate(epsilons):
+        batch_idx = 0
+
         for data, targets in tqdm.tqdm(
             dataloader,
             desc=f"[{eps_idx + 1}/{len(epsilons)}] eps={eps}",
@@ -263,9 +265,10 @@ def run(
                 cossim,
                 os.path.join(
                     temp_dir,
-                    f"{eps_idx}-{current_time()}.pt",
+                    f"{eps_idx}.{batch_idx}-{current_time()}.pt",
                 ),
             )
+            batch_idx += 1
 
     # DDP cleanup
     if rank != torch.device("cpu"):
