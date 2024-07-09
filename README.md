@@ -30,3 +30,4 @@ webdriver_manager
 ## Examples
 
 - [Model Training](https://github.com/yupeeee/WAH/tree/main/examples/model_training)
+- [Model Evaluation](https://github.com/yupeeee/WAH/tree/main/examples/model_evaluation)

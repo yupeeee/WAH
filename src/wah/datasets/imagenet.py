@@ -13,6 +13,7 @@ from ..typing import (
 from ..utils.download import check, download_url
 from ..utils.lst import load_txt
 from ..utils.path import ls
+from ..utils.zip import extract
 from .base import ClassificationDataset
 from .labels import imagenet1k as labels
 
@@ -23,6 +24,49 @@ __all__ = [
 
 
 class ImageNetTrain(ClassificationDataset):
+    """
+    [ImageNet](https://www.image-net.org/challenges/LSVRC/2012/index.php) train dataset.
+
+    ### Attributes
+    - `root` (Path):
+      Root directory where the dataset exists or will be saved to.
+    - `transform` (Callable, optional):
+      A function/transform that takes in the data and transforms it.
+      If None, no transformation is performed. Defaults to None.
+    - `target_transform` (Callable, optional):
+      A function/transform that takes in the target and transforms it.
+      If None, no transformation is performed. Defaults to None.
+    - `data`:
+      Data of the dataset.
+    - `targets`:
+      Targets of the dataset.
+    - `labels`:
+      Labels of the dataset.
+    - `MEAN` (list):
+      mean of dataset; [0.485, 0.456, 0.406].
+    - `STD` (list):
+      std of dataset; [0.229, 0.224, 0.225].
+    - `NORMALIZE` (callable):
+      transform for dataset normalization.
+
+    ### Methods
+    - `__getitem__`:
+      Returns (data, target) of dataset using the specified index.
+    - `__len__`:
+      Returns the size of the dataset.
+    - `set_return_data_only`:
+      Sets the flag to return only data without targets.
+    - `unset_return_data_only`:
+      Unsets the flag to return only data without targets.
+
+    ### Example
+    ```python
+    dataset = ImageNetTrain(download=True)
+    data, target = dataset[0]
+    num_data = len(dataset)
+    ```
+    """
+
     URLS = [
         "https://www.image-net.org/data/ILSVRC/2012/ILSVRC2012_img_train.tar",
     ]
@@ -101,39 +145,54 @@ class ImageNetTrain(ClassificationDataset):
             pass
 
         if download:
-            # download validation dataset
+            # download train dataset
             self._download(
                 urls=self.URLS,
                 checklist=self.checklist,
                 ext_dir_name="train",
             )
 
+            # extract class folders
+            data_root = os.path.normpath(os.path.join(self.root, "train"))
+            classes = ls(data_root, fext=".tar", sort=True)
+
+            if len(classes):
+                classes = [c.split(".tar")[0] for c in classes]
+
+                for c in classes:
+                    fpath = os.path.join(data_root, f"{c}.tar")
+                    extract(fpath, save_dir=os.path.join(data_root, c))
+
+                    # delete zipfiles
+                    os.remove(fpath)
+
         self._initialize()
 
     def _initialize(
         self,
     ) -> None:
-        # load data (list of path to images)
+        # load class folders
         data_root = os.path.normpath(os.path.join(self.root, "train"))
-        fnames = ls(
+        classes = ls(
             path=data_root,
-            fext="JPEG",
+            fext="dir",
             sort=True,
         )
 
+        # load data (list of path to images) & targets
         self.data = []
-        for fname in fnames:
-            fpath = os.path.normpath(os.path.join(data_root, fname))
-            self.data.append(fpath)
+        self.targets = []
 
-        # load targets
-        targets_path = os.path.normpath(
-            os.path.join(
-                self.root,
-                "ILSVRC2012_devkit_t12/data/ILSVRC2012_validation_ground_truth.txt",
-            )
-        )
-        self.targets = load_txt(targets_path, dtype=int)
+        for class_idx, c in enumerate(classes):
+            class_dir = os.path.normpath(os.path.join(data_root, c))
+            fpaths = ls(path=class_dir, fext=".JPEG", sort=True)
+
+            path_to_images = [
+                os.path.normpath(os.path.join(data_root, c, fpath)) for fpath in fpaths
+            ]
+
+            self.data += path_to_images
+            self.targets += [class_idx] * len(fpaths)
 
         # load labels
         self.labels = labels
@@ -147,7 +206,7 @@ class ImageNetTrain(ClassificationDataset):
 
 class ImageNetVal(ClassificationDataset):
     """
-    Dataset class for the ImageNet validation set.
+    [ImageNet](https://www.image-net.org/challenges/LSVRC/2012/index.php) validation dataset.
 
     ### Attributes
     - `root` (Path):
@@ -264,7 +323,7 @@ class ImageNetVal(ClassificationDataset):
                 checklist=self.checklist[:1],
                 ext_dir_name="val",
             )
-            # download devkit
+            # download ground truth targets
             fpath = download_url(self.URLS[1], self.root)
             check(fpath, self.checklist[1][1])
 
