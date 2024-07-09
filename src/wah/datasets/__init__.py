@@ -5,10 +5,7 @@ from .dataloader import (
     CollateFunction,
     to_dataloader,
 )
-from .imagenet import (
-    ImageNetTrain,
-    ImageNetVal,
-)
+from .imagenet import ImageNet
 from .stl10 import STL10
 from .utils import (
     mean_and_std,
@@ -21,8 +18,7 @@ __all__ = [
     "CIFAR100",
     "CollateFunction",
     "to_dataloader",
-    "ImageNetTrain",
-    "ImageNetVal",
+    "ImageNet",
     "STL10",
     "mean_and_std",
     "portion_dataset",

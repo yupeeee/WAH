@@ -1,6 +1,7 @@
 import os
 
 import torchvision.transforms as T
+import tqdm
 from PIL import Image
 
 from ..typing import (
@@ -18,8 +19,7 @@ from .base import ClassificationDataset
 from .labels import imagenet1k as labels
 
 __all__ = [
-    "ImageNetTrain",
-    "ImageNetVal",
+    "ImageNet",
 ]
 
 
@@ -61,7 +61,7 @@ class ImageNetTrain(ClassificationDataset):
 
     ### Example
     ```python
-    dataset = ImageNetTrain(download=True)
+    dataset = ImageNetTrain(root="path/to/dataset")
     data, target = dataset[0]
     num_data = len(dataset)
     ```
@@ -183,7 +183,12 @@ class ImageNetTrain(ClassificationDataset):
         self.data = []
         self.targets = []
 
-        for class_idx, c in enumerate(classes):
+        for class_idx, c in enumerate(
+            tqdm.tqdm(
+                classes,
+                desc="Initializing ImageNet train dataset...",
+            )
+        ):
             class_dir = os.path.normpath(os.path.join(data_root, c))
             fpaths = ls(path=class_dir, fext=".JPEG", sort=True)
 
@@ -242,7 +247,7 @@ class ImageNetVal(ClassificationDataset):
 
     ### Example
     ```python
-    dataset = ImageNetVal(download=True)
+    dataset = ImageNetVal(root="path/to/dataset")
     data, target = dataset[0]
     num_data = len(dataset)
     ```
@@ -362,3 +367,115 @@ class ImageNetVal(ClassificationDataset):
         fpath: Path,
     ) -> Image.Image:
         return Image.open(fpath).convert("RGB")
+
+
+def ImageNet(
+    root: Path = os.path.normpath("./datasets/imagenet"),
+    split: Literal[
+        "train",
+        "val",
+    ] = "train",
+    transform: Union[
+        Optional[Callable],
+        Literal[
+            "auto",
+            "tt",
+            "train",
+            "val",
+        ],
+    ] = None,
+    target_transform: Union[Optional[Callable], Literal["auto",]] = None,
+    return_data_only: Optional[bool] = False,
+    download: bool = False,
+) -> Union[ImageNetTrain, ImageNetVal]:
+    """
+    [ImageNet](https://www.image-net.org/challenges/LSVRC/2012/index.php) dataset.
+
+    ### Parameters
+    - `root` (path):
+      Root directory where the dataset exists or will be saved to.
+    - `split` (str):
+      The dataset split; supports "train" (default), and "val".
+    - `transform` (str):
+      A function/transform that takes in the data (PIL image, numpy.ndarray, etc.) and transforms it;
+      supports "auto", "tt", "train", "val", and None (default).
+      - "auto": Automatically initializes the transform based on the dataset type and `split`.
+      - "tt": Converts data into a tensor image.
+      - "train": Transform to use in train stage.
+      - "val": Transform to use in validation stage.
+      - None (default): No transformation is applied.
+    - `target_transform` (str):
+      A function/transform that takes in the target (int, etc.) and transforms it;
+      supports "auto", and None (default).
+      - "auto": Automatically initializes the transform based on the dataset type and `split`.
+      - None (default): No transformation is applied.
+    - `return_data_only` (bool, optional):
+      Whether to return only data without targets.
+      Defaults to False.
+    - `download` (bool):
+      If True, downloads the dataset from the internet and puts it into the `root` directory.
+      If dataset is already downloaded, it is not downloaded again.
+
+    ### Returns
+    - `Union[ImageNetTrain, ImageNetVal]`:
+      ImageNet train/validation dataset.
+
+    ### Attributes
+    - `root` (Path):
+      Root directory where the dataset exists or will be saved to.
+    - `transform` (Callable, optional):
+      A function/transform that takes in the data and transforms it.
+      If None, no transformation is performed. Defaults to None.
+    - `target_transform` (Callable, optional):
+      A function/transform that takes in the target and transforms it.
+      If None, no transformation is performed. Defaults to None.
+    - `data`:
+      Data of the dataset.
+    - `targets`:
+      Targets of the dataset.
+    - `labels`:
+      Labels of the dataset.
+    - `MEAN` (list):
+      mean of dataset; [0.485, 0.456, 0.406].
+    - `STD` (list):
+      std of dataset; [0.229, 0.224, 0.225].
+    - `NORMALIZE` (callable):
+      transform for dataset normalization.
+
+    ### Methods
+    - `__getitem__`:
+      Returns (data, target) of dataset using the specified index.
+    - `__len__`:
+      Returns the size of the dataset.
+    - `set_return_data_only`:
+      Sets the flag to return only data without targets.
+    - `unset_return_data_only`:
+      Unsets the flag to return only data without targets.
+
+    ### Example
+    ```python
+    dataset = ImageNet(root="path/to/dataset")
+    data, target = dataset[0]
+    num_data = len(dataset)
+    ```
+    """
+    if split == "train":
+        return ImageNetTrain(
+            root=root,
+            transform=transform,
+            target_transform=target_transform,
+            return_data_only=return_data_only,
+            download=download,
+        )
+
+    elif split == "val":
+        return ImageNetVal(
+            root=root,
+            transform=transform,
+            target_transform=target_transform,
+            return_data_only=return_data_only,
+            download=download,
+        )
+
+    else:
+        raise ValueError(f"Unsupported dataset split: {split}")
