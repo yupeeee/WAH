@@ -63,7 +63,7 @@ The result will be as follows, which is the same as reported in [**link**](https
 >>> Acc@1 of resnet50 on ImageNet: 100%|█████...██████| 1563/1563 [00:00<00:00, 0s/it]
 Acc@1 of resnet50 on ImageNet: 76.13%
 ```
-![resnet50_IMAGENET1K_V1_acc1](https://github.com/yupeeee/WAH/blob/main/examples/model_evaluation/resnet50_acc1.PNG?raw=true)
+![resnet50_IMAGENET1K_V1_acc1](https://github.com/yupeeee/WAH/blob/main/examples/model_evaluation/resnet50_IMAGENET1K_V1_acc1.PNG?raw=true)
 
 
 ### References
