@@ -15,7 +15,6 @@ from typing import (
 from lightning import Trainer
 from matplotlib.pyplot import Axes
 from pandas import DataFrame
-from paramiko import SFTPClient, Transport
 from torch import Tensor
 from torch import device as Device
 from torch.multiprocessing import Process, Queue
@@ -57,12 +56,10 @@ __all__ = [
     "Process",
     "ResQueue",
     "Sequence",
-    "SFTPClient",
     "SummaryWriter",
     "Tensor",
     "Trainer",
     "Transform",
-    "Transport",
     "Tuple",
     "Union",
 ]
