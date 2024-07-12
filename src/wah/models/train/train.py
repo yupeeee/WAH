@@ -250,14 +250,25 @@ class Wrapper(L.LightningModule):
             with torch.no_grad():
                 if self.feature_extractor.checked_layers is False:
                     _ = self.feature_extractor(data)
-                    self.train_rms = dict(
-                        (i_layer, [])
-                        for i_layer in self.feature_extractor.feature_layers.values()
-                    )
-                    self.val_rms = dict(
-                        (i_layer, [])
-                        for i_layer in self.feature_extractor.feature_layers.values()
-                    )
+
+            if self._track.FEATURE_RMS:
+                self.train_rms = dict(
+                    (i_layer, [])
+                    for i_layer in self.feature_extractor.feature_layers.values()
+                )
+                self.val_rms = dict(
+                    (i_layer, [])
+                    for i_layer in self.feature_extractor.feature_layers.values()
+                )
+            if self._track.FEATURE_SIGN:
+                self.train_sign = dict(
+                    (i_layer, [])
+                    for i_layer in self.feature_extractor.feature_layers.values()
+                )
+                self.val_sign = dict(
+                    (i_layer, [])
+                    for i_layer in self.feature_extractor.feature_layers.values()
+                )
 
         # track
         if self._track.FEATURE_RMS:
