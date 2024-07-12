@@ -193,11 +193,13 @@ class Wrapper(L.LightningModule):
                 header=f"param_svdval_max/{tag}",
             )
         if self._track.STATE_DICT:
+            tensorboard_log_dir = self.trainer.tensorboard_log_dir
+
             track.state_dict.save(
                 model=self.model,
                 epoch=current_epoch,
                 every_n_epochs=1,
-                tensorboard=tensorboard,
+                tensorboard_log_dir=tensorboard_log_dir,
             )
 
     def validation_step(self, batch, batch_idx):
@@ -324,9 +326,10 @@ def load_trainer(
         name=name,
         version=version,
     )
+    tensorboard_log_dir = tensorboard_logger.log_dir
     checkpoint_callback = load_checkpoint_callback()
 
-    return L.Trainer(
+    trainer = L.Trainer(
         accelerator=accelerator,
         devices=devices,
         logger=[
@@ -339,3 +342,6 @@ def load_trainer(
         log_every_n_steps=None,
         deterministic="warn" if config["seed"] is not None else False,
     )
+    setattr(trainer, "tensorboard_log_dir", tensorboard_log_dir)
+
+    return trainer
