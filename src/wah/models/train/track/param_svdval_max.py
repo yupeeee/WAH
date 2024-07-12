@@ -12,6 +12,7 @@ __all__ = [
     "init",
     "compute",
     "track",
+    "reset",
 ]
 
 
@@ -53,5 +54,9 @@ def track(
             global_step=epoch,
         )
 
-        # reset
+
+def reset(
+    param_svdval_max_dict: Dict[str, List[Tensor]],
+) -> None:
+    for i_layer, _ in param_svdval_max_dict.items():
         param_svdval_max_dict[i_layer].clear()

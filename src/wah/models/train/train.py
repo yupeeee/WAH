@@ -191,6 +191,7 @@ class Wrapper(L.LightningModule):
                 feature_rms_dict=self.train_rms,
                 header=f"feature_rms/{tag}/train",
             )
+            track.feature_rms.reset(self.train_rms)
         if self._track.FEATURE_SIGN:
             track.feature_sign.track(
                 epoch=current_epoch,
@@ -198,6 +199,7 @@ class Wrapper(L.LightningModule):
                 feature_sign_dict=self.train_sign,
                 header=f"feature_sign/{tag}/train",
             )
+            track.feature_sign.reset(self.train_sign)
         if self._track.GRAD_L2:
             track.grad_l2.track(
                 epoch=current_epoch,
@@ -205,6 +207,7 @@ class Wrapper(L.LightningModule):
                 grad_l2_dict=self.grad_l2_dict,
                 header=f"grad_l2/{tag}",
             )
+            track.grad_l2.reset(self.grad_l2_dict)
         if self._track.PARAM_SVDVAL_MAX:
             track.param_svdval_max.compute(
                 model=self.model,
@@ -216,6 +219,7 @@ class Wrapper(L.LightningModule):
                 param_svdval_max_dict=self.param_svdval_max_dict,
                 header=f"param_svdval_max/{tag}",
             )
+            track.param_svdval_max.reset(self.param_svdval_max_dict)
         if self._track.STATE_DICT:
             tensorboard_log_dir = self.trainer.tensorboard_log_dir
 
@@ -251,24 +255,24 @@ class Wrapper(L.LightningModule):
                 if self.feature_extractor.checked_layers is False:
                     _ = self.feature_extractor(data)
 
-            if self._track.FEATURE_RMS:
-                self.train_rms = dict(
-                    (i_layer, [])
-                    for i_layer in self.feature_extractor.feature_layers.values()
-                )
-                self.val_rms = dict(
-                    (i_layer, [])
-                    for i_layer in self.feature_extractor.feature_layers.values()
-                )
-            if self._track.FEATURE_SIGN:
-                self.train_sign = dict(
-                    (i_layer, [])
-                    for i_layer in self.feature_extractor.feature_layers.values()
-                )
-                self.val_sign = dict(
-                    (i_layer, [])
-                    for i_layer in self.feature_extractor.feature_layers.values()
-                )
+                    if self._track.FEATURE_RMS:
+                        self.train_rms = dict(
+                            (i_layer, [])
+                            for i_layer in self.feature_extractor.feature_layers.values()
+                        )
+                        self.val_rms = dict(
+                            (i_layer, [])
+                            for i_layer in self.feature_extractor.feature_layers.values()
+                        )
+                    if self._track.FEATURE_SIGN:
+                        self.train_sign = dict(
+                            (i_layer, [])
+                            for i_layer in self.feature_extractor.feature_layers.values()
+                        )
+                        self.val_sign = dict(
+                            (i_layer, [])
+                            for i_layer in self.feature_extractor.feature_layers.values()
+                        )
 
         # track
         if self._track.FEATURE_RMS:
@@ -310,6 +314,7 @@ class Wrapper(L.LightningModule):
                 feature_rms_dict=self.val_rms,
                 header=f"feature_rms/{tag}/val",
             )
+            track.feature_rms.reset(self.val_rms)
         if self._track.FEATURE_SIGN:
             track.feature_sign.track(
                 epoch=current_epoch,
@@ -317,6 +322,7 @@ class Wrapper(L.LightningModule):
                 feature_sign_dict=self.val_sign,
                 header=f"feature_sign/{tag}/val",
             )
+            track.feature_sign.reset(self.val_sign)
 
 
 def load_tensorboard_logger(

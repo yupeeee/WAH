@@ -15,6 +15,7 @@ __all__ = [
     "init",
     "compute",
     "track",
+    "reset",
 ]
 
 
@@ -65,4 +66,9 @@ def track(
             global_step=epoch,
         )
 
+
+def reset(
+    feature_sign_dict: Dict[str, List[Tensor]],
+) -> None:
+    for i_layer, _ in feature_sign_dict.items():
         feature_sign_dict[i_layer].clear()

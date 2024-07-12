@@ -12,6 +12,7 @@ __all__ = [
     "init",
     "compute",
     "track",
+    "reset",
 ]
 
 
@@ -49,5 +50,9 @@ def track(
             global_step=epoch,
         )
 
-        # reset
+
+def reset(
+    grad_l2_dict: Dict[str, List[Tensor]],
+) -> None:
+    for i_layer, _ in grad_l2_dict.items():
         grad_l2_dict[i_layer].clear()

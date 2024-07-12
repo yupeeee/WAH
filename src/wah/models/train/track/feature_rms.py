@@ -17,6 +17,7 @@ __all__ = [
     "init",
     "compute",
     "track",
+    "reset",
 ]
 
 
@@ -67,4 +68,9 @@ def track(
             global_step=epoch,
         )
 
+
+def reset(
+    feature_rms_dict: Dict[str, List[Tensor]],
+) -> None:
+    for i_layer, _ in feature_rms_dict.items():
         feature_rms_dict[i_layer].clear()
