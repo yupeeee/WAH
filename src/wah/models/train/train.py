@@ -60,6 +60,13 @@ class Wrapper(L.LightningModule):
 
         utils.random.seed_everything(init_seed(config))
 
+        self.sync_dist: bool = False
+        if (
+            "gpu" in config["devices"]
+            and len(config["devices"].split("gpu:")[-1].split(",")) > 1
+        ):
+            self.sync_dist = True
+
         self.criterion = load_criterion(config)
 
         # metrics (default)
@@ -78,6 +85,10 @@ class Wrapper(L.LightningModule):
         if self._track.FEATURE_RMS:
             self.feature_extractor, self.train_rms, self.val_rms = (
                 track.feature_rms.init(model)
+            )
+        if self._track.FEATURE_SIGN:
+            self.feature_extractor, self.train_sign, self.val_sign = (
+                track.feature_sign.init(model)
             )
         if self._track.GRAD_L2:
             self.grad_l2_dict = track.grad_l2.init(model)
@@ -138,6 +149,12 @@ class Wrapper(L.LightningModule):
                 feature_extractor=self.feature_extractor,
                 feature_rms_dict=self.train_rms,
             )
+        if self._track.FEATURE_SIGN:
+            track.feature_sign.compute(
+                data=data,
+                feature_extractor=self.feature_extractor,
+                feature_sign_dict=self.train_sign,
+            )
 
         return loss
 
@@ -150,18 +167,18 @@ class Wrapper(L.LightningModule):
         current_epoch = self.current_epoch  # + 1
 
         # epoch as global_step
-        self.log("step", current_epoch)
+        self.log("step", current_epoch, sync_dist=self.sync_dist)
 
         # log: lr
         self.lr(get_lr(self.trainer))
-        self.log(f"lr-{self.config['optimizer']}", self.lr)
+        self.log(f"lr-{self.config['optimizer']}", self.lr, sync_dist=self.sync_dist)
 
         # log: loss
-        self.log("train/avg_loss", self.train_loss)
+        self.log("train/avg_loss", self.train_loss, sync_dist=self.sync_dist)
 
         # log: metrics
         for label, metric in self.train_metrics_dict.items():
-            self.log(label, metric)
+            self.log(label, metric, sync_dist=self.sync_dist)
 
         # log: track
         tensorboard: SummaryWriter = self.logger.experiment
@@ -173,6 +190,13 @@ class Wrapper(L.LightningModule):
                 tensorboard=tensorboard,
                 feature_rms_dict=self.train_rms,
                 header=f"feature_rms/{tag}/train",
+            )
+        if self._track.FEATURE_SIGN:
+            track.feature_sign.track(
+                epoch=current_epoch,
+                tensorboard=tensorboard,
+                feature_sign_dict=self.train_sign,
+                header=f"feature_sign/{tag}/train",
             )
         if self._track.GRAD_L2:
             track.grad_l2.track(
@@ -221,10 +245,9 @@ class Wrapper(L.LightningModule):
 
             metric(outputs, targets)
 
-        # track
-        if self._track.FEATURE_RMS:
+        # track; if not checked_layers, check
+        if self._track.FEATURE_RMS or self._track.FEATURE_SIGN:
             with torch.no_grad():
-                # if not checked_layers, check
                 if self.feature_extractor.checked_layers is False:
                     _ = self.feature_extractor(data)
                     self.train_rms = dict(
@@ -235,11 +258,20 @@ class Wrapper(L.LightningModule):
                         (i_layer, [])
                         for i_layer in self.feature_extractor.feature_layers.values()
                     )
-                track.feature_rms.compute(
-                    data=data,
-                    feature_extractor=self.feature_extractor,
-                    feature_rms_dict=self.val_rms,
-                )
+
+        # track
+        if self._track.FEATURE_RMS:
+            track.feature_rms.compute(
+                data=data,
+                feature_extractor=self.feature_extractor,
+                feature_rms_dict=self.val_rms,
+            )
+        if self._track.FEATURE_SIGN:
+            track.feature_sign.compute(
+                data=data,
+                feature_extractor=self.feature_extractor,
+                feature_sign_dict=self.val_sign,
+            )
 
         return loss
 
@@ -247,14 +279,14 @@ class Wrapper(L.LightningModule):
         current_epoch = self.current_epoch + 1
 
         # epoch as global_step
-        self.log("step", current_epoch)
+        self.log("step", current_epoch, sync_dist=self.sync_dist)
 
         # log: loss
-        self.log("val/avg_loss", self.val_loss)
+        self.log("val/avg_loss", self.val_loss, sync_dist=self.sync_dist)
 
         # log: metrics
         for label, metric in self.val_metrics_dict.items():
-            self.log(label, metric)
+            self.log(label, metric, sync_dist=self.sync_dist)
 
         # log: track
         tensorboard: SummaryWriter = self.logger.experiment
@@ -266,6 +298,13 @@ class Wrapper(L.LightningModule):
                 tensorboard=tensorboard,
                 feature_rms_dict=self.val_rms,
                 header=f"feature_rms/{tag}/val",
+            )
+        if self._track.FEATURE_SIGN:
+            track.feature_sign.track(
+                epoch=current_epoch,
+                tensorboard=tensorboard,
+                feature_sign_dict=self.val_sign,
+                header=f"feature_sign/{tag}/val",
             )
 
 

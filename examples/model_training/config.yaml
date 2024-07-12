@@ -50,6 +50,7 @@ metrics:
 
 track:
 # - "feature_rms"
+- "feature_sign"
 - "grad_l2"
 # - "param_svdval_max"
 - "state_dict"

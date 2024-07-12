@@ -4,6 +4,7 @@ from ....typing import (
 )
 from . import (
     feature_rms,
+    feature_sign,
     grad_l2,
     param_svdval_max,
     state_dict,
@@ -14,6 +15,7 @@ __all__ = [
     "Track",
     "load_track",
     "feature_rms",
+    "feature_sign",
     "grad_l2",
     "param_svdval_max",
     "state_dict",
@@ -22,6 +24,7 @@ __all__ = [
 
 class Track:
     FEATURE_RMS = False
+    FEATURE_SIGN = False
     GRAD_L2 = False
     PARAM_SVDVAL_MAX = False
     STATE_DICT = False
