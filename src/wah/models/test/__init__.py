@@ -1,4 +1,5 @@
 from .accuracy import AccuracyTest
+# from .feature_sign import FeatureSignTest
 from .travel import Traveler
 from .travel_linearity import TravelLinearityTest
 
@@ -7,6 +8,7 @@ from .travel_linearity import TravelLinearityTest
 
 __all__ = [
     "AccuracyTest",
+    # "FeatureSignTest",
     "Traveler",
     "TravelLinearityTest",
     # "FeatureRMSTest",

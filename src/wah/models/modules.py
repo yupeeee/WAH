@@ -218,11 +218,27 @@ def get_attrs(
     for name in names:
         attr = get_valid_attr(model, name)
 
-        # Skip if attr is not valid
+        ############
+        # Skip if: #
+        ############
+
+        # attr is not valid
         if attr is None:
+            continue
+
+        # module is dropout
+        if "drop" in attr:
             continue
 
         if attr not in attrs:
             attrs.append(attr)
 
-    return attrs
+    valid_attrs = []
+
+    for i in range(len(attrs) - 1):
+        if attrs[i] not in attrs[i + 1]:
+            valid_attrs.append(attrs[i])
+
+    valid_attrs.append(attrs[-1])
+
+    return valid_attrs

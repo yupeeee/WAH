@@ -45,7 +45,7 @@ def compute(
     for i_layer, feature in features.items():
         feature = flatten_batch(feature)
 
-        f_sign = -torch.sum((feature.sign() - 1) / 2, dim=-1) / feature.size(-1)
+        f_sign = torch.sum((feature < 0).int(), dim=-1) / feature.size(-1)
         feature_sign_dict[i_layer].append(f_sign)
 
         del feature

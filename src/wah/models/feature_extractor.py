@@ -1,13 +1,14 @@
 import torch
 from torchvision.models.feature_extraction import (
     create_feature_extractor,
-    get_graph_node_names,
+    # get_graph_node_names,
 )
 
 from ..typing import (
     Module,
 )
 from ..utils.tensor import flatten_batch
+from .modules import _getattr, get_attrs
 
 __all__ = [
     "FeatureExtractor",
@@ -51,7 +52,8 @@ class FeatureExtractor(Module):
 
         self.model = model
 
-        _, layers = get_graph_node_names(model)
+        # _, layers = get_graph_node_names(model)
+        layers = get_attrs(model)
 
         if penultimate_only:
             self.feature_layers = {
@@ -128,16 +130,20 @@ class FeatureExtractor(Module):
                 if layer == "x":
                     continue
 
-                # skip if output type has no attr len
-                # TypeError: object of type 'int' has no len()
-                try:
-                    _ = len(features[i_layer])
-                except TypeError:
+                # skip Identity()
+                if isinstance(_getattr(self.model, layer), torch.nn.Identity):
                     continue
 
-                # skip weight/bias/gamma/etc
-                if len(features[i_layer]) != len(x):
-                    continue
+                # # skip if output type has no attr len
+                # # TypeError: object of type 'int' has no len()
+                # try:
+                #     _ = len(features[i_layer])
+                # except TypeError:
+                #     continue
+
+                # # skip weight/bias/gamma/etc
+                # if len(features[i_layer]) != len(x):
+                #     continue
 
                 try:
                     _ = flatten_batch(features[i_layer])
