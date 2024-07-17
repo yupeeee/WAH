@@ -291,7 +291,7 @@ class Wrapper(L.LightningModule):
         return loss
 
     def on_validation_epoch_end(self) -> None:
-        current_epoch = self.current_epoch + 1
+        current_epoch = self.current_epoch  # + 1
 
         # epoch as global_step
         self.log("step", current_epoch, sync_dist=self.sync_dist)
