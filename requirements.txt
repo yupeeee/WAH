@@ -4,7 +4,6 @@ pandas
 pyperclip
 PyYAML
 selenium
-sphinx_rtd_theme
 tensorboard
 timm
 ## package location
