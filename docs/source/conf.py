@@ -16,7 +16,14 @@ release = '1.4.1'
 
 extensions = [
     "sphinx_rtd_theme",
+    "sphinx.ext.autodoc",
+    "myst_parser",
 ]
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.txt': 'markdown',
+    '.md': 'markdown',
+}
 
 templates_path = ['_templates']
 exclude_patterns = []
