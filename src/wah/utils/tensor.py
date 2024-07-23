@@ -1,15 +1,25 @@
 import torch
 
 from ..typing import (
+    Path,
     Tensor,
 )
 
 __all__ = [
+    "save",
     "isvec",
     "repeat",
     "mat_eprod_vec",
     "flatten_batch",
 ]
+
+
+def save(
+    x: Tensor,
+    path: Path,
+    **kwargs,
+) -> None:
+    torch.save(x, path, **kwargs)
 
 
 def isvec(
