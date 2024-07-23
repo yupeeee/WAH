@@ -12,6 +12,10 @@ from ...typing import (
 )
 from ...utils import dist
 
+__all__ = [
+    "AccuracyTest",
+]
+
 
 def run(
     rank: int,

@@ -74,6 +74,7 @@ class ClassificationDataset(Dataset):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         return_data_only: Optional[bool] = False,
+        return_w_index: Optional[bool] = False,
     ) -> None:
         """
         - `root` (Path):
@@ -94,6 +95,7 @@ class ClassificationDataset(Dataset):
         self.transform = transform
         self.target_transform = target_transform
         self.return_data_only = return_data_only
+        self.return_w_index = return_w_index
 
         # must be initialized through self._initialize()
         self.data = ...
@@ -131,10 +133,16 @@ class ClassificationDataset(Dataset):
             if self.target_transform is not None:
                 target = self.target_transform(target)
 
-            return data, target
+            if self.return_w_index:
+                return index, (data, target)
+            else:
+                return data, target
 
         else:
-            return data
+            if self.return_w_index:
+                return index, data
+            else:
+                return data
 
     def __len__(
         self,
@@ -304,3 +312,13 @@ class ClassificationDataset(Dataset):
         - `None`
         """
         self.return_data_only = False
+
+    def set_return_w_index(
+        self,
+    ) -> None:
+        self.return_w_index = True
+
+    def unset_return_w_index(
+        self,
+    ) -> None:
+        self.return_w_index = False
