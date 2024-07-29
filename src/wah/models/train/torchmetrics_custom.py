@@ -23,16 +23,16 @@ def _binning_bucketize(
     accuracies: Tensor,
     bin_boundaries: Tensor,
 ) -> Tuple[Tensor, Tensor, Tensor]:
-    """Compute calibration bins using ``torch.bucketize``. Use for ``pytorch >=1.6``.
+    """
+    Compute calibration bins using ``torch.bucketize``. Use for ``pytorch >=1.6``.
 
-    Args:
-        confidences: The confidence (i.e. predicted prob) of the top1 prediction.
-        accuracies: 1.0 if the top-1 prediction was correct, 0.0 otherwise.
-        bin_boundaries: Bin boundaries separating the ``linspace`` from 0 to 1.
+    ### Parameters
+    - `confidences (Tensor)`: The confidence (i.e. predicted prob) of the top1 prediction.
+    - `accuracies (Tensor)`: 1.0 if the top-1 prediction was correct, 0.0 otherwise.
+    - `bin_boundaries (Tensor)`: Bin boundaries separating the ``linspace`` from 0 to 1.
 
-    Returns:
-        tuple with binned accuracy, binned confidence and binned probabilities
-
+    ### Returns
+    - `Tuple[Tensor, Tensor, Tensor]`: A tuple with binned accuracy, binned confidence and binned probabilities.
     """
     accuracies = accuracies.to(dtype=confidences.dtype)
     acc_bin = torch.zeros(
@@ -67,22 +67,21 @@ def _ce_compute(
     norm: str = "l1",
     debias: bool = False,
 ) -> Tensor:
-    """Compute the calibration error given the provided bin boundaries and norm.
+    """
+    Compute the calibration error given the provided bin boundaries and norm.
 
-    Args:
-        confidences: The confidence (i.e. predicted prob) of the top1 prediction.
-        accuracies: 1.0 if the top-1 prediction was correct, 0.0 otherwise.
-        bin_boundaries: Bin boundaries separating the ``linspace`` from 0 to 1.
-        norm: Norm function to use when computing calibration error. Defaults to "l1".
-        debias: Apply debiasing to L2 norm computation as in
-            `Verified Uncertainty Calibration`_. Defaults to False.
+    ### Parameters
+    - `confidences (Tensor)`: The confidence (i.e. predicted prob) of the top1 prediction.
+    - `accuracies (Tensor)`: 1.0 if the top-1 prediction was correct, 0.0 otherwise.
+    - `bin_boundaries (Union[Tensor, int])`: Bin boundaries separating the ``linspace`` from 0 to 1.
+    - `norm (str)`: Norm function to use when computing calibration error. Defaults to "l1".
+    - `debias (bool)`: Apply debiasing to L2 norm computation as in `Verified Uncertainty Calibration`. Defaults to False.
 
-    Raises:
-        ValueError: If an unsupported norm function is provided.
+    ### Returns
+    - `Tensor`: Calibration error scalar.
 
-    Returns:
-        Tensor: Calibration error scalar.
-
+    ### Raises
+    - `ValueError`: If an unsupported norm function is provided.
     """
     if isinstance(bin_boundaries, int):
         bin_boundaries = torch.linspace(
@@ -107,31 +106,35 @@ def _ce_compute(
         ce = torch.max(torch.abs(acc_bin - conf_bin))
     if norm == "l2":
         ce = torch.sum(torch.pow(acc_bin - conf_bin, 2) * prop_bin)
-        # NOTE: debiasing is disabled in the wrapper functions.
-        # This implementation differs from that in sklearn.
         if debias:
-            # the order here (acc_bin - 1 ) vs (1 - acc_bin)
-            # is flipped from the equation in
-            # Verified Uncertainty Prediction (Kumar et al 2019)
             debias_bins = (acc_bin * (acc_bin - 1) * prop_bin) / (
                 prop_bin * accuracies.size()[0] - 1
             )
-            # replace nans with zeros if nothing appeared in a bin
             ce += torch.sum(torch.nan_to_num(debias_bins))
-
         return torch.sqrt(ce) if ce > 0 else torch.tensor(0)
 
     return ce
 
 
 def dim_zero_cat(x: Union[Tensor, List[Tensor]]) -> Tensor:
-    """Concatenation along the zero dimension."""
+    """
+    Concatenation along the zero dimension.
+
+    ### Parameters
+    - `x (Union[Tensor, List[Tensor]])`: The input tensor or list of tensors to concatenate.
+
+    ### Returns
+    - `Tensor`: The concatenated tensor.
+
+    ### Raises
+    - `ValueError`: If the input list is empty.
+    """
     if isinstance(x, torch.Tensor):
         return x
 
     x = [y.unsqueeze(0) if y.numel() == 1 and y.ndim == 0 else y for y in x]
 
-    if not x:  # empty list
+    if not x:
         raise ValueError("No samples to concatenate")
 
     return torch.cat(x, dim=0)
@@ -152,12 +155,28 @@ class MulticlassCalibrationError(_MultiClassCalibrationError):
         validate_args: bool = False,
         **kwargs: Any,
     ) -> None:
+        """
+        Initializes the MulticlassCalibrationError class.
+
+        ### Parameters
+        - `num_classes (int)`: Number of classes.
+        - `n_bins (int)`: Number of bins to use. Defaults to 10.
+        - `norm (Literal["l1", "sign", "l2", "max"])`: Norm function to use when computing calibration error. Defaults to "l1".
+        - `ignore_index (Optional[int])`: Index to ignore when computing. Defaults to None.
+        - `validate_args (bool)`: If True, validates the arguments. Defaults to False.
+        - `**kwargs (Any)`: Additional keyword arguments.
+        """
         super().__init__(
             num_classes, n_bins, norm, ignore_index, validate_args, **kwargs
         )
 
     def compute(self) -> Tensor:
-        """Compute metric."""
+        """
+        Compute the metric.
+
+        ### Returns
+        - `Tensor`: Computed calibration error.
+        """
         confidences = dim_zero_cat(self.confidences)
         accuracies = dim_zero_cat(self.accuracies)
 

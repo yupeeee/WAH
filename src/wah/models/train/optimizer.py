@@ -19,12 +19,12 @@ def load_optimizer(
     Loads an optimizer based on the given YAML configuration.
     See https://pytorch.org/docs/stable/optim.html#algorithms for supported optimizers.
 
-    Parameters:
-    - config (Config): YAML configuration for training.
-    - model (Module): Model to train.
+    ### Parameters
+    - `config (Config)`: YAML configuration for training.
+    - `model (Module)`: Model to train.
 
-    Returns:
-    - Optimizer: Optimizer for training.
+    ### Returns
+    - `Optimizer`: Optimizer for training.
     """
     optimizer: Optimizer = getattr(optim, config["optimizer"])
 

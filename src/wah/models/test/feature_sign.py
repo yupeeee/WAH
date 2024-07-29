@@ -36,6 +36,17 @@ def compute_negative_ratios(
     data: Tensor,
     device: Device,
 ) -> Dict[str, List[float]]:
+    """
+    Computes the negative ratios of features extracted by the feature extractor.
+
+    ### Parameters
+    - `feature_extractor (Module)`: The feature extractor model.
+    - `data (Tensor)`: The input data tensor.
+    - `device (Device)`: The device to perform computation on.
+
+    ### Returns
+    - `Dict[str, List[float]]`: A dictionary with layer names as keys and lists of negative ratios as values.
+    """
     feature_extractor.to(device)
     data = data.to(device)
 
@@ -64,6 +75,21 @@ def run(
     num_workers: int = 0,
     verbose: bool = False,
 ) -> None:
+    """
+    Runs the feature extraction and computes negative ratios across dataset.
+
+    ### Parameters
+    - `rank (int)`: The rank of the current process. Use -1 for CPU.
+    - `nprocs (int)`: The total number of processes.
+    - `feature_extractor (Module)`: The feature extractor model.
+    - `dataset (Dataset)`: The dataset to evaluate.
+    - `batch_size (int)`: The batch size for the DataLoader. Defaults to 1.
+    - `num_workers (int)`: The number of workers for the DataLoader. Defaults to 0.
+    - `verbose (bool)`: Whether to enable verbose output. Defaults to False.
+
+    ### Returns
+    - `None`
+    """
     # if rank == -1: CPU
     if rank == -1:
         rank = "cpu"
@@ -118,6 +144,20 @@ def run(
 
 
 class FeatureSignTest:
+    """
+    A class for testing the feature sign of a PyTorch model on a given dataset.
+
+    ### Attributes
+    - `batch_size (int)`: The batch size for the DataLoader. Defaults to 1.
+    - `num_workers (int)`: The number of workers for the DataLoader. Defaults to 0.
+    - `seed (Optional[int])`: The random seed for reproducibility. Defaults to 0.
+    - `use_cuda (bool)`: Whether to use CUDA for evaluation. Defaults to False.
+    - `devices (Optional[Devices])`: The devices to use for evaluation. Defaults to "auto".
+
+    ### Methods
+    - `__call__(model, dataset, verbose) -> Dict[float, List[float]]`: Evaluates the model on the given dataset and returns the negative ratios.
+    """
+
     def __init__(
         self,
         batch_size: int = 1,
@@ -126,6 +166,16 @@ class FeatureSignTest:
         use_cuda: bool = False,
         devices: Optional[Devices] = "auto",
     ) -> None:
+        """
+        Initialize the FeatureSignTest class.
+
+        ### Parameters
+        - `batch_size (int)`: The batch size for the DataLoader. Defaults to 1.
+        - `num_workers (int)`: The number of workers for the DataLoader. Defaults to 0.
+        - `seed (Optional[int])`: The random seed for reproducibility. Defaults to 0.
+        - `use_cuda (bool)`: Whether to use CUDA for evaluation. Defaults to False.
+        - `devices (Optional[Devices])`: The devices to use for evaluation. Defaults to "auto".
+        """
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.seed = seed
@@ -143,6 +193,17 @@ class FeatureSignTest:
         dataset: Dataset,
         verbose: bool = False,
     ) -> Dict[float, List[float]]:
+        """
+        Evaluates the model on the given dataset and returns the negative ratios.
+
+        ### Parameters
+        - `model (Module)`: The PyTorch model to evaluate.
+        - `dataset (Dataset)`: The dataset to evaluate the model on.
+        - `verbose (bool)`: Whether to enable verbose output. Defaults to False.
+
+        ### Returns
+        - `Dict[float, List[float]]`: The computed negative ratios.
+        """
         feature_extractor = FeatureExtractor(model.eval())
         if isinstance(dataset, ClassificationDataset):
             dataset.set_return_data_only()

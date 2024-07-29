@@ -23,40 +23,29 @@ class CIFAR100(CIFAR10):
     [CIFAR-100](https://www.cs.toronto.edu/~kriz/cifar.html) dataset.
 
     ### Attributes
-    - `root` (Path):
-      Root directory where the dataset exists or will be saved to.
-    - `transform` (Callable, optional):
-      A function/transform that takes in the data and transforms it.
-      If None, no transformation is performed. Defaults to None.
-    - `target_transform` (Callable, optional):
-      A function/transform that takes in the target and transforms it.
-      If None, no transformation is performed. Defaults to None.
-    - `data`:
-      Data of the dataset.
-    - `targets`:
-      Targets of the dataset.
-    - `labels`:
-      Labels of the dataset.
-    - `MEAN` (list):
-      mean of dataset; [0.5071, 0.4866, 0.4409].
-    - `STD` (list):
-      std of dataset; [0.2673, 0.2564, 0.2762].
-    - `NORMALIZE` (callable):
-      transform for dataset normalization.
+    - `root` (Path): Root directory where the dataset exists or will be saved to.
+    - `transform` (Callable, optional): A function/transform that takes in the data and transforms it. Defaults to None.
+    - `target_transform` (Callable, optional): A function/transform that takes in the target and transforms it. Defaults to None.
+    - `data`: Data of the dataset.
+    - `targets`: Targets of the dataset.
+    - `labels`: Labels of the dataset.
+    - `MEAN` (list): Mean of dataset; [0.5071, 0.4866, 0.4409].
+    - `STD` (list): Standard deviation of dataset; [0.2673, 0.2564, 0.2762].
+    - `NORMALIZE` (callable): Transform for dataset normalization.
 
     ### Methods
-    - `__getitem__`:
-      Returns (data, target) of dataset using the specified index.
-    - `__len__`:
-      Returns the size of the dataset.
-    - `set_return_data_only`:
-      Sets the flag to return only data without targets.
-    - `unset_return_data_only`:
-      Unsets the flag to return only data without targets.
+    - `__getitem__(index) -> Tuple[Any, Any]`: Returns (data, target) of dataset using the specified index.
+    - `__len__() -> int`: Returns the size of the dataset.
+    - `set_return_data_only() -> None`: Sets the flag to return only data without targets.
+    - `unset_return_data_only() -> None`: Unsets the flag to return only data without targets.
+    - `set_return_w_index() -> None`: Sets the flag to return data with index.
+    - `unset_return_w_index() -> None`: Unsets the flag to return data with index.
 
     ### Example
     ```python
-    dataset = CIFAR100(root="path/to/dataset")
+    import wah
+
+    dataset = wah.datasets.CIFAR100(root="path/to/dataset")
     data, target = dataset[0]
     num_data = len(dataset)
     ```
@@ -123,20 +112,50 @@ class CIFAR100(CIFAR10):
         ] = None,
         target_transform: Union[Optional[Callable], Literal["auto",]] = None,
         return_data_only: Optional[bool] = False,
+        return_w_index: Optional[bool] = False,
         download: bool = False,
     ) -> None:
+        """
+        Initialize the CIFAR-100 dataset.
+
+        ### Parameters
+        - `root` (Path): Root directory where the dataset exists or will be saved to.
+        - `split` (Literal["train", "test"]): The dataset split; supports "train" (default), and "test".
+        - `transform` (Union[Optional[Callable], Literal["auto", "tt", "train", "test"]]): A function/transform that takes in the data and transforms it.
+          Supports "auto", "tt", "train", "test", and None (default).
+          - "auto": Automatically initializes the transform based on the dataset type and `split`.
+          - "tt": Converts data into a tensor image.
+          - "train": Transform to use in the train stage.
+          - "test": Transform to use in the test stage.
+          - None (default): No transformation is applied.
+        - `target_transform` (Union[Optional[Callable], Literal["auto"]]): A function/transform that takes in the target and transforms it.
+          Supports "auto", and None (default).
+          - "auto": Automatically initializes the transform based on the dataset type and `split`.
+          - None (default): No transformation is applied.
+        - `return_data_only` (Optional[bool]): Whether to return only data without targets. Defaults to False.
+        - `return_w_index` (Optional[bool]): Whether to return data with index. Defaults to False.
+        - `download` (bool): If True, downloads the dataset from the internet and puts it into the `root` directory.
+          If the dataset is already downloaded, it is not downloaded again.
+        """
         super().__init__(
             root,
             split,
             transform,
             target_transform,
             return_data_only,
+            return_w_index,
             download,
         )
 
     def _initialize(
         self,
     ) -> None:
+        """
+        Initializes the CIFAR-100 dataset.
+
+        ### Returns
+        - `None`
+        """
         self.data = []
         self.targets = []
 

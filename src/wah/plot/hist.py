@@ -23,18 +23,13 @@ def _hist(
     Computes the histogram of the given data.
 
     ### Parameters
-    - `x` (Iterable[float]):
-      The data to compute the histogram for.
-    - `x_min` (float):
-      The minimum value of the bins.
-    - `x_max` (float):
-      The maximum value of the bins.
-    - `num_bins` (int):
-      The number of bins.
+    - `x (Iterable[float])`: The data to compute the histogram for.
+    - `x_min (float)`: The minimum value of the bins.
+    - `x_max (float)`: The maximum value of the bins.
+    - `num_bins (int)`: The number of bins.
 
     ### Returns
-    - `Tuple[Iterable[float], Iterable[float]]`:
-      A tuple containing the bin edges and the normalized histogram values.
+    - `Tuple[Iterable[float], Iterable[float]]`: A tuple containing the bin edges and the normalized histogram values.
 
     ### Notes
     - This function computes the histogram of the given data and normalizes it by the total number of data points.
@@ -52,12 +47,9 @@ class HistPlot2D(Plot2D):
     A class for creating 2D histogram plots with customizable settings.
 
     ### Methods
-    - `plot`:
-      Creates the plot with the specified settings.
-    - `show`:
-      Displays the plot.
-    - `save`:
-      Saves the plot to the specified path with optional settings.
+    - `plot`: Creates the plot with the specified settings.
+    - `show`: Displays the plot.
+    - `save`: Saves the plot to the specified path with optional settings.
     """
 
     def __init__(

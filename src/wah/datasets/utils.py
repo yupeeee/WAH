@@ -29,28 +29,20 @@ def mean_and_std(
     Computes the mean and standard deviation of the dataset.
 
     ### Parameters
-    - `dataset` (Dataset):
-      The dataset for which to compute the mean and standard deviation.
-      Note that the dataset must contain data of type `torch.Tensor` for computation.
-    - `data_shape` (str):
-      The shape format of the data in the dataset. Defaults to "CHW".
+    - `dataset` (Dataset): The dataset for which to compute the mean and standard deviation. Note that the dataset must contain data of type `torch.Tensor` for computation.
+    - `data_shape` (Literal["CHW", "HWC", "HW"]): The shape format of the data in the dataset. Defaults to "CHW".
         - "CHW": Channels-Height-Width
         - "HWC": Height-Width-Channels
         - "HW": Height-Width (grayscale images)
 
     ### Returns
-    - Tensor:
-      The mean value of the dataset.
-    - Tensor:
-      The standard deviation of the dataset.
+    - `Tuple[Tensor, Tensor]`: The mean and standard deviation of the dataset.
 
     ### Raises
-    - ValueError:
-      If an unsupported data_shape is provided.
+    - `ValueError`: If an unsupported `data_shape` is provided.
 
     ### Notes
-    - The dataset must contain data of type `torch.Tensor` for computation.
-      For instance, use `torchvision.transforms.ToTensor()` to transform PIL Image data into tensor format.
+    - The dataset must contain data of type `torch.Tensor` for computation. For instance, use `torchvision.transforms.ToTensor()` to transform PIL Image data into tensor format.
     - The data is converted to float32 before computing mean and standard deviation.
 
     ### Example
@@ -101,33 +93,21 @@ def portion_dataset(
     Creates a subset of the given dataset based on the specified portion.
 
     ### Parameters
-    - `dataset` (Dataset):
-      The dataset from which to create the subset.
-    - `portion` (float):
-      The portion of the dataset to include in the subset. Must be in range (0, 1].
-    - `balanced` (bool, optional):
-      Whether to create a balanced subset.
-      If True, the subset will have a balanced number of samples from each class.
-      Defaults to True.
-    - `random_sample` (bool, optional):
-      Whether to randomly sample the indices.
-      If False, the subset will include the first `portion` of the dataset.
-      Defaults to False.
+    - `dataset` (Dataset): The dataset from which to create the subset.
+    - `portion` (float): The portion of the dataset to include in the subset. Must be in range (0, 1].
+    - `balanced` (Optional[bool]): Whether to create a balanced subset. If True, the subset will have a balanced number of samples from each class. Defaults to True.
+    - `random_sample` (Optional[bool]): Whether to randomly sample the indices. If False, the subset will include the first `portion` of the dataset. Defaults to False.
 
     ### Returns
-    - `Dataset`:
-      A subset of the original dataset based on the specified portion.
+    - `Dataset`: A subset of the original dataset based on the specified portion.
 
     ### Raises
-    - `AssertionError`:
-      If `portion` is not in range (0, 1].
-    - `AssertionError`:
-      If `balanced` is True and the dataset does not have targets.
+    - `AssertionError`: If `portion` is not in range (0, 1].
+    - `AssertionError`: If `balanced` is True and the dataset does not have targets.
 
     ### Notes
     - When `balanced` is True, the dataset must have a 'targets' attribute containing the labels for balancing.
-    - When `random_sample` is True, the function will randomly select samples.
-      This can lead to different subsets on different runs.
+    - When `random_sample` is True, the function will randomly select samples. This can lead to different subsets on different runs.
 
     ### Example
     ```python
@@ -161,7 +141,6 @@ def portion_dataset(
 
             if random_sample:
                 c_indices = random.sample(c_indices, num_c)
-
             else:
                 c_indices = c_indices[:num_c]
 
@@ -172,7 +151,6 @@ def portion_dataset(
 
         if random_sample:
             indices = random.sample([i for i in range(len(dataset))], num_data)
-
         else:
             indices = [i for i in range(len(dataset))][:num_data]
 

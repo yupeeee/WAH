@@ -1,25 +1,15 @@
 import torch
 
 from ..typing import (
-    Path,
     Tensor,
 )
 
 __all__ = [
-    "save",
     "isvec",
     "repeat",
     "mat_eprod_vec",
     "flatten_batch",
 ]
-
-
-def save(
-    x: Tensor,
-    path: Path,
-    **kwargs,
-) -> None:
-    torch.save(x, path, **kwargs)
 
 
 def isvec(
@@ -29,12 +19,10 @@ def isvec(
     Checks if the given tensor is a vector (1-dimensional).
 
     ### Parameters
-    - `x` (Tensor):
-      The tensor to check.
+    - `x (Tensor)`: The tensor to check.
 
     ### Returns
-    - `bool`:
-      `True` if the tensor is 1-dimensional, otherwise `False`.
+    - `bool`: `True` if the tensor is 1-dimensional, otherwise `False`.
 
     ### Notes
     - A tensor is considered a vector if it has exactly one dimension.
@@ -51,17 +39,12 @@ def repeat(
     Repeats a tensor along a specified dimension.
 
     ### Parameters
-    - `x` (Tensor):
-      The tensor to repeat.
-    - `repeat` (int):
-      The number of times to repeat the tensor.
-    - `dim` (int):
-      The dimension along which to repeat the tensor.
-      Defaults to 0.
+    - `x (Tensor)`: The tensor to repeat.
+    - `repeat (int)`: The number of times to repeat the tensor.
+    - `dim (int)`: The dimension along which to repeat the tensor. Defaults to 0.
 
     ### Returns
-    - `Tensor`:
-      The repeated tensor.
+    - `Tensor`: The repeated tensor.
 
     ### Notes
     - This function unsqueezes the tensor along the specified dimension before repeating it.
@@ -83,20 +66,15 @@ def mat_eprod_vec(
     Performs element-wise multiplication of a matrix and a vector along a specified dimension.
 
     ### Parameters
-    - `mat` (Tensor):
-      The matrix tensor.
-    - `vec` (Tensor):
-      The vector tensor.
-    - `dim` (int):
-      The dimension along which to multiply the matrix with the vector.
+    - `mat (Tensor)`: The matrix tensor.
+    - `vec (Tensor)`: The vector tensor.
+    - `dim (int)`: The dimension along which to multiply the matrix with the vector.
 
     ### Returns
-    - `Tensor`:
-      The resulting tensor after element-wise multiplication.
+    - `Tensor`: The resulting tensor after element-wise multiplication.
 
     ### Raises
-    - `AssertionError`:
-      If `vec` is not a vector or if the size of `vec` does not match the specified dimension of `mat`.
+    - `AssertionError`: If `vec` is not a vector or if the size of `vec` does not match the specified dimension of `mat`.
 
     ### Notes
     - This function expands the vector to match the shape of the matrix along the specified dimension before performing element-wise multiplication.
@@ -117,12 +95,10 @@ def flatten_batch(batch) -> Tensor:
     Flattens a batch tensor.
 
     ### Parameters
-    - `batch` (Union[Tensor, tuple]):
-      The input batch tensor or tuple of tensors to flatten.
+    - `batch (Union[Tensor, tuple])`: The input batch tensor or tuple of tensors to flatten.
 
     ### Returns
-    - `Tensor`:
-      The flattened batch tensor.
+    - `Tensor`: The flattened batch tensor.
 
     ### Notes
     - If the input `batch` is a tuple, it concatenates the non-`None` elements along the first dimension.

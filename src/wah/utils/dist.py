@@ -23,6 +23,7 @@ __all__ = [
     "init_os_env",
     "init_dist",
     "cleanup",
+    "barrier",
     "Queue",
     "set_start_method",
     "run_fn",
@@ -38,21 +39,17 @@ def parse_devices(
     Parses and validates the specified devices for CUDA computation.
 
     ### Parameters
-    - `devices` (Union[int, str, List[Union[int, str]]]):
-      The devices to be used.
+    - `devices (Union[int, str, List[Union[int, str]]])`: The devices to be used.
         - Can be "auto" to automatically use all available CUDA devices.
         - Can be a single int or str representing a device ID.
         - Can be a list of ints or strs representing multiple device IDs.
 
     ### Returns
-    - `Union[List[int], str]`:
-      A sorted list of device IDs if valid, or raises a ValueError if the input is invalid.
+    - `Union[List[int], str]`: A sorted list of device IDs if valid, or raises a ValueError if the input is invalid.
 
     ### Raises
-    - `AssertionError`:
-      If no CUDA devices are available.
-    - `ValueError`:
-      If the input devices are not in a valid format.
+    - `AssertionError`: If no CUDA devices are available.
+    - `ValueError`: If the input devices are not in a valid format.
 
     ### Notes
     - The function assumes that at least one CUDA device is available.
@@ -111,14 +108,12 @@ def set_backend() -> str:
     Automatically sets the backend for distributed computing based on the current operating system.
 
     ### Returns
-    - `str`:
-      The backend to be used for distributed computing.
+    - `str`: The backend to be used for distributed computing.
         - "nccl" for Linux.
         - "gloo" for Windows.
 
     ### Raises
-    - `SystemError`:
-      If the function is run on an unsupported operating system.
+    - `SystemError`: If the function is run on an unsupported operating system.
 
     ### Notes
     - This function supports automatic backend initialization only for Linux and Windows.
@@ -146,14 +141,9 @@ def init_os_env(
     Initializes the environment variables for distributed computing.
 
     ### Parameters
-    - `devices` (List[int]):
-      A list of device IDs to be made visible to CUDA.
-    - `master_addr` (str):
-      The address of the master node.
-      Defaults to "localhost".
-    - `master_port` (int):
-      The port of the master node.
-      Defaults to 12345.
+    - `devices (List[int])`: A list of device IDs to be made visible to CUDA.
+    - `master_addr (str)`: The address of the master node. Defaults to "localhost".
+    - `master_port (int)`: The port of the master node. Defaults to 12345.
 
     ### Returns
     - `None`
@@ -166,27 +156,21 @@ def init_os_env(
 def init_dist(
     rank: int,
     nprocs: int,
-    # backend: str = "nccl",
     init_method: str = "env://",
 ) -> None:
     """
     Initializes the distributed computing environment.
 
     ### Parameters
-    - `rank` (int):
-      The rank of the current process.
-    - `nprocs` (int):
-      The total number of processes.
-    - `init_method` (str):
-      The initialization method for the process group.
-      Defaults to "env://".
+    - `rank (int)`: The rank of the current process.
+    - `nprocs (int)`: The total number of processes.
+    - `init_method (str)`: The initialization method for the process group. Defaults to "env://".
 
     ### Returns
     - `None`
 
     ### Raises
-    - `SystemError`:
-      If the backend is not supported on the current operating system.
+    - `SystemError`: If the backend is not supported on the current operating system.
     """
     backend = set_backend()
 
@@ -218,6 +202,15 @@ def cleanup() -> None:
 
 
 def barrier() -> None:
+    """
+    Synchronizes all processes in the distributed group by blocking each until all processes have reached this function.
+
+    ### Parameters
+    - `None`
+
+    ### Returns
+    - `None`
+    """
     dist.barrier()
 
 
@@ -255,14 +248,10 @@ def run_fn(
     Runs a function across multiple processes using multiprocessing.
 
     ### Parameters
-    - `fn` (Any):
-      The function to be executed in multiple processes.
-    - `args` (Any):
-      The arguments to pass to the function.
-    - `nprocs` (int):
-      The number of processes to spawn.
-    - `**kwargs`:
-      Additional keyword arguments to pass to `mp.spawn`.
+    - `fn (Any)`: The function to be executed in multiple processes.
+    - `args (Any)`: The arguments to pass to the function.
+    - `nprocs (int)`: The number of processes to spawn.
+    - `**kwargs`: Additional keyword arguments to pass to `mp.spawn`.
 
     ### Returns
     - `None`
@@ -272,7 +261,7 @@ def run_fn(
     - If an exception occurs (e.g., due to a SIGSEGV error), it falls back to manually starting and joining processes.
     """
     try:
-        mp.spawn(fn, args, nprocs, join=True, **kwargs)
+        mp.spawn(fn, args=args, nprocs=nprocs, join=True, **kwargs)
 
     # [FIX1] Replace mp.spawn to start/join due to SIGSEGV error
     except:
@@ -298,18 +287,13 @@ def load_dataloader(
     Loads a DataLoader for the given dataset with distributed sampling.
 
     ### Parameters
-    - `rank` (int):
-      The rank of the current process.
-    - `nprocs` (int):
-      The total number of processes.
-    - `dataset` (Dataset):
-      The dataset to load.
-    - `**kwargs`:
-      Additional keyword arguments to pass to the DataLoader.
+    - `rank (int)`: The rank of the current process.
+    - `nprocs (int)`: The total number of processes.
+    - `dataset (Dataset)`: The dataset to load.
+    - `**kwargs`: Additional keyword arguments to pass to the DataLoader.
 
     ### Returns
-    - `DataLoader`:
-      A DataLoader configured with distributed sampling.
+    - `DataLoader`: A DataLoader configured with distributed sampling.
 
     ### Notes
     - This function creates a `DistributedSampler` for the dataset to ensure that each process gets a unique subset of the data.
@@ -329,14 +313,11 @@ def load_model(
     Loads the model onto the specified device and wraps it with DistributedDataParallel (DDP).
 
     ### Parameters
-    - `rank` (int):
-      The rank of the current process, which determines the device ID.
-    - `model` (Module):
-      The PyTorch model to be loaded and wrapped with DDP.
+    - `rank (int)`: The rank of the current process, which determines the device ID.
+    - `model (Module)`: The PyTorch model to be loaded and wrapped with DDP.
 
     ### Returns
-    - `Module`:
-      The model loaded onto the specified device and wrapped with DDP.
+    - `Module`: The model loaded onto the specified device and wrapped with DDP.
 
     ### Notes
     - This function moves the model to the device corresponding to the given rank.

@@ -27,11 +27,11 @@ def as_attr(
     that are not suitable for an identifier or numeric, and prefixes it with an underscore
     (ensuring it can safely be used as a private attribute name).
 
-    Parameters:
-    - name (str): Input string to be converted.
+    ### Parameters
+    - `name (str)`: Input string to be converted.
 
-    Returns:
-    - str: A string suitable to be used as a private attribute name, prefixed with an underscore.
+    ### Returns
+    - `str`: A string suitable to be used as a private attribute name, prefixed with an underscore.
     """
     attr: str = "".join(filter(lambda c: str.isidentifier(c) or str.isdecimal(c), name))
 
@@ -45,6 +45,12 @@ class MetricLoader:
         self,
         config: Config,
     ) -> None:
+        """
+        Initializes the MetricLoader with the given configuration.
+
+        ### Parameters
+        - `config (Config)`: The configuration object containing settings for metrics.
+        """
         self.config = config
 
     def __call__(
@@ -54,14 +60,17 @@ class MetricLoader:
         """
         Loads a metric based on the given name.
 
-        Parameters:
-        - name (str): metric to load.
-        Supported metrics are:
+        ### Parameters
+        - `name (str)`: The name of the metric to load.
+          Supported metrics are:
             - "acc@`int`"
             - "ce@`l1 | sign | l2 | max`"
 
-        Returns:
-        - Metric: Metric to monitor in training.
+        ### Returns
+        - `Metric`: The metric instance to monitor in training.
+
+        ### Raises
+        - `ValueError`: If the metric name is unsupported.
         """
         if "acc@" in name:
             assert self.config["task"] == "classification"
@@ -95,11 +104,11 @@ def load_metrics(
     The function uses a `MetricLoader` instance to dynamically fetch each specified metric
     and stores them in a list along with their names.
 
-    Parameters:
-    - config (Config): YAML configuration for training.
+    ### Parameters
+    - `config (Config)`: YAML configuration for training.
 
-    Returns:
-    - List: A list of tuples, where each tuple contains the metric name (as a string) and an initialized metric instance.
+    ### Returns
+    - `List[Tuple[str, Metric]]`: A list of tuples, where each tuple contains the metric name (as a string) and an initialized metric instance.
     """
     metrics: List[Tuple[str, Metric]] = []
 

@@ -22,11 +22,8 @@ def sort_str_list(
     Sorts a list of strings in natural order, optionally returning the sorted indices.
 
     ### Parameters
-    - `str_list` (List[str]):
-      The list of strings to sort.
-    - `return_indices` (bool):
-      Whether to return the sorted indices along with the sorted list.
-      Defaults to `False`.
+    - `str_list (List[str])`: The list of strings to sort.
+    - `return_indices (bool)`: Whether to return the sorted indices along with the sorted list. Defaults to `False`.
 
     ### Returns
     - `Union[List[str], Tuple[List[str], List[int]]]`:

@@ -19,21 +19,15 @@ def get_mixup_cutmix(
     Creates a transform for mixup and cutmix data augmentation based on the provided parameters.
 
     ### Parameters
-    - `mixup_alpha` (float):
-      The alpha parameter for mixup augmentation.
-      A value greater than 0.0 enables mixup.
-    - `cutmix_alpha` (float):
-      The alpha parameter for cutmix augmentation.
-      A value greater than 0.0 enables cutmix.
-    - `num_classes` (int):
-      The number of classes in the dataset.
+    - `mixup_alpha` (float): The alpha parameter for mixup augmentation. A value greater than 0.0 enables mixup.
+    - `cutmix_alpha` (float): The alpha parameter for cutmix augmentation. A value greater than 0.0 enables cutmix.
+    - `num_classes` (int): The number of classes in the dataset.
 
     ### Returns
-    - `Transform`:
-      A composite transform that applies mixup and/or cutmix augmentations based on the specified alphas.
-        - If both mixup_alpha and cutmix_alpha are 0.0, returns None.
-        - If only one of mixup_alpha or cutmix_alpha is greater than 0.0, returns the corresponding transform.
-        - If both mixup_alpha and cutmix_alpha are greater than 0.0, returns a random choice between mixup and cutmix transforms.
+    - `Transform`: A composite transform that applies mixup and/or cutmix augmentations based on the specified alphas.
+        - If both `mixup_alpha` and `cutmix_alpha` are 0.0, returns None.
+        - If only one of `mixup_alpha` or `cutmix_alpha` is greater than 0.0, returns the corresponding transform.
+        - If both `mixup_alpha` and `cutmix_alpha` are greater than 0.0, returns a random choice between mixup and cutmix transforms.
     """
     mixup_cutmix = []
 
@@ -59,17 +53,14 @@ def get_mixup_cutmix(
 
 class CollateFunction:
     """
-    A collate function class for data augmentation using MixUp and CutMix techniques.
+    A collate function class for data augmentation using [MixUp](https://arxiv.org/abs/1710.09412) and [CutMix](https://arxiv.org/abs/1905.04899) techniques.
 
     ### Attributes
-    - `collate_fn` (callable):
-      Default collate function used to combine a list of samples into a mini-batch.
-    - `mixup_cutmix` (callable or None):
-      Function to apply MixUp or CutMix augmentations, or None if neither is to be applied.
+    - `collate_fn` (callable): Default collate function used to combine a list of samples into a mini-batch.
+    - `mixup_cutmix` (callable or None): Function to apply MixUp or CutMix augmentations, or None if neither is to be applied.
 
     ### Methods
-    - `__call__`:
-      Calls the collate function on the batch, applying MixUp or CutMix if applicable.
+    - `__call__(batch) -> Tensor`: Calls the collate function on the batch, applying MixUp or CutMix if applicable.
     """
 
     def __init__(
@@ -79,12 +70,12 @@ class CollateFunction:
         num_classes: int,
     ) -> None:
         """
-        - `mixup_alpha` (float):
-          Parameter for MixUp alpha value.
-        - `cutmix_alpha` (float):
-          Parameter for CutMix alpha value.
-        - `num_classes` (int):
-          Number of classes in the dataset.
+        Initialize the CollateFunction with MixUp and CutMix parameters.
+
+        ### Parameters
+        - `mixup_alpha` (float): Parameter for MixUp alpha value.
+        - `cutmix_alpha` (float): Parameter for CutMix alpha value.
+        - `num_classes` (int): Number of classes in the dataset.
         """
         self.collate_fn = default_collate
 
@@ -98,7 +89,25 @@ class CollateFunction:
             self.collate_fn = self._collate_fn
 
     def _collate_fn(self, batch):
+        """
+        Applies the MixUp or CutMix transform to the batch.
+
+        ### Parameters
+        - `batch` (list): List of samples in the batch.
+
+        ### Returns
+        - `Tensor`: The transformed batch.
+        """
         return self.mixup_cutmix(*default_collate(batch))
 
     def __call__(self, batch):
+        """
+        Calls the collate function on the batch, applying MixUp or CutMix if applicable.
+
+        ### Parameters
+        - `batch` (list): List of samples in the batch.
+
+        ### Returns
+        - `Tensor`: The collated batch with optional MixUp or CutMix applied.
+        """
         return self.collate_fn(batch)

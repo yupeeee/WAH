@@ -7,12 +7,14 @@ from ...typing import (
     DataLoader,
     Dataset,
     Devices,
+    Dict,
     List,
     Literal,
     Module,
     Optional,
     Path,
     Tensor,
+    Union,
 )
 from ...datasets.base import ClassificationDataset
 from ...utils import dist
@@ -22,16 +24,29 @@ from ..load import load_state_dict
 
 __all__ = [
     "LossTest",
-    "LossPlot",
+    "LossTests",
 ]
 
 temp_dir = "wahtmpdir@LossTest"
 
 
 def set_loss_fn(
-    loss: Literal["ce",],
+    loss: Literal["ce"],
     **kwargs,
 ) -> Module:
+    """
+    Sets the loss function for evaluation.
+
+    ### Parameters
+    - `loss (Literal["ce"])`: The type of loss function to use. Currently only "ce" (CrossEntropyLoss) is supported.
+    - `**kwargs`: Additional keyword arguments for the loss function.
+
+    ### Returns
+    - `Module`: The loss function module.
+
+    ### Raises
+    - `ValueError`: If an unsupported loss type is provided.
+    """
     if loss == "ce":
         return torch.nn.CrossEntropyLoss(reduction="none", **kwargs)
     else:
@@ -49,6 +64,23 @@ def run(
     verbose: bool = False,
     desc: Optional[str] = None,
 ) -> None:
+    """
+    Runs the loss computation on the given dataset.
+
+    ### Parameters
+    - `rank (int)`: The rank of the current process. Use -1 for CPU.
+    - `nprocs (int)`: The total number of processes.
+    - `model (Module)`: The PyTorch model to evaluate.
+    - `dataset (Dataset)`: The dataset to evaluate the model on.
+    - `loss_fn (Module)`: The loss function to use for evaluation.
+    - `batch_size (int)`: The batch size for the DataLoader. Defaults to 1.
+    - `num_workers (int)`: The number of workers for the DataLoader. Defaults to 0.
+    - `verbose (bool)`: Whether to enable verbose output. Defaults to False.
+    - `desc (Optional[str])`: Description for the progress bar. Defaults to None.
+
+    ### Returns
+    - `None`
+    """
     # if rank == -1: CPU
     if rank == -1:
         rank = torch.device("cpu")
@@ -107,14 +139,38 @@ def run(
 
 
 class LossTest:
+    """
+    A class for testing the loss of a PyTorch model on a given dataset.
+
+    ### Attributes
+    - `loss_fn (Module)`: The loss function module.
+    - `batch_size (int)`: The batch size for the DataLoader. Defaults to 1.
+    - `num_workers (int)`: The number of workers for the DataLoader. Defaults to 0.
+    - `use_cuda (bool)`: Whether to use CUDA for evaluation. Defaults to False.
+    - `devices (Optional[Devices])`: The devices to use for evaluation. Defaults to "auto".
+
+    ### Methods
+    - `__call__(model, dataset, verbose, desc) -> Dict[str, Union[int, float]]`: Evaluates the model on the given dataset and returns the computed loss.
+    """
+
     def __init__(
         self,
-        loss: Literal["ce",] = "ce",
+        loss: Literal["ce"] = "ce",
         batch_size: int = 1,
         num_workers: int = 0,
         use_cuda: bool = False,
         devices: Optional[Devices] = "auto",
     ) -> None:
+        """
+        Initialize the LossTest class.
+
+        ### Parameters
+        - `loss (Literal["ce"])`: The type of loss function to use. Currently only "ce" (CrossEntropyLoss) is supported.
+        - `batch_size (int)`: The batch size for the DataLoader. Defaults to 1.
+        - `num_workers (int)`: The number of workers for the DataLoader. Defaults to 0.
+        - `use_cuda (bool)`: Whether to use CUDA for evaluation. Defaults to False.
+        - `devices (Optional[Devices])`: The devices to use for evaluation. Defaults to "auto".
+        """
         self.loss_fn = set_loss_fn(loss=loss)
         self.batch_size = batch_size
         self.num_workers = num_workers
@@ -131,7 +187,19 @@ class LossTest:
         dataset: Dataset,
         verbose: bool = False,
         desc: Optional[str] = None,
-    ) -> float:
+    ) -> Dict[str, Union[int, float]]:
+        """
+        Evaluates the model on the given dataset and returns the computed loss.
+
+        ### Parameters
+        - `model (Module)`: The PyTorch model to evaluate.
+        - `dataset (Dataset)`: The dataset to evaluate the model on.
+        - `verbose (bool)`: Whether to enable verbose output. Defaults to False.
+        - `desc (Optional[str])`: Description for the progress bar. Defaults to None.
+
+        ### Returns
+        - `Dict[str, Union[int, float]]`: The computed loss and indices.
+        """
         model.eval()
         if isinstance(dataset, ClassificationDataset):
             dataset.set_return_w_index()
@@ -196,15 +264,35 @@ class LossTest:
         }
 
 
-class LossPlot:
+class LossTests:
+    """
+    A class for running loss tests across multiple checkpoints of a PyTorch model.
+
+    ### Attributes
+    - `test (LossTest)`: An instance of the LossTest class.
+
+    ### Methods
+    - `__call__(model, dataset, ckpt_dir, verbose, desc) -> float`: Evaluates the model across multiple checkpoints and returns the computed losses.
+    """
+
     def __init__(
         self,
-        loss: Literal["ce",] = "ce",
+        loss: Literal["ce"] = "ce",
         batch_size: int = 1,
         num_workers: int = 0,
         use_cuda: bool = False,
         devices: Optional[Devices] = "auto",
     ) -> None:
+        """
+        Initialize the LossTests class.
+
+        ### Parameters
+        - `loss (Literal["ce"])`: The type of loss function to use. Currently only "ce" (CrossEntropyLoss) is supported.
+        - `batch_size (int)`: The batch size for the DataLoader. Defaults to 1.
+        - `num_workers (int)`: The number of workers for the DataLoader. Defaults to 0.
+        - `use_cuda (bool)`: Whether to use CUDA for evaluation. Defaults to False.
+        - `devices (Optional[Devices])`: The devices to use for evaluation. Defaults to "auto".
+        """
         self.test = LossTest(
             loss=loss,
             batch_size=batch_size,
@@ -221,6 +309,19 @@ class LossPlot:
         verbose: bool = False,
         desc: Optional[str] = None,
     ) -> float:
+        """
+        Evaluates the model across multiple checkpoints and returns the computed losses.
+
+        ### Parameters
+        - `model (Module)`: The PyTorch model to evaluate.
+        - `dataset (Dataset)`: The dataset to evaluate the model on.
+        - `ckpt_dir (Path)`: The directory containing the model checkpoints.
+        - `verbose (bool)`: Whether to enable verbose output. Defaults to False.
+        - `desc (Optional[str])`: Description for the progress bar. Defaults to None.
+
+        ### Returns
+        - `float`: The computed losses across checkpoints.
+        """
         ckpt_fnames = ls(ckpt_dir, fext=".ckpt", sort=True)
         ckpt_fnames = [fname for fname in ckpt_fnames if "epoch=" in fname]
 

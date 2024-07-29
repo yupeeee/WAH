@@ -19,12 +19,10 @@ def unzip_mode(
     Determines the mode to use for extracting archives based on their file extension.
 
     ### Parameters
-    - `ext` (str):
-      The file extension of the archive.
+    - `ext` (str): The file extension of the archive.
 
     ### Returns
-    - `str`:
-      The mode to use for extracting the archive.
+    - `str`: The mode to use for extracting the archive.
 
     ### Notes
     - Supports `.zip`, `.tar`, `.gz`, and `.xz` extensions.
@@ -50,10 +48,8 @@ def extract(
     Extracts the contents of an archive to the specified directory.
 
     ### Parameters
-    - `fpath` (Path):
-      The path to the archive file.
-    - `save_dir` (Path, optional):
-      The directory where the contents will be extracted. Defaults to the directory of the archive file.
+    - `fpath` (Path): The path to the archive file.
+    - `save_dir` (Path, optional): The directory where the contents will be extracted. Defaults to the directory of the archive file.
 
     ### Returns
     - `None`
@@ -68,14 +64,12 @@ def extract(
 
     if save_dir is None:
         save_dir = os.path.dirname(fpath)
-
     else:
         os.makedirs(save_dir, exist_ok=True)
 
     if ext == ".zip":
         with zipfile.ZipFile(fpath, mode) as f:
             f.extractall(save_dir)
-
     else:
         with tarfile.open(fpath, mode) as f:
             f.extractall(save_dir)

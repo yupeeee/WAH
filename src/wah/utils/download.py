@@ -47,15 +47,10 @@ def urlretrieve(
     Downloads a file from a URL and saves it to the specified path with a progress bar.
 
     ### Parameters
-    - `url` (str):
-      The URL of the file to download.
-    - `fpath` (Path):
-      The path where the downloaded file will be saved.
-    - `chunk_size` (int):
-      The size of each chunk to read during download.
-      Defaults to 32 KB.
-    - `**kwargs`:
-      Additional keyword arguments to pass to `tqdm`.
+    - `url (str)`: The URL of the file to download.
+    - `fpath (Path)`: The path where the downloaded file will be saved.
+    - `chunk_size (int)`: The size of each chunk to read during download. Defaults to 32 KB.
+    - `**kwargs`: Additional keyword arguments to pass to `tqdm`.
 
     ### Returns
     - `None`
@@ -83,23 +78,17 @@ def check(
     Verifies the checksum of a file.
 
     ### Parameters
-    - `fpath` (Path):
-      The path to the file to check.
-    - `checksum` (str):
-      The expected MD5 checksum of the file.
-    - `chunk_size` (int):
-      The size of each chunk to read during check.
-      Defaults to 32 KB.
+    - `fpath (Path)`: The path to the file to check.
+    - `checksum (str)`: The expected MD5 checksum of the file.
+    - `chunk_size (int)`: The size of each chunk to read during check. Defaults to 32 KB.
 
     ### Returns
-    - `bool`:
-      `True` if the file's checksum matches the expected checksum, otherwise `False`.
+    - `bool`: `True` if the file's checksum matches the expected checksum, otherwise `False`.
 
     ### Notes
     - This function reads the file in binary mode and computes its MD5 checksum.
     - It compares the computed checksum with the expected checksum.
     """
-
     with open(fpath, "rb") as f:
         h = hashlib.md5()
 
@@ -124,14 +113,11 @@ def download_url(
     Downloads a file from the given URL to the specified root directory.
 
     ### Parameters
-    - `url` (str):
-      The URL of the file to download.
-    - `root` (Path):
-      The root directory where the file will be saved.
+    - `url (str)`: The URL of the file to download.
+    - `root (Path)`: The root directory where the file will be saved.
 
     ### Returns
-    - `Path`:
-      The file path where the downloaded file is saved.
+    - `Path`: The file path where the downloaded file is saved.
 
     ### Notes
     - This function checks if the file has already been downloaded to avoid redundant downloads.

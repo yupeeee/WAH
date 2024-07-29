@@ -22,12 +22,10 @@ def _dict_to_mat(
     Converts a dictionary of data to a matrix format suitable for plotting.
 
     ### Parameters
-    - `data_dict` (Dict[float, List[float]]):
-      A dictionary where keys are floats and values are lists of floats.
+    - `data_dict (Dict[float, List[float]])`: A dictionary where keys are floats and values are lists of floats.
 
     ### Returns
-    - `Tuple[List[float], np.ndarray]`:
-      A tuple containing a list of keys and a 2D numpy array of values.
+    - `Tuple[List[float], np.ndarray]]`: A tuple containing a list of keys and a 2D numpy array of values.
 
     ### Notes
     - The function ensures the values are converted to a 2D numpy array.
@@ -51,12 +49,9 @@ class DistPlot2D(Plot2D):
     A class for creating 2D distribution plots (mean, min, max, and quartile values) with customizable settings.
 
     ### Methods
-    - `plot`:
-      Creates the plot with the specified settings.
-    - `show`:
-      Displays the plot.
-    - `save`:
-      Saves the plot to the specified path with optional settings.
+    - `plot`: Creates the plot with the specified settings.
+    - `show`: Displays the plot.
+    - `save`: Saves the plot to the specified path with optional settings.
     """
 
     def __init__(

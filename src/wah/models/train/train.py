@@ -46,9 +46,9 @@ class Wrapper(L.LightningModule):
         """
         Wrapper that employs PyTorch Lightning for model training.
 
-        Parameters:
-        - model (Module): Model to train.
-        - config (Config): YAML configuration for training.
+        ### Parameters
+        - `model (Module)`: Model to train.
+        - `config (Config)`: YAML configuration for training.
         """
         super().__init__()
 
@@ -331,6 +331,18 @@ def load_tensorboard_logger(
     name: str,
     version: Optional[str] = None,
 ) -> TensorBoardLogger:
+    """
+    Loads the TensorBoard logger for training.
+
+    ### Parameters
+    - `config (Config)`: YAML configuration for training.
+    - `save_dir (Path)`: Directory to save the logs.
+    - `name (str)`: Name of the logging experiment.
+    - `version (Optional[str])`: Version of the logging experiment. If `None`, uses the current timestamp.
+
+    ### Returns
+    - `TensorBoardLogger`: The TensorBoard logger.
+    """
     return TensorBoardLogger(
         save_dir=save_dir,
         name=name,
@@ -343,6 +355,12 @@ def load_tensorboard_logger(
 
 
 def load_checkpoint_callback() -> ModelCheckpoint:
+    """
+    Loads the model checkpoint callback.
+
+    ### Returns
+    - `ModelCheckpoint`: The model checkpoint callback.
+    """
     return ModelCheckpoint(
         save_last=True,
         save_top_k=0,
@@ -353,13 +371,22 @@ def load_checkpoint_callback() -> ModelCheckpoint:
 def load_accelerator_and_devices(
     config: Config,
 ) -> Tuple[str, List[int]]:
+    """
+    Loads the accelerator and devices based on the configuration.
+
+    ### Parameters
+    - `config (Config)`: YAML configuration for training.
+
+    ### Returns
+    - `Tuple[str, List[int]]`: The accelerator type and list of devices.
+    """
     devices_cfg: str = config["devices"]
     devices_cfg: List[str] = devices_cfg.split(":")
 
     accelerator = "auto"
     devices = "auto"
 
-    if len(devices) == 1:
+    if len(devices_cfg) == 1:
         accelerator = devices_cfg[0]
     else:
         accelerator = devices_cfg[0]
@@ -374,6 +401,18 @@ def load_trainer(
     name: str,
     version: Optional[str] = None,
 ) -> L.Trainer:
+    """
+    Loads the PyTorch Lightning trainer based on the configuration.
+
+    ### Parameters
+    - `config (Config)`: YAML configuration for training.
+    - `save_dir (Path)`: Directory to save the logs and checkpoints.
+    - `name (str)`: Name of the training experiment.
+    - `version (Optional[str])`: Version of the training experiment. If `None`, uses the current timestamp.
+
+    ### Returns
+    - `L.Trainer`: The PyTorch Lightning trainer.
+    """
     accelerator, devices = load_accelerator_and_devices(config)
 
     tensorboard_logger = load_tensorboard_logger(

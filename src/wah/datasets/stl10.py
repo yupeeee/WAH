@@ -23,40 +23,29 @@ class STL10(ClassificationDataset):
     [STL-10](https://ai.stanford.edu/~acoates/stl10/) dataset.
 
     ### Attributes
-    - `root` (Path):
-      Root directory where the dataset exists or will be saved to.
-    - `transform` (Callable, optional):
-      A function/transform that takes in the data and transforms it.
-      If None, no transformation is performed. Defaults to None.
-    - `target_transform` (Callable, optional):
-      A function/transform that takes in the target and transforms it.
-      If None, no transformation is performed. Defaults to None.
-    - `data`:
-      Data of the dataset.
-    - `targets`:
-      Targets of the dataset.
-    - `labels`:
-      Labels of the dataset.
-    - `MEAN` (list):
-      mean of dataset; [0.4467, 0.4398, 0.4066].
-    - `STD` (list):
-      std of dataset; [0.2603, 0.2566, 0.2713].
-    - `NORMALIZE` (callable):
-      transform for dataset normalization.
+    - `root` (Path): Root directory where the dataset exists or will be saved to.
+    - `transform` (Callable, optional): A function/transform that takes in the data and transforms it. If None, no transformation is performed. Defaults to None.
+    - `target_transform` (Callable, optional): A function/transform that takes in the target and transforms it. If None, no transformation is performed. Defaults to None.
+    - `data`: Data of the dataset.
+    - `targets`: Targets of the dataset.
+    - `labels`: Labels of the dataset.
+    - `MEAN` (list): Mean of dataset; [0.4467, 0.4398, 0.4066].
+    - `STD` (list): Standard deviation of dataset; [0.2603, 0.2566, 0.2713].
+    - `NORMALIZE` (callable): Transform for dataset normalization.
 
     ### Methods
-    - `__getitem__`:
-      Returns (data, target) of dataset using the specified index.
-    - `__len__`:
-      Returns the size of the dataset.
-    - `set_return_data_only`:
-      Sets the flag to return only data without targets.
-    - `unset_return_data_only`:
-      Unsets the flag to return only data without targets.
+    - `__getitem__(index) -> Tuple[Any, Any]`: Returns (data, target) of dataset using the specified index.
+    - `__len__() -> int`: Returns the size of the dataset.
+    - `set_return_data_only() -> None`: Sets the flag to return only data without targets.
+    - `unset_return_data_only() -> None`: Unsets the flag to return only data without targets.
+    - `set_return_w_index() -> None`: Sets the flag to return data with index.
+    - `unset_return_w_index() -> None`: Unsets the flag to return data with index.
 
     ### Example
     ```python
-    dataset = STL10(root="path/to/dataset")
+    import wah
+
+    dataset = wah.datasets.STL10(root="path/to/dataset")
     data, target = dataset[0]
     num_data = len(dataset)
     ```
@@ -80,8 +69,6 @@ class STL10(ClassificationDataset):
     ]
     META_LIST = [
         ("stl10_binary/class_names.txt", "6de44d022411c4d5cda4673b7f147c3f"),
-        # ("stl10_binary/fold_indices.txt", "4bbf8cd098ab9f87fe03fbcb37c06b28"),
-        # ("stl10_binary/unlabeled_X.bin", "MEMORYERROR"),
     ]
 
     MEAN = [0.4467, 0.4398, 0.4066]
@@ -93,7 +80,6 @@ class STL10(ClassificationDataset):
             [
                 T.RandomResizedCrop(96),
                 T.RandomHorizontalFlip(),
-                # T.AutoAugment(T.AutoAugmentPolicy(None)),
                 T.ToTensor(),
                 NORMALIZE,
             ]
@@ -126,36 +112,36 @@ class STL10(ClassificationDataset):
                 "test",
             ],
         ] = None,
-        target_transform: Union[Optional[Callable], Literal["auto",]] = None,
+        target_transform: Union[Optional[Callable], Literal["auto"]] = None,
         return_data_only: Optional[bool] = False,
+        return_w_index: Optional[bool] = False,
         download: bool = False,
     ) -> None:
         """
-        - `root` (path):
-          Root directory where the dataset exists or will be saved to.
-        - `split` (str):
-          The dataset split; supports "train" (default), and "test".
-        - `transform` (str):
-          A function/transform that takes in the data (PIL image, numpy.ndarray, etc.) and transforms it;
-          supports "auto", "tt", "train", "test", and None (default).
+        Initialize the STL-10 dataset.
+
+        ### Parameters
+        - `root` (Path): Root directory where the dataset exists or will be saved to.
+        - `split` (Literal["train", "test"]): The dataset split; supports "train" (default), and "test".
+        - `transform` (Union[Optional[Callable], Literal["auto", "tt", "train", "test"]]): A function/transform that takes in the data and transforms it.
+          Supports "auto", "tt", "train", "test", and None (default).
           - "auto": Automatically initializes the transform based on the dataset type and `split`.
           - "tt": Converts data into a tensor image.
-          - "train": Transform to use in train stage.
-          - "test": Transform to use in test stage.
+          - "train": Transform to use in the train stage.
+          - "test": Transform to use in the test stage.
           - None (default): No transformation is applied.
-        - `target_transform` (str):
-          A function/transform that takes in the target (int, etc.) and transforms it;
-          supports "auto", and None (default).
+        - `target_transform` (Union[Optional[Callable], Literal["auto"]]): A function/transform that takes in the target and transforms it.
+          Supports "auto", and None (default).
           - "auto": Automatically initializes the transform based on the dataset type and `split`.
           - None (default): No transformation is applied.
-        - `return_data_only` (bool, optional):
-          Whether to return only data without targets.
-          Defaults to False.
-        - `download` (bool):
-          If True, downloads the dataset from the internet and puts it into the `root` directory.
-          If dataset is already downloaded, it is not downloaded again.
+        - `return_data_only` (Optional[bool]): Whether to return only data without targets. Defaults to False.
+        - `return_w_index` (Optional[bool]): Whether to return data with index. Defaults to False.
+        - `download` (bool): If True, downloads the dataset from the internet and puts it into the `root` directory.
+          If the dataset is already downloaded, it is not downloaded again.
         """
-        super().__init__(root, transform, target_transform, return_data_only)
+        super().__init__(
+            root, transform, target_transform, return_data_only, return_w_index
+        )
 
         self.checklist = []
 
@@ -168,7 +154,7 @@ class STL10(ClassificationDataset):
             self.checklist += self.TEST_LIST
 
         else:
-            raise ValueError(f"split must be one of ['train', 'test', ], got {split}")
+            raise ValueError(f"split must be one of ['train', 'test'], got {split}")
 
         if self.transform == "auto":
             self.transform = self.TRANSFORM[split]
@@ -198,6 +184,12 @@ class STL10(ClassificationDataset):
     def _initialize(
         self,
     ) -> None:
+        """
+        Initializes the STL-10 dataset.
+
+        ### Returns
+        - `None`
+        """
         # load data
         data_fname, _ = self.checklist[1]
         data_fpath = os.fspath(os.path.join(self.root, data_fname))
@@ -225,4 +217,13 @@ class STL10(ClassificationDataset):
         self,
         data: np.ndarray,
     ) -> Image.Image:
+        """
+        Preprocesses the data.
+
+        ### Parameters
+        - `data` (np.ndarray): The data to preprocess.
+
+        ### Returns
+        - `Image.Image`: The preprocessed data.
+        """
         return Image.fromarray(data)

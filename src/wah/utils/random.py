@@ -15,8 +15,7 @@ def seed_everything(
     Sets the seed for all random number generators to ensure reproducibility.
 
     ### Parameters
-    - `seed` (int):
-      The seed value to set. If `None`, a default value of `-1` is used.
+    - `seed (int)`: The seed value to set. If `None`, a default value of `-1` is used.
 
     ### Returns
     - `None`

@@ -1,5 +1,5 @@
 import subprocess
-from typing import (
+from ..typing import (
     Literal,
     Tuple,
 )
@@ -20,19 +20,14 @@ def run(
     Runs a command in the specified terminal and captures the output.
 
     ### Parameters
-    - `args` (str):
-      The command to run in the terminal.
-    - `terminal` (Literal["cmd", "powershell"]):
-      The terminal to use for running the command.
-      Defaults to "cmd".
+    - `args (str)`: The command to run in the terminal.
+    - `terminal (Literal["cmd", "powershell"])`: The terminal to use for running the command. Defaults to "cmd".
 
     ### Returns
-    - `Tuple[bool, str]`:
-      A tuple where the first element is a boolean indicating success, and the second element is the command output or error message.
+    - `Tuple[bool, str]`: A tuple where the first element is a boolean indicating success, and the second element is the command output or error message.
 
     ### Raises
-    - `ValueError`:
-      If the specified terminal is not one of ['cmd', 'powershell'].
+    - `ValueError`: If the specified terminal is not one of ['cmd', 'powershell'].
 
     ### Notes
     - This function uses `subprocess.run` to execute the command in the specified terminal.
@@ -46,13 +41,12 @@ def run(
         args = "powershell -Command " + args
     else:
         raise ValueError(
-            f"terminal must be one of ['cmd', 'powershell', ], got {terminal}"
+            f"terminal must be one of ['cmd', 'powershell'], got {terminal}"
         )
 
     result = subprocess.run(args, shell=True, capture_output=True, text=True)
 
     if result.returncode == 0:
         return True, result.stdout
-
     else:
         return False, result.stderr

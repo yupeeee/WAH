@@ -10,7 +10,10 @@ from ..typing import (
     Path,
     Tuple,
 )
-from ..utils.download import check, download_url
+from ..utils.download import (
+    check,
+    download_url,
+)
 from ..utils.zip import extract
 
 __all__ = [
@@ -23,49 +26,24 @@ class ClassificationDataset(Dataset):
     Dataset for classification tasks.
 
     ### Attributes
-    - `root` (Path):
-      Root directory where the dataset exists or will be saved to.
-    - `transform` (Callable, optional):
-      A function/transform that takes in the data (PIL image, numpy.ndarray, etc.) and transforms it.
-      If None, no transformation is performed. Defaults to None.
-    - `target_transform` (Callable, optional):
-      A function/transform that takes in the target (int, etc.) and transforms it.
-      If None, no transformation is performed. Defaults to None.
-    - `data`:
-      Data of the dataset (numpy.ndarray, torch.Tensor, list of paths to data, etc.).
-      Must be initialized through `self._initialize()`.
-    - `targets`:
-      Targets of the dataset (numpy.ndarray, torch.Tensor, list of ints, etc.).
-      Must be initialized through `self._initialize()`.
-      Note that targets must be in the range [0, num_classes - 1].
-    - `labels`:
-      Labels of the dataset (list of str labels, dict[class_idx -> label], etc.).
-      Must be initialized through `self._initialize()`.
+    - `root` (Path): Root directory where the dataset exists or will be saved to.
+    - `transform` (Callable, optional): A function/transform that takes in the data (PIL image, numpy.ndarray, etc.) and transforms it. Defaults to None.
+    - `target_transform` (Callable, optional): A function/transform that takes in the target (int, etc.) and transforms it. Defaults to None.
+    - `data`: Data of the dataset (numpy.ndarray, torch.Tensor, list of paths to data, etc.). Must be initialized through `self._initialize()`.
+    - `targets`: Targets of the dataset (numpy.ndarray, torch.Tensor, list of ints, etc.). Must be initialized through `self._initialize()`.
+    - `labels`: Labels of the dataset (list of str labels, dict[class_idx -> label], etc.). Must be initialized through `self._initialize()`.
 
     ### Methods
-    - `__getitem__`:
-      Returns (data, target) of dataset using the specified index.
-    - `__len__`:
-      Returns the size of the dataset.
-    - `_check`:
-      Checks if the dataset exists and is valid.
-    - `_download`:
-      Downloads and extracts the dataset.
-    - `_initialize`:
-      Initializes the dataset. Must be implemented by subclasses.
-    - `_preprocess_data`:
-      Preprocesses the data. Must be implemented by subclasses.
-    - `set_return_data_only`:
-      Sets the flag to return only data without targets.
-    - `unset_return_data_only`:
-      Unsets the flag to return only data without targets.
-
-    ### Example
-    ```python
-    dataset = ClassificationDataset(root="path/to/dataset")
-    data, target = dataset[0]
-    num_data = len(dataset)
-    ```
+    - `__getitem__(index) -> Tuple[Any, Any]`: Returns (data, target) of dataset using the specified index.
+    - `__len__() -> int`: Returns the size of the dataset.
+    - `_check(checklist, dataset_root) -> bool`: Checks if the dataset exists and is valid.
+    - `_download(urls, checklist, ext_dir_name) -> None`: Downloads and extracts the dataset.
+    - `_initialize() -> None`: Initializes the dataset. Must be implemented by subclasses.
+    - `_preprocess_data(data) -> Any`: Preprocesses the data. Must be implemented by subclasses.
+    - `set_return_data_only() -> None`: Sets the flag to return only data without targets.
+    - `unset_return_data_only() -> None`: Unsets the flag to return only data without targets.
+    - `set_return_w_index() -> None`: Sets the flag to return data with index.
+    - `unset_return_w_index() -> None`: Unsets the flag to return data with index.
     """
 
     def __init__(
@@ -77,19 +55,14 @@ class ClassificationDataset(Dataset):
         return_w_index: Optional[bool] = False,
     ) -> None:
         """
-        - `root` (Path):
-          Root directory where the dataset exists or will be saved to.
-        - `transform` (Callable, optional):
-          A function/transform that takes in the data (PIL image, numpy.ndarray, etc.) and transforms it.
-          If None, no transformation is performed.
-          Defaults to None.
-        - `target_transform` (Callable, optional):
-          A function/transform that takes in the target (int, etc.) and transforms it.
-          If None, no transformation is performed.
-          Defaults to None.
-        - `return_data_only` (bool, optional):
-          Whether to return only data without targets.
-          Defaults to False.
+        Initialize the dataset.
+
+        ### Parameters
+        - `root` (Path): Root directory where the dataset exists or will be saved to.
+        - `transform` (Callable, optional): A function/transform that takes in the data (PIL image, numpy.ndarray, etc.) and transforms it. Defaults to None.
+        - `target_transform` (Callable, optional): A function/transform that takes in the target (int, etc.) and transforms it. Defaults to None.
+        - `return_data_only` (bool, optional): Whether to return only data without targets. Defaults to False.
+        - `return_w_index` (bool, optional): Whether to return data with index. Defaults to False.
         """
         self.root = root
         self.transform = transform
@@ -112,15 +85,14 @@ class ClassificationDataset(Dataset):
         Returns (data, target) of dataset using the specified index.
 
         ### Parameters
-        - `index` (int):
-          Index of the data item to retrieve.
+        - `index` (int): Index of the data item to retrieve.
 
         ### Returns
-        - `Tuple[Any, Any]`:
-          The data and target at the specified index.
+        - `Tuple[Any, Any]`: The data and target at the specified index.
 
         ### Notes
         - If `return_data_only` is set to True, only the data is returned.
+        - If `return_w_index` is set to True, returns index along with (data, target).
         """
         data, target = self.data[index], self.targets[index]
 
@@ -151,8 +123,7 @@ class ClassificationDataset(Dataset):
         Returns the size of the dataset.
 
         ### Returns
-        - `int`:
-          The number of items in the dataset.
+        - `int`: The number of items in the dataset.
         """
         return len(self.data)
 
@@ -165,14 +136,11 @@ class ClassificationDataset(Dataset):
         Checks if the dataset exists and is valid.
 
         ### Parameters
-        - `checklist` (List[Tuple[Path, str]]):
-          A list of (file path, checksum) tuples to verify the dataset files.
-        - `dataset_root` (Path):
-          The root directory of the dataset.
+        - `checklist` (List[Tuple[Path, str]]): A list of (file path, checksum) tuples to verify the dataset files.
+        - `dataset_root` (Path): The root directory of the dataset.
 
         ### Returns
-        - `bool`:
-          True if the dataset is valid, False otherwise.
+        - `bool`: True if the dataset is valid, False otherwise.
 
         ### Notes
         - This method verifies the existence and integrity of the dataset files.
@@ -201,12 +169,9 @@ class ClassificationDataset(Dataset):
         Downloads and extracts the dataset.
 
         ### Parameters
-        - `urls` (List[str]):
-          A list of URLs to download the dataset files from.
-        - `checklist` (List[Tuple[Path, str]]):
-          A list of (file path, checksum) tuples to verify the dataset files.
-        - `ext_dir_name` (Path, optional):
-          The directory name for extracted files. Defaults to ".".
+        - `urls` (List[str]): A list of URLs to download the dataset files from.
+        - `checklist` (List[Tuple[Path, str]]): A list of (file path, checksum) tuples to verify the dataset files.
+        - `ext_dir_name` (Path, optional): The directory name for extracted files. Defaults to ".".
 
         ### Returns
         - `None`
@@ -279,12 +244,10 @@ class ClassificationDataset(Dataset):
         Preprocesses the data.
 
         ### Parameters
-        - `data` (Any):
-          The data to preprocess.
+        - `data` (Any): The data to preprocess.
 
         ### Returns
-        - `Any`:
-          The preprocessed data.
+        - `Any`: The preprocessed data.
 
         ### Notes
         - This method must be implemented by subclasses to preprocess the data.
@@ -316,9 +279,21 @@ class ClassificationDataset(Dataset):
     def set_return_w_index(
         self,
     ) -> None:
+        """
+        Sets the flag to return data with index.
+
+        ### Returns
+        - `None`
+        """
         self.return_w_index = True
 
     def unset_return_w_index(
         self,
     ) -> None:
+        """
+        Unsets the flag to return data with index.
+
+        ### Returns
+        - `None`
+        """
         self.return_w_index = False

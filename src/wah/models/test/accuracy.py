@@ -33,32 +33,16 @@ def run(
     Runs the evaluation of the model on the given dataset and computes top-k accuracy.
 
     ### Parameters
-    - `rank` (int):
-      The rank of the current process.
-      Use -1 for CPU.
-    - `nprocs` (int):
-      The total number of processes.
-    - `res_queue` (Queue):
-      A multiprocessing queue to store the results.
-    - `model` (Module):
-      The PyTorch model to evaluate.
-    - `dataset` (Dataset):
-      The dataset to evaluate the model on.
-    - `top_k` (int):
-      The top-k accuracy to compute.
-      Defaults to 1.
-    - `batch_size` (int):
-      The batch size for the DataLoader.
-      Defaults to 1.
-    - `num_workers` (int):
-      The number of workers for the DataLoader.
-      Defaults to 0.
-    - `verbose` (bool):
-      Whether to enable verbose output.
-      Defaults to False.
-    - `desc` (str, optional):
-      Description for the progress bar.
-      Defaults to None.
+    - `rank (int)`: The rank of the current process. Use -1 for CPU.
+    - `nprocs (int)`: The total number of processes.
+    - `res_queue (ResQueue)`: A multiprocessing queue to store the results.
+    - `model (Module)`: The PyTorch model to evaluate.
+    - `dataset (Dataset)`: The dataset to evaluate the model on.
+    - `top_k (int)`: The top-k accuracy to compute. Defaults to 1.
+    - `batch_size (int)`: The batch size for the DataLoader. Defaults to 1.
+    - `num_workers (int)`: The number of workers for the DataLoader. Defaults to 0.
+    - `verbose (bool)`: Whether to enable verbose output. Defaults to False.
+    - `desc (Optional[str])`: Description for the progress bar. Defaults to None.
 
     ### Returns
     - `None`
@@ -118,26 +102,15 @@ class AccuracyTest:
     """
     A class for testing the top-k accuracy of a PyTorch model on a given dataset.
 
-    ### Parameters
-    - `top_k` (int):
-      The top-k accuracy to compute.
-      Defaults to 1.
-    - `batch_size` (int):
-      The batch size for the DataLoader.
-      Defaults to 1.
-    - `num_workers` (int):
-      The number of workers for the DataLoader.
-      Defaults to 0.
-    - `use_cuda` (bool):
-      Whether to use CUDA for evaluation.
-      Defaults to False.
-    - `devices` (Union[str, List[int]], optional):
-      The devices to use for evaluation.
-      Defaults to "auto".
+    ### Attributes
+    - `top_k (int)`: The top-k accuracy to compute. Defaults to 1.
+    - `batch_size (int)`: The batch size for the DataLoader. Defaults to 1.
+    - `num_workers (int)`: The number of workers for the DataLoader. Defaults to 0.
+    - `use_cuda (bool)`: Whether to use CUDA for evaluation. Defaults to False.
+    - `devices (Optional[Devices])`: The devices to use for evaluation. Defaults to "auto".
 
     ### Methods
-    - `__call__`:
-      Evaluates the model on the given dataset and returns the accuracy.
+    - `__call__(model, dataset, verbose, desc) -> float`: Evaluates the model on the given dataset and returns the accuracy.
     """
 
     def __init__(
@@ -149,21 +122,14 @@ class AccuracyTest:
         devices: Optional[Devices] = "auto",
     ) -> None:
         """
-        - `top_k` (int):
-        The top-k accuracy to compute.
-        Defaults to 1.
-        - `batch_size` (int):
-        The batch size for the DataLoader.
-        Defaults to 1.
-        - `num_workers` (int):
-        The number of workers for the DataLoader.
-        Defaults to 0.
-        - `use_cuda` (bool):
-        Whether to use CUDA for evaluation.
-        Defaults to False.
-        - `devices` (Union[str, List[int]], optional):
-        The devices to use for evaluation.
-        Defaults to "auto".
+        Initialize the AccuracyTest class.
+
+        ### Parameters
+        - `top_k (int)`: The top-k accuracy to compute. Defaults to 1.
+        - `batch_size (int)`: The batch size for the DataLoader. Defaults to 1.
+        - `num_workers (int)`: The number of workers for the DataLoader. Defaults to 0.
+        - `use_cuda (bool)`: Whether to use CUDA for evaluation. Defaults to False.
+        - `devices (Optional[Devices])`: The devices to use for evaluation. Defaults to "auto".
         """
         self.top_k = top_k
         self.batch_size = batch_size
@@ -186,18 +152,13 @@ class AccuracyTest:
         Evaluates the model on the given dataset and returns the accuracy.
 
         ### Parameters
-        - `model` (Module):
-          The PyTorch model to evaluate.
-        - `dataset` (Dataset):
-          The dataset to evaluate the model on.
-        - `verbose` (bool):
-          Whether to enable verbose output. Defaults to False.
-        - `desc` (str, optional):
-          Description for the progress bar. Defaults to None.
+        - `model (Module)`: The PyTorch model to evaluate.
+        - `dataset (Dataset)`: The dataset to evaluate the model on.
+        - `verbose (bool)`: Whether to enable verbose output. Defaults to False.
+        - `desc (Optional[str])`: Description for the progress bar. Defaults to None.
 
         ### Returns
-        - `float`:
-          The computed accuracy.
+        - `float`: The computed accuracy.
         """
         model.eval()
         res_queue = dist.Queue()

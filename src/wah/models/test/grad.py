@@ -1,3 +1,5 @@
+import os
+
 import torch
 import tqdm
 
@@ -5,18 +7,26 @@ from ...typing import (
     DataLoader,
     Dataset,
     Devices,
+    List,
     Module,
     Optional,
-    ResQueue,
     Tensor,
 )
+from ...datasets.base import ClassificationDataset
 from ...utils import dist
+from ...utils.path import ls, rmdir
+from ...utils.time import current_time
+
+__all__ = [
+    "GradTest",
+]
+
+temp_dir = "wahtmpdir@GradTest"
 
 
 def run(
     rank: int,
     nprocs: int,
-    res_queue: ResQueue,
     model: Module,
     dataset: Dataset,
     batch_size: int = 1,
@@ -24,9 +34,22 @@ def run(
     verbose: bool = False,
     desc: Optional[str] = None,
 ) -> None:
-    if hasattr(dataset, "targets"):
-        dataset.set_return_data_only()
+    """
+    Runs the gradient computation on the given dataset.
 
+    ### Parameters
+    - `rank (int)`: The rank of the current process. Use -1 for CPU.
+    - `nprocs (int)`: The total number of processes.
+    - `model (Module)`: The PyTorch model to evaluate.
+    - `dataset (Dataset)`: The dataset to evaluate the model on.
+    - `batch_size (int)`: The batch size for the DataLoader. Defaults to 1.
+    - `num_workers (int)`: The number of workers for the DataLoader. Defaults to 0.
+    - `verbose (bool)`: Whether to enable verbose output. Defaults to False.
+    - `desc (Optional[str])`: Description for the progress bar. Defaults to None.
+
+    ### Returns
+    - `None`
+    """
     # if rank == -1: CPU
     if rank == -1:
         rank = torch.device("cpu")
@@ -53,77 +76,51 @@ def run(
         )
         model = dist.load_model(rank, model)
 
-    # compute
-    num_data = 0
-    cumulative_mean = None
-    cumulative_m2 = None
+    # compute grad
+    os.makedirs(temp_dir, exist_ok=True)
 
-    for data in tqdm.tqdm(
-        dataloader,
-        desc=f"linearity@input_grad" if desc is None else desc,
-        disable=not verbose,
+    for batch_idx, (indices, data) in enumerate(
+        tqdm.tqdm(
+            dataloader,
+            desc=f"GradTest" if desc is None else desc,
+            disable=not verbose,
+        )
     ):
         data: Tensor = data.to(rank)
-        data.requires_grad()
+        data.requires_grad = True
 
-        # forward pass
+        model.zero_grad()
+
         outputs: Tensor = model(data)
+        outputs.sum().backward()
 
-        # backward pass
-        outputs.backward(torch.ones_like(outputs))
+        grads = data.grad
 
-        # gradients
-        grads = data.grad.detach()
-
-        # batch size, mean, var
-        batch_size = grads.size(0)
-        grads = grads.reshape(batch_size, -1)
-
-        batch_mean = torch.mean(grads, dim=0)
-        batch_var = torch.var(grads, dim=0, unbiased=False)
-
-        # save results
-        num_data += batch_size
-
-        delta = batch_mean - cumulative_mean
-        cumulative_mean += delta * (batch_size / num_data)
-
-        cumulative_m2 += (
-            batch_size * batch_var
-            + (delta**2) * batch_size * (num_data - batch_size) / num_data
+        torch.save(
+            (indices, grads.detach().to(torch.device("cpu"))),
+            os.path.join(
+                temp_dir,
+                f"{batch_idx}-{current_time()}.pt",
+            ),
         )
-
-    res_queue.put((num_data, cumulative_mean, cumulative_m2))
 
     # DDP cleanup
     if rank != torch.device("cpu"):
         dist.cleanup()
 
 
-class GradLinearityTest:
+class GradTest:
     """
-    A class for testing the top-k accuracy of a PyTorch model on a given dataset.
+    A class for testing the gradients of a PyTorch model on a given dataset.
 
-    ### Parameters
-    - `top_k` (int):
-      The top-k accuracy to compute.
-      Defaults to 1.
-    - `batch_size` (int):
-      The batch size for the DataLoader.
-      Defaults to 1.
-    - `num_workers` (int):
-      The number of workers for the DataLoader.
-      Defaults to 0.
-    - `use_cuda` (bool):
-      Whether to use CUDA for evaluation.
-      Defaults to False.
-    - `devices` (Union[str, List[int]], optional):
-      The devices to use for evaluation.
-      Defaults to "auto".
+    ### Attributes
+    - `batch_size (int)`: The batch size for the DataLoader. Defaults to 1.
+    - `num_workers (int)`: The number of workers for the DataLoader. Defaults to 0.
+    - `use_cuda (bool)`: Whether to use CUDA for evaluation. Defaults to False.
+    - `devices (Optional[Devices])`: The devices to use for evaluation. Defaults to "auto".
 
     ### Methods
-    - `__call__`:
-      Evaluates the model on the given dataset and returns the accuracy.
+    - `__call__(model, dataset, verbose, desc) -> Tensor`: Evaluates the model on the given dataset and returns the computed gradients.
     """
 
     def __init__(
@@ -134,18 +131,13 @@ class GradLinearityTest:
         devices: Optional[Devices] = "auto",
     ) -> None:
         """
-        - `batch_size` (int):
-        The batch size for the DataLoader.
-        Defaults to 1.
-        - `num_workers` (int):
-        The number of workers for the DataLoader.
-        Defaults to 0.
-        - `use_cuda` (bool):
-        Whether to use CUDA for evaluation.
-        Defaults to False.
-        - `devices` (Union[str, List[int]], optional):
-        The devices to use for evaluation.
-        Defaults to "auto".
+        Initialize the GradTest class.
+
+        ### Parameters
+        - `batch_size (int)`: The batch size for the DataLoader. Defaults to 1.
+        - `num_workers (int)`: The number of workers for the DataLoader. Defaults to 0.
+        - `use_cuda (bool)`: Whether to use CUDA for evaluation. Defaults to False.
+        - `devices (Optional[Devices])`: The devices to use for evaluation. Defaults to "auto".
         """
         self.batch_size = batch_size
         self.num_workers = num_workers
@@ -162,9 +154,23 @@ class GradLinearityTest:
         dataset: Dataset,
         verbose: bool = False,
         desc: Optional[str] = None,
-    ) -> float:
+    ) -> Tensor:
+        """
+        Evaluates the model on the given dataset and returns the computed gradients.
+
+        ### Parameters
+        - `model (Module)`: The PyTorch model to evaluate.
+        - `dataset (Dataset)`: The dataset to evaluate the model on.
+        - `verbose (bool)`: Whether to enable verbose output. Defaults to False.
+        - `desc (Optional[str])`: Description for the progress bar. Defaults to None.
+
+        ### Returns
+        - `Tensor`: The computed gradients.
+        """
         model.eval()
-        res_queue = dist.Queue()
+        if isinstance(dataset, ClassificationDataset):
+            dataset.set_return_data_only()
+            dataset.set_return_w_index()
 
         # GPU
         if self.use_cuda:
@@ -174,10 +180,8 @@ class GradLinearityTest:
                 fn=run,
                 args=(
                     nprocs,
-                    res_queue,
                     model,
                     dataset,
-                    self.top_k,
                     self.batch_size,
                     self.num_workers,
                     verbose,
@@ -192,38 +196,32 @@ class GradLinearityTest:
 
             run(
                 rank=-1,
-                nprocs=1,
-                res_queue=res_queue,
+                nprocs=nprocs,
                 model=model,
                 dataset=dataset,
-                top_k=self.top_k,
                 batch_size=self.batch_size,
                 num_workers=self.num_workers,
                 verbose=verbose,
                 desc=desc,
             )
 
-        # acc
-        N = 0
-        mean = None
-        m2 = None
+        # grad
+        indices: List[int] = []
+        grads: List[Tensor] = []
 
-        for _ in range(nprocs):
-            num_data, cumulative_mean, cumulative_m2 = res_queue.get()
+        file_names = ls(temp_dir)
 
-            N += num_data
-            mean += cumulative_mean
-            m2 += cumulative_m2
+        for file_name in file_names:
+            i, g = torch.load(os.path.join(temp_dir, file_name))
+            indices.append(i)
+            grads.append(g)
 
-        overall_mean = self.cumulative_mean
-        overall_var = self.cumulative_m2 / self.total_samples
-        overall_std = torch.sqrt(overall_var)
+        indices = torch.cat(indices, dim=0)
+        grads = torch.cat(grads, dim=0)
 
-        return overall_mean, overall_std
+        grads = grads[indices]
+        indices, _ = indices.sort()
 
-        corrects: int = 0
-        
+        rmdir(temp_dir)
 
-        acc: float = corrects / len(dataset)
-
-        return acc
+        return grads

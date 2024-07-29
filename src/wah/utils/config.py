@@ -17,12 +17,10 @@ def load(
     Loads a YAML configuration file from the specified path.
 
     ### Parameters
-    - `path` (Path):
-      The path to the YAML configuration file.
+    - `path (Path)`: The path to the YAML configuration file.
 
     ### Returns
-    - `Any`:
-      The configuration data loaded from the YAML file.
+    - `Config`: The configuration data loaded from the YAML file.
 
     ### Notes
     - This function reads the YAML file from the given path and loads its content using `yaml.load`.

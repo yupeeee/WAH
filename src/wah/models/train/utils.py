@@ -20,14 +20,14 @@ def check_config(
     """
     Checks whether the provided YAML configuration file includes the necessary arguments for training.
 
-    Parameters:
-    - config (Config): YAML configuration for training.
+    ### Parameters
+    - `config (Config)`: YAML configuration for training.
 
-    Returns:
-    - None
+    ### Returns
+    - `None`
 
-    Raises:
-    - AttributeError: If the necessary arguments is missing in the YAML configuration.
+    ### Raises
+    - `AttributeError`: If the necessary arguments are missing in the YAML configuration.
     """
     assert (
         "task" in config.keys()
@@ -49,12 +49,11 @@ def init_seed(
     """
     Returns the seed for random initialization based on the given YAML configuration.
 
-    Parameters:
-    - config (Config): YAML configuration for training.
+    ### Parameters
+    - `config (Config)`: YAML configuration for training.
 
-    Returns:
-    - int: Seed for random initialization.
-    Returns -1 (no seeding) if seed is not provided in config.
+    ### Returns
+    - `int`: Seed for random initialization. Returns -1 (no seeding) if seed is not provided in config.
     """
     seed = -1
 
@@ -70,11 +69,11 @@ def get_lr(
     """
     Returns the last computed learning rate.
 
-    Parameters:
-    - trainer (Trainer): Trainer for training.
+    ### Parameters
+    - `trainer (Trainer)`: Trainer for training.
 
-    Returns:
-    - float: Last computed learning rate.
+    ### Returns
+    - `float`: Last computed learning rate.
     """
     scheduler: LRScheduler = trainer.lr_scheduler_configs[0].scheduler
     lr = scheduler.get_last_lr()[0]
@@ -85,6 +84,15 @@ def get_lr(
 def get_tag(
     trainer: Trainer,
 ) -> Path:
+    """
+    Returns the tag name used for logging.
+
+    ### Parameters
+    - `trainer (Trainer)`: Trainer for training.
+
+    ### Returns
+    - `Path`: Tag name used for logging.
+    """
     tag = trainer.logger.name
 
     return tag

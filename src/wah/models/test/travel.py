@@ -33,22 +33,18 @@ class DirectionGenerator:
     refer to [**link**](https://arxiv.org/abs/2210.05742).
 
     ### Parameters
-    - `model` (Module):
-      The model to generate directions for.
-    - `method` (Literal["fgsm"], optional):
-      The method to use for generating travel directions. Defaults to "fgsm".
-    - `device` (Device, optional):
-      The device to use for computation. Defaults to "cpu".
+    - `model (Module)`: The model to generate directions for.
+    - `method (Literal["fgsm"], optional)`: The method to use for generating travel directions. Defaults to "fgsm".
+    - `device (Device, optional)`: The device to use for computation. Defaults to "cpu".
 
     ### Methods
-    - `__call__`:
-      Generates travel directions for the given data and targets.
+    - `__call__(data, targets) -> Tensor`: Generates travel directions for the given data and targets.
     """
 
     def __init__(
         self,
         model: Module,
-        method: Literal["fgsm",] = "fgsm",
+        method: Literal["fgsm"] = "fgsm",
         device: Optional[Device] = "cpu",
     ) -> None:
         assert (
@@ -68,14 +64,11 @@ class DirectionGenerator:
         Generates travel directions for the given data and targets.
 
         ### Parameters
-        - `data` (Tensor):
-        Data for travel.
-        - `targets` (Tensor):
-        Targets for travel.
+        - `data (Tensor)`: Data for travel.
+        - `targets (Tensor)`: Targets for travel.
 
         ### Returns
-        - `Tensor`:
-          Generated travel directions.
+        - `Tensor`: Generated travel directions.
         """
         if self.method == "fgsm":
             signed_grads = (
@@ -106,18 +99,13 @@ def test_data(
     Tests the data on the model and returns the results and confidences.
 
     ### Parameters
-    - `data` (Tensor):
-      The input data.
-    - `targets` (Tensor):
-      The target labels.
-    - `model` (Module):
-      The model to test the data on.
-    - `device` (Device):
-      The device to run the model on.
+    - `data (Tensor)`: The input data.
+    - `targets (Tensor)`: The target labels.
+    - `model (Module)`: The model to test the data on.
+    - `device (Device)`: The device to run the model on.
 
     ### Returns
-    - `Tuple[List[bool], List[float]]`:
-      A tuple containing a list of boolean results indicating correctness and a list of signed confidences.
+    - `Tuple[List[bool], List[float]]`: A tuple containing a list of boolean results indicating correctness and a list of signed confidences.
 
     ### Notes
     - This function uses softmax to get the confidence scores and computes the results by comparing predictions with targets.
@@ -149,22 +137,15 @@ def travel_data(
     Travels the data in the direction to find the decision boundary.
 
     ### Parameters
-    - `x` (Tensor):
-      The input data.
-    - `t` (Tensor):
-      The target label.
-    - `d` (Tensor):
-      The direction tensor.
-    - `model` (Module):
-      The model to test the data on.
-    - `device` (Device):
-      The device to run the model on.
-    - `params` (Dict[str, float]):
-      Parameters for the travel algorithm.
+    - `x (Tensor)`: The input data.
+    - `t (Tensor)`: The target label.
+    - `d (Tensor)`: The direction tensor.
+    - `model (Module)`: The model to test the data on.
+    - `device (Device)`: The device to run the model on.
+    - `params (Dict[str, float])`: Parameters for the travel algorithm.
 
     ### Returns
-    - `float`:
-      The distance traveled to the decision boundary.
+    - `float`: The distance traveled to the decision boundary.
 
     ### Notes
     - This function iteratively updates the distance traveled to find the decision boundary.
@@ -244,44 +225,33 @@ def travel_data(
 
 def update(
     iteration: int,
-    eps,
-    stride,
-    _stride,
-    stride_decay,
-    correct,
-    _correct,
-    flag,
+    eps: float,
+    stride: float,
+    _stride: float,
+    stride_decay: float,
+    correct: bool,
+    _correct: bool,
+    flag: int,
     max_iter: int,
     turnaround: int,
-) -> None:
+) -> Tuple[float, float, float, float, bool, bool, int]:
     """
     Updates the travel parameters based on the current state.
 
     ### Parameters
-    - `iteration` (int):
-      The current iteration number.
-    - `eps` (float):
-      The current epsilon value.
-    - `stride` (float):
-      The current stride value.
-    - `_stride` (float):
-      The original stride value.
-    - `stride_decay` (float):
-      The ratio to decay the stride.
-    - `correct` (bool):
-      The current correctness of the travel.
-    - `_correct` (bool):
-      The previous correctness of the travel.
-    - `flag` (int):
-      The current flag indicating the travel state.
-    - `max_iter` (int):
-      The maximum number of iterations.
-    - `turnaround` (int):
-      The ratio to determine if the travel has diverged.
+    - `iteration (int)`: The current iteration number.
+    - `eps (float)`: The current epsilon value.
+    - `stride (float)`: The current stride value.
+    - `_stride (float)`: The original stride value.
+    - `stride_decay (float)`: The ratio to decay the stride.
+    - `correct (bool)`: The current correctness of the travel.
+    - `_correct (bool)`: The previous correctness of the travel.
+    - `flag (int)`: The current flag indicating the travel state.
+    - `max_iter (int)`: The maximum number of iterations.
+    - `turnaround (int)`: The ratio to determine if the travel has diverged.
 
     ### Returns
-    - `Tuple[float, float, float, float, bool, bool, int]`:
-      Updated values for epsilon, stride, original stride, stride decay, current correctness, previous correctness, and flag.
+    - `Tuple[float, float, float, float, bool, bool, int]`: Updated values for epsilon, stride, original stride, stride decay, current correctness, previous correctness, and flag.
 
     ### Notes
     - This function adjusts the travel parameters based on whether the decision boundary was crossed.
@@ -321,41 +291,31 @@ def update(
 
 def work(
     i: int,
-    data,
-    targets,
-    directions,
-    results,
-    signed_confs,
-    model,
-    device,
-    params,
+    data: Tensor,
+    targets: Tensor,
+    directions: Tensor,
+    results: List[bool],
+    signed_confs: List[float],
+    model: Module,
+    device: Device,
+    params: Dict[str, float],
 ) -> Tuple[int, float, float]:
     """
     Performs the travel work for a single data point.
 
     ### Parameters
-    - `i` (int):
-      The index of the data point.
-    - `data` (Tensor):
-      The input data.
-    - `targets` (Tensor):
-      The target labels.
-    - `directions` (Tensor):
-      The direction tensor.
-    - `results` (List[bool]):
-      The list of correctness results.
-    - `signed_confs` (List[float]):
-      The list of signed confidences.
-    - `model` (Module):
-      The model to test the data on.
-    - `device` (Device):
-      The device to run the model on.
-    - `params` (Dict[str, float]):
-      Parameters for the travel algorithm.
+    - `i (int)`: The index of the data point.
+    - `data (Tensor)`: The input data.
+    - `targets (Tensor)`: The target labels.
+    - `directions (Tensor)`: The direction tensor.
+    - `results (List[bool])`: The list of correctness results.
+    - `signed_confs (List[float])`: The list of signed confidences.
+    - `model (Module)`: The model to test the data on.
+    - `device (Device)`: The device to run the model on.
+    - `params (Dict[str, float])`: Parameters for the travel algorithm.
 
     ### Returns
-    - `Tuple[int, float, float]`:
-      A tuple containing the ground truth label, confidence, and epsilon distance.
+    - `Tuple[int, float, float]`: A tuple containing the ground truth label, confidence, and epsilon distance.
 
     ### Notes
     - This function handles the travel process for a single data point, updating the travel distance as needed.
@@ -384,42 +344,20 @@ class Traveler:
     refer to [**link**](https://arxiv.org/abs/2210.05742).
 
     ### Parameters
-    - `model` (Module):
-      The model to test the data on.
-    - `method` (Literal["fgsm"], optional):
-      The method to use for generating directions.
-      Defaults to "fgsm".
-    - `seed` (int, optional):
-      The seed for random number generation.
-      Defaults to 0.
-    - `use_cuda` (bool, optional):
-      Whether to use CUDA for computation.
-      Defaults to False.
-    - `init_eps` (float, optional):
-      Initial length of travel.
-      Defaults to 1.0e-3.
-    - `stride` (float, optional):
-      Travel stride.
-      Defaults to 1.0e-3.
-    - `stride_decay` (float, optional):
-      Ratio to decay stride.
-      Defaults to 0.5.
-    - `bound` (bool, optional):
-      Whether to clip data to [0, 1].
-      Defaults to True.
-    - `tol` (float, optional):
-      Tolerance for early stop.
-      Defaults to 1.0e-10.
-    - `max_iter` (int, optional):
-      Maximum number of iterations.
-      Defaults to 10000.
-    - `turnaround` (float, optional):
-      Ratio to determine if travel has diverged.
-      Defaults to 0.1.
+    - `model (Module)`: The model to test the data on.
+    - `method (Literal["fgsm"], optional)`: The method to use for generating directions. Defaults to "fgsm".
+    - `seed (int, optional)`: The seed for random number generation. Defaults to 0.
+    - `device (Optional[Device], optional)`: The device to run the model on. Defaults to "cpu".
+    - `init_eps (float, optional)`: Initial length of travel. Defaults to 1.0e-3.
+    - `stride (float, optional)`: Travel stride. Defaults to 1.0e-3.
+    - `stride_decay (float, optional)`: Ratio to decay stride. Defaults to 0.5.
+    - `bound (bool, optional)`: Whether to clip data to [0, 1]. Defaults to True.
+    - `tol (float, optional)`: Tolerance for early stop. Defaults to 1.0e-10.
+    - `max_iter (int, optional)`: Maximum number of iterations. Defaults to 10000.
+    - `turnaround (float, optional)`: Ratio to determine if travel has diverged. Defaults to 0.1.
 
     ### Methods
-    - `__call__`:
-      Travels through the data to find decision boundaries.
+    - `__call__(dataloader, verbose) -> Dict[str, List[float]]`: Travels through the data to find decision boundaries.
 
     ### Notes
     - This class utilizes `DirectionGenerator` for generating adversarial directions.
@@ -429,7 +367,7 @@ class Traveler:
     def __init__(
         self,
         model: Module,
-        method: Literal["fgsm",] = "fgsm",
+        method: Literal["fgsm"] = "fgsm",
         seed: Optional[int] = 0,
         device: Optional[Device] = "cpu",
         init_eps: float = 1.0e-3,
@@ -441,38 +379,17 @@ class Traveler:
         turnaround: float = 0.1,
     ) -> None:
         """
-        - `model` (Module):
-          The model to test the data on.
-        - `method` (Literal["fgsm"], optional):
-          The method to use for generating directions.
-          Defaults to "fgsm".
-        - `seed` (int, optional):
-          The seed for random number generation.
-          Defaults to 0.
-        - `use_cuda` (bool, optional):
-          Whether to use CUDA for computation.
-          Defaults to False.
-        - `init_eps` (float, optional):
-          Initial length of travel.
-          Defaults to 1.0e-3.
-        - `stride` (float, optional):
-          Travel stride.
-          Defaults to 1.0e-3.
-        - `stride_decay` (float, optional):
-          Ratio to decay stride.
-          Defaults to 0.5.
-        - `bound` (bool, optional):
-          Whether to clip data to [0, 1].
-          Defaults to True.
-        - `tol` (float, optional):
-          Tolerance for early stop.
-          Defaults to 1.0e-10.
-        - `max_iter` (int, optional):
-          Maximum number of iterations.
-          Defaults to 10000.
-        - `turnaround` (float, optional):
-          Ratio to determine if travel has diverged.
-          Defaults to 0.1.
+        - `model (Module)`: The model to test the data on.
+        - `method (Literal["fgsm"], optional)`: The method to use for generating directions. Defaults to "fgsm".
+        - `seed (int, optional)`: The seed for random number generation. Defaults to 0.
+        - `device (Optional[Device], optional)`: The device to run the model on. Defaults to "cpu".
+        - `init_eps (float, optional)`: Initial length of travel. Defaults to 1.0e-3.
+        - `stride (float, optional)`: Travel stride. Defaults to 1.0e-3.
+        - `stride_decay (float, optional)`: Ratio to decay stride. Defaults to 0.5.
+        - `bound (bool, optional)`: Whether to clip data to [0, 1]. Defaults to True.
+        - `tol (float, optional)`: Tolerance for early stop. Defaults to 1.0e-10.
+        - `max_iter (int, optional)`: Maximum number of iterations. Defaults to 10000.
+        - `turnaround (float, optional)`: Ratio to determine if travel has diverged. Defaults to 0.1.
         """
         assert 0 < stride, f"Expected 0 < stride, got {stride}"
         assert (
@@ -520,14 +437,11 @@ class Traveler:
         Travels through the data to find decision boundaries.
 
         ### Parameters
-        - `dataloader` (DataLoader):
-          The data loader containing the data to be traveled.
-        - `verbose` (bool, optional):
-          Whether to print progress. Defaults to True.
+        - `dataloader (DataLoader)`: The data loader containing the data to be traveled.
+        - `verbose (bool, optional)`: Whether to print progress. Defaults to True.
 
         ### Returns
-        - `Dict[str, List[float]]`:
-          A dictionary containing ground truth labels, confidences, and epsilon distances.
+        - `Dict[str, List[float]]`: A dictionary containing ground truth labels, confidences, and epsilon distances.
 
         ### Notes
         - This method iterates over the data in the dataloader, generating directions and traveling each data point to find decision boundaries.

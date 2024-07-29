@@ -28,19 +28,15 @@ __all__ = [
 def load_state_dict(
     model: Module,
     state_dict_path: Path,
-    map_location: Optional[Device] = None,
+    map_location: Optional[Device] = "cpu",
 ) -> None:
     """
     Loads a state dictionary into a model, with optional mapping to a specific device.
 
     ### Parameters
-    - `model` (Module):
-      The model into which to load the state dictionary.
-    - `state_dict_path` (Path):
-      The path to the state dictionary file.
-    - `map_location` (Device, optional):
-      The device to map the state dictionary to.
-      Defaults to None.
+    - `model (Module)`: The model into which to load the state dictionary.
+    - `state_dict_path (Path)`: The path to the state dictionary file.
+    - `map_location (Device, optional)`: The device to map the state dictionary to. Defaults to "cpu".
 
     ### Returns
     - `None`
@@ -88,30 +84,18 @@ def load_timm_model(
     Loads a model from the timm library.
 
     ### Parameters
-    - `name` (str):
-      The name of the model to load.
-    - `pretrained` (bool, optional):
-      Whether to load pretrained weights.
-      Defaults to False.
-    - `num_classes` (int, optional):
-      The number of output classes.
-      Defaults to 1000 (ImageNet).
-    - `image_size` (int, optional):
-      The input image size.
-      Defaults to 224 (ImageNet).
-    - `num_channels` (int, optional):
-      The number of input channels.
-      Defaults to 3 (RGB).
-    - `**kwargs`:
-      Additional keyword arguments for the model.
+    - `name (str)`: The name of the model to load.
+    - `pretrained (bool, optional)`: Whether to load pretrained weights. Defaults to False.
+    - `num_classes (int, optional)`: The number of output classes. Defaults to 1000 (ImageNet).
+    - `image_size (int, optional)`: The input image size. Defaults to 224 (ImageNet).
+    - `num_channels (int, optional)`: The number of input channels. Defaults to 3 (RGB).
+    - `**kwargs`: Additional keyword arguments for the model.
 
     ### Returns
-    - `Module`:
-      The loaded model.
+    - `Module`: The loaded model.
 
     ### Raises
-    - `AssertionError`:
-      If the model name is not supported by timm.
+    - `AssertionError`: If the model name is not supported by timm.
     """
     assert name in timm.list_models(), (
         f"timm does not support {name}. "
@@ -149,27 +133,17 @@ def load_torchvision_model(
     Loads a model from the torchvision library.
 
     ### Parameters
-    - `name` (str):
-      The name of the model to load.
-    - `weights` (str, optional):
-      The weights to load.
-      Defaults to None.
-    - `num_classes` (int, optional):
-      The number of output classes.
-      Defaults to 1000 (ImageNet).
-    - `image_size` (int, optional):
-      The input image size.
-      Defaults to 224 (ImageNet).
-    - `**kwargs`:
-      Additional keyword arguments for the model.
+    - `name (str)`: The name of the model to load.
+    - `weights (str, optional)`: The weights to load. Defaults to None.
+    - `num_classes (int, optional)`: The number of output classes. Defaults to 1000 (ImageNet).
+    - `image_size (int, optional)`: The input image size. Defaults to 224 (ImageNet).
+    - `**kwargs`: Additional keyword arguments for the model.
 
     ### Returns
-    - `Module`:
-      The loaded model.
+    - `Module`: The loaded model.
 
     ### Raises
-    - `AssertionError`:
-      If the model name is not supported by torchvision.
+    - `AssertionError`: If the model name is not supported by torchvision.
     """
     assert name in models.list_models(), (
         f"torchvision does not support {name}. "
@@ -197,43 +171,27 @@ def load_model(
     image_size: int = 224,
     num_channels: int = 3,
     load_from: Literal["timm", "torchvision"] = "timm",
-    map_location: Optional[Device] = None,
+    map_location: Optional[Device] = "cpu",
     **kwargs,
 ) -> Module:
     """
     Loads a model from the specified library (timm or torchvision).
 
     ### Parameters
-    - `name` (str):
-      The name of the model to load.
-    - `weights` (str, optional):
-      The path to the weights file, or "auto" to load pretrained weights, or weight specification to load pretrained torchvision model.
-      Defaults to None.
-    - `num_classes` (int, optional):
-      The number of output classes.
-      Defaults to 1000 (ImageNet).
-    - `image_size` (int, optional):
-      The input image size.
-      Defaults to 224 (ImageNet).
-    - `num_channels` (int, optional):
-      The number of input channels.
-      Defaults to 3 (RGB).
-    - `load_from` (Literal["timm", "torchvision"], optional):
-      The library to load the model from.
-      Defaults to "timm".
-    - `map_location` (Device, optional):
-      The device to map the weights to.
-      Defaults to None.
-    - `**kwargs`:
-      Additional keyword arguments for the model.
+    - `name (str)`: The name of the model to load.
+    - `weights (str, optional)`: The path to the weights file, or "auto" to load pretrained weights, or weight specification to load pretrained torchvision model. Defaults to None.
+    - `num_classes (int, optional)`: The number of output classes. Defaults to 1000 (ImageNet).
+    - `image_size (int, optional)`: The input image size. Defaults to 224 (ImageNet).
+    - `num_channels (int, optional)`: The number of input channels. Defaults to 3 (RGB).
+    - `load_from (Literal["timm", "torchvision"], optional)`: The library to load the model from. Defaults to "timm".
+    - `map_location (Device, optional)`: The device to map the weights to. Defaults to "cpu".
+    - `**kwargs`: Additional keyword arguments for the model.
 
     ### Returns
-    - `Module`:
-      The loaded model.
+    - `Module`: The loaded model.
 
     ### Raises
-    - `ValueError`:
-      If the specified library (`load_from`) is not supported.
+    - `ValueError`: If the specified library (`load_from`) is not supported.
 
     ### Notes
     - This function supports loading models from either the timm or torchvision library.
@@ -284,14 +242,11 @@ def add_preprocess(
     Adds a preprocessing step to the model.
 
     ### Parameters
-    - `model` (Module):
-      The model to which the preprocessing step will be added.
-    - `preprocess` (Union[Module, Transform]):
-      The preprocessing step to add.
+    - `model (Module)`: The model to which the preprocessing step will be added.
+    - `preprocess (Union[Module, Transform])`: The preprocessing step to add.
 
     ### Returns
-    - `Module`:
-      The model with the preprocessing step added.
+    - `Module`: The model with the preprocessing step added.
 
     ### Notes
     - This function creates a sequential module that first applies the preprocessing and then the model.

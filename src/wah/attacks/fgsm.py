@@ -19,24 +19,16 @@ class IFGSM:
     [Iterative Fast Gradient Sign Method (IFGSM)](https://openreview.net/forum?id=BJm4T4Kgx) for generating adversarial examples.
 
     ### Attributes
-    - `model` (Module):
-      The neural network model to attack.
-    - `epsilon` (float):
-      The maximum perturbation allowed.
-    - `iteration` (int):
-      The number of iterations to perform.
-    - `alpha` (float):
-      The step size for each iteration.
-    - `device` (Device):
-      The device (CPU or GPU) used for computation.
-    - `criterion` (nn.CrossEntropyLoss):
-      The loss function used for computing gradients.
+    - `model` (Module): The neural network model to attack.
+    - `epsilon` (float): The maximum perturbation allowed.
+    - `iteration` (int): The number of iterations to perform.
+    - `alpha` (float): The step size for each iteration.
+    - `device` (Device): The device (CPU or GPU) used for computation.
+    - `criterion` (nn.CrossEntropyLoss): The loss function used for computing gradients.
 
     ### Methods
-    - `__call__`:
-      Generates adversarial examples for the given data and targets.
-    - `grad`:
-      Computes the gradients of the loss with respect to the input data.
+    - `__call__(data, targets) -> Tensor`: Generates adversarial examples for the given data and targets.
+    - `grad(data, targets) -> Tensor`: Computes the gradients of the loss with respect to the input data.
 
     ### Example
     ```python
@@ -59,16 +51,14 @@ class IFGSM:
         device: Optional[Device] = "cpu",
     ) -> None:
         """
-        - `model` (Module):
-          The neural network model to attack.
-        - `epsilon` (float):
-          The maximum perturbation allowed.
-        - `iteration` (int):
-          The number of iterations to perform.
-        - `alpha` (float, optional):
-          The step size for each iteration. Defaults to epsilon/iteration.
-        - `device` (Device, optional):
-          The device (CPU or GPU) used for computation. Defaults to "cpu".
+        Initialize the IFGSM attack.
+
+        ### Parameters
+        - `model` (Module): The neural network model to attack.
+        - `epsilon` (float): The maximum perturbation allowed.
+        - `iteration` (int): The number of iterations to perform.
+        - `alpha` (float, optional): The step size for each iteration. Defaults to epsilon/iteration.
+        - `device` (Device, optional): The device (CPU or GPU) used for computation. Defaults to "cpu".
         """
         self.model = model
         self.epsilon = epsilon
@@ -87,14 +77,11 @@ class IFGSM:
         Generates adversarial examples for the given data and targets.
 
         ### Parameters
-        - `data` (Tensor):
-          The input data.
-        - `targets` (Tensor):
-          The target labels.
+        - `data` (Tensor): The input data.
+        - `targets` (Tensor): The target labels.
 
         ### Returns
-        - `Tensor`:
-          The adversarial examples generated from the input data.
+        - `Tensor`: The adversarial examples generated from the input data.
         """
         if self.epsilon == 0.0:
             return data
@@ -102,7 +89,7 @@ class IFGSM:
         _data = data.detach()
 
         for _ in range(self.iteration):
-            _data = self.fgsm(_data, targets, self.alpha)
+            _data = self._fgsm(_data, targets, self.alpha)
 
         return _data.to(torch.device("cpu"))
 
@@ -115,14 +102,11 @@ class IFGSM:
         Computes the gradients of the loss with respect to the input data.
 
         ### Parameters
-        - `data` (Tensor):
-          The input data.
-        - `targets` (Tensor):
-          The target labels.
+        - `data` (Tensor): The input data.
+        - `targets` (Tensor): The target labels.
 
         ### Returns
-        - `Tensor`:
-          The gradients of the loss with respect to the input data.
+        - `Tensor`: The gradients of the loss with respect to the input data.
         """
         data = data.to(self.device)
         targets = targets.to(self.device)
@@ -140,26 +124,22 @@ class IFGSM:
 
         return grads.detach()
 
-    def fgsm(
+    def _fgsm(
         self,
         data: Tensor,
         targets: Tensor,
         epsilon: float,
     ) -> Tensor:
         """
-        Applies the [Fast Gradient Sign Method (FGSM)](https://arxiv.org/abs/1412.6572) to the input data.
+        Applies the Fast Gradient Sign Method (FGSM) to the input data.
 
         ### Parameters
-        - `data` (Tensor):
-          The input data.
-        - `targets` (Tensor):
-          The target labels.
-        - `epsilon` (float):
-          The perturbation magnitude.
+        - `data` (Tensor): The input data.
+        - `targets` (Tensor): The target labels.
+        - `epsilon` (float): The perturbation magnitude.
 
         ### Returns
-        - `Tensor`:
-          The perturbed data.
+        - `Tensor`: The perturbed data.
         """
         if epsilon == 0.0:
             return data
@@ -180,20 +160,14 @@ class FGSM(IFGSM):
     [Fast Gradient Sign Method (FGSM)](https://arxiv.org/abs/1412.6572) for generating adversarial examples.
 
     ### Attributes
-    - `model` (Module):
-      The neural network model to attack.
-    - `epsilon` (float):
-      The maximum perturbation allowed.
-    - `device` (Device):
-      The device (CPU or GPU) used for computation.
-    - `criterion` (nn.CrossEntropyLoss):
-      The loss function used for computing gradients.
+    - `model` (Module): The neural network model to attack.
+    - `epsilon` (float): The maximum perturbation allowed.
+    - `device` (Device): The device (CPU or GPU) used for computation.
+    - `criterion` (nn.CrossEntropyLoss): The loss function used for computing gradients.
 
     ### Methods
-    - `__call__`:
-      Generates adversarial examples for the given data and targets.
-    - `grad`:
-      Computes the gradients of the loss with respect to the input data.
+    - `__call__(data, targets) -> Tensor`: Generates adversarial examples for the given data and targets.
+    - `grad(data, targets) -> Tensor`: Computes the gradients of the loss with respect to the input data.
 
     ### Example
     ```python
@@ -214,11 +188,11 @@ class FGSM(IFGSM):
         device: Optional[Device] = "cpu",
     ) -> None:
         """
-        - `model` (Module):
-          The neural network model to attack.
-        - `epsilon` (float):
-          The maximum perturbation size allowed.
-        - `device` (Device, optional):
-          The device (CPU or GPU) used for computation. Defaults to "cpu".
+        Initialize the FGSM attack.
+
+        ### Parameters
+        - `model` (Module): The neural network model to attack.
+        - `epsilon` (float): The maximum perturbation size allowed.
+        - `device` (Device, optional): The device (CPU or GPU) used for computation. Defaults to "cpu".
         """
         super().__init__(model, epsilon, 1, None, device)

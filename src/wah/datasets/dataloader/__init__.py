@@ -24,36 +24,24 @@ def to_dataloader(
     Loads a DataLoader for the given dataset with various configurable options.
 
     ### Parameters
-    - `dataset` (Dataset):
-      The dataset to load.
-    - `train` (Optional[bool]):
-      Indicates if the DataLoader is for training.
-      Defaults to False.
+    - `dataset` (Dataset): The dataset to load.
+    - `train` (Optional[bool]): Indicates if the DataLoader is for training. Defaults to False.
         - If True, data is shuffled and mixup/cutmix is applied if specified.
         - If False, data is not shuffled and mixup/cutmix is not applied.
-    - `batch_size` (int):
-      The number of samples per batch. Defaults to 1.
-    - `num_workers` (int):
-      The number of subprocesses to use for data loading.
-      Defaults to 0.
-    - `mixup_alpha` (float):
-      The alpha parameter for mixup.
-      Defaults to 0.0, meaning no mixup is applied.
-    - `cutmix_alpha` (float):
-      The alpha parameter for cutmix.
-      Defaults to 0.0, meaning no cutmix is applied.
-    - `**kwargs`:
-      Additional keyword arguments for further customization.
-      Possible keys include:
-        - "batch_size": Override the default batch size.
-        - "num_workers": Override the default number of workers.
-        - "mixup_alpha": Override the default mixup alpha.
-        - "cutmix_alpha": Override the default cutmix alpha.
-        - "num_classes": The number of classes in the dataset.
+    - `batch_size` (int): The number of samples per batch. Defaults to 1.
+    - `num_workers` (int): The number of subprocesses to use for data loading. Defaults to 0.
+    - `mixup_alpha` (float): The alpha parameter for mixup. Defaults to 0.0, meaning no mixup is applied.
+    - `cutmix_alpha` (float): The alpha parameter for cutmix. Defaults to 0.0, meaning no cutmix is applied.
+    - `**kwargs`: Additional keyword arguments for further customization.
+        - Possible keys include:
+            - "batch_size": Override the default batch size.
+            - "num_workers": Override the default number of workers.
+            - "mixup_alpha": Override the default mixup alpha.
+            - "cutmix_alpha": Override the default cutmix alpha.
+            - "num_classes": The number of classes in the dataset.
 
     ### Returns
-    - `DataLoader`:
-      A DataLoader configured with the specified options.
+    - `DataLoader`: A DataLoader configured with the specified options.
 
     ### Notes
     - If `train` is True, a custom collate function `CollateFunction` is used for mixup/cutmix augmentation.
@@ -73,7 +61,6 @@ def to_dataloader(
         mixup_alpha=...,
         cutmix_alpha=...,
     )
-
     for batch in dataloader:
         print(len(batch))   # 64
         break

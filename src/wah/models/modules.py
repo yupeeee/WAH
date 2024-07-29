@@ -26,18 +26,14 @@ def _getattr(
     Returns the value of the attribute (attr) from the module.
 
     ### Parameters
-    - `module` (Module):
-      The module from which to get the attribute.
-    - `attr` (str):
-      The attribute name to get from the module.
+    - `module (Module)`: The module from which to get the attribute.
+    - `attr (str)`: The attribute name to get from the module.
 
     ### Returns
-    - `Module`:
-      The value of the specified attribute.
+    - `Module`: The value of the specified attribute.
 
     ### Raises
-    - `AttributeError`:
-      If the specified attribute does not exist within the module.
+    - `AttributeError`: If the specified attribute does not exist within the module.
 
     ### Notes
     - This function supports nested attributes separated by dots.
@@ -47,12 +43,9 @@ def _getattr(
         for a in attr.split("."):
             if attr.isnumeric():
                 module = module[int(a)]
-
             else:
                 module = getattr(module, a)
-
         return module
-
     except AttributeError:
         raise
 
@@ -65,14 +58,11 @@ def get_valid_attr(
     Returns the longest valid nested attribute (attr) name that exists in the model.
 
     ### Parameters
-    - `model` (Module):
-      The model from which to get the attribute.
-    - `attr` (str):
-      The attribute name to validate.
+    - `model (Module)`: The model from which to get the attribute.
+    - `attr (str)`: The attribute name to validate.
 
     ### Returns
-    - `str`:
-      The longest valid nested attribute name if it exists, otherwise `None`.
+    - `str`: The longest valid nested attribute name if it exists, otherwise `None`.
 
     ### Notes
     - This function checks each part of the nested attribute and returns the longest valid attribute path.
@@ -87,7 +77,6 @@ def get_valid_attr(
         for a in attrs[1:]:
             module = _getattr(module, a)
             valid_attr.append(a)
-
     except AttributeError:
         pass
 
@@ -101,12 +90,10 @@ def get_module_name(
     Returns the class name of the module.
 
     ### Parameters
-    - `module` (Module):
-      The module to get the class name from.
+    - `module (Module)`: The module to get the class name from.
 
     ### Returns
-    - `str`:
-      The class name of the module.
+    - `str`: The class name of the module.
     """
     return module.__class__.__name__
 
@@ -118,12 +105,10 @@ def get_module_params(
     Returns the parameters of a module as a tuple of positional and keyword arguments.
 
     ### Parameters
-    - `module` (Module):
-      The module to get the parameters from.
+    - `module (Module)`: The module to get the parameters from.
 
     ### Returns
-    - `Tuple[List[Any], Dict[str, Any]]`:
-      A tuple containing a list of positional arguments and a dictionary of keyword arguments.
+    - `Tuple[List[Any], Dict[str, Any]]`: A tuple containing a list of positional arguments and a dictionary of keyword arguments.
 
     ### Notes
     - This function parses the module's string representation to extract its parameters.
@@ -152,7 +137,6 @@ def get_module_params(
                 # increment by 2 to skip the next element
                 # since it's already paired
                 i += 2
-
             else:
                 yield params[i]
                 i += 1
@@ -169,7 +153,6 @@ def get_module_params(
     for param in process_params(params):
         if "=" not in param:
             args.append(literal_eval(param))
-
         else:
             k, v = param.split("=")
             kwargs[k] = literal_eval(v)
@@ -184,12 +167,10 @@ def get_named_modules(
     Returns the names of all modules in the model.
 
     ### Parameters
-    - `model` (Module):
-      The model to get the module names from.
+    - `model (Module)`: The model to get the module names from.
 
     ### Returns
-    - `List[str]`:
-      A list of names of all modules in the model.
+    - `List[str]`: A list of names of all modules in the model.
     """
     return [name for name, _ in model.named_modules()]
 
@@ -201,12 +182,10 @@ def get_attrs(
     Returns all valid module names (attrs) of a given neural network model.
 
     ### Parameters
-    - `model` (Module):
-      The model to get the attributes from.
+    - `model (Module)`: The model to get the attributes from.
 
     ### Returns
-    - `List[str]`:
-      A list of all valid module names.
+    - `List[str]`: A list of all valid module names.
 
     ### Notes
     - This function validates and collects all attribute names of the model.

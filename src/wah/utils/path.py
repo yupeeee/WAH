@@ -24,8 +24,7 @@ def mkdir(
     Creates a directory at the specified path if it does not already exist.
 
     ### Parameters
-    - `path` (Path):
-      The path to the directory to create.
+    - `path (Path)`: The path to the directory to create.
 
     ### Returns
     - `None`
@@ -50,13 +49,11 @@ def rmdir(
     Recursively deletes a directory and all its contents.
 
     ### Parameters
-    - `path` (Path):
-      The path to the directory to delete.
+    - `path (Path)`: The path to the directory to delete.
 
     ### Returns
     - `None`
     """
-
     shutil.rmtree(path)
 
 
@@ -67,12 +64,10 @@ def clean(
     Normalizes a filesystem path.
 
     ### Parameters
-    - `path` (Path):
-      The path to normalize.
+    - `path (Path)`: The path to normalize.
 
     ### Returns
-    - `Path`:
-      The normalized path.
+    - `Path`: The normalized path.
 
     ### Notes
     - This function uses `os.path.normpath` to normalize the given path.
@@ -87,12 +82,10 @@ def join(
     Joins multiple path components and normalizes the resulting path.
 
     ### Parameters
-    - `*path_list`:
-      The path components to join.
+    - `*path_list`: The path components to join.
 
     ### Returns
-    - `Path`:
-      The joined and normalized path.
+    - `Path`: The joined and normalized path.
 
     ### Notes
     - This function uses `os.path.join` to join the given path components and then normalizes the result using `clean`.
@@ -107,12 +100,10 @@ def splitext(
     Returns the file extension of the given path.
 
     ### Parameters
-    - `path` (Path):
-      The path to extract the file extension from.
+    - `path (Path)`: The path to extract the file extension from.
 
     ### Returns
-    - `str`:
-      The file extension of the path.
+    - `str`: The file extension of the path.
 
     ### Notes
     - This function uses `os.path.splitext` to get the file extension.
@@ -129,16 +120,12 @@ def ls(
     Lists files and directories in the specified path, optionally filtering by extension and sorting.
 
     ### Parameters
-    - `path` (Path):
-      The path to list the files and directories from.
-    - `fext` (Optional[str]):
-      The file extension to filter by. Defaults to `None`.
-    - `sort` (bool):
-      Whether to sort the list. Defaults to `True`.
+    - `path (Path)`: The path to list the files and directories from.
+    - `fext (Optional[str])`: The file extension to filter by. Defaults to `None`.
+    - `sort (bool)`: Whether to sort the list. Defaults to `True`.
 
     ### Returns
-    - `List[str]`:
-      A list of file and directory names in the specified path.
+    - `List[str]`: A list of file and directory names in the specified path.
 
     ### Notes
     - This function uses `os.listdir` to get the list of files and directories.

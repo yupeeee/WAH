@@ -3,7 +3,7 @@ import os
 import torch
 import tqdm
 
-from ...typing import (
+from ....typing import (
     Dataset,
     DataLoader,
     Device,
@@ -16,11 +16,11 @@ from ...typing import (
     Tensor,
     Tuple,
 )
-from ...utils import dist
-from ...utils.path import ls, rmdir
-from ...utils.random import seed_everything
-from ...utils.time import current_time
-from .travel import DirectionGenerator
+from ....utils import dist
+from ....utils.path import ls, rmdir
+from ....utils.random import seed_everything
+from ....utils.time import current_time
+from ..travel import DirectionGenerator
 
 __all__ = [
     "TravelLinearityTest",
@@ -39,18 +39,13 @@ def move_x(
     Moves the input data `x` along the direction `d` by `eps`.
 
     ### Parameters
-    - `x` (Tensor):
-      The input data.
-    - `d` (Tensor):
-      The direction tensor.
-    - `eps` (float):
-      The distance to move along the direction.
-    - `bound` (bool, optional):
-      Whether to clamp the output to [0, 1]. Defaults to True.
+    - `x (Tensor)`: The input data.
+    - `d (Tensor)`: The direction tensor.
+    - `eps (float)`: The distance to move along the direction.
+    - `bound (bool, optional)`: Whether to clamp the output to [0, 1]. Defaults to True.
 
     ### Returns
-    - `Tensor`:
-      The moved data.
+    - `Tensor`: The moved data.
     """
     _x = x + d * eps
 
@@ -67,12 +62,10 @@ def load_preprocess_and_feature_extractor(
     Loads the preprocessing and feature extractor modules from the given model.
 
     ### Parameters
-    - `model` (Module):
-      The model from which to load the preprocessing and feature extractor modules.
+    - `model (Module)`: The model from which to load the preprocessing and feature extractor modules.
 
     ### Returns
-    - `Tuple[Module, Module]`:
-      A tuple containing the preprocessing module and the feature extractor module.
+    - `Tuple[Module, Module]`: A tuple containing the preprocessing module and the feature extractor module.
     """
     # model is timm model
     try:
@@ -103,24 +96,16 @@ def compute_cossim(
     Computes cosine similarities between feature vectors of moved data.
 
     ### Parameters
-    - `model` (Module):
-      The model to extract features.
-    - `data` (Tensor):
-      The input data.
-    - `directions` (Tensor):
-      The direction tensor.
-    - `eps` (float):
-      The distance to move along the direction.
-    - `delta` (float):
-      The small perturbation for calculating movement vectors.
-    - `device` (Device):
-      The device to run the model on.
-    - `bound` (bool, optional):
-      Whether to clamp the moved data to [0, 1]. Defaults to True.
+    - `model (Module)`: The model to extract features.
+    - `data (Tensor)`: The input data.
+    - `directions (Tensor)`: The direction tensor.
+    - `eps (float)`: The distance to move along the direction.
+    - `delta (float)`: The small perturbation for calculating movement vectors.
+    - `device (Device)`: The device to run the model on.
+    - `bound (bool, optional)`: Whether to clamp the moved data to [0, 1]. Defaults to True.
 
     ### Returns
-    - `List[float]`:
-      The cosine similarities.
+    - `List[float]`: The cosine similarities.
     """
     batch_size = len(data)
     nzd = 1.0e-7  # for nonzero division
@@ -178,28 +163,17 @@ def run(
     Runs the linearity test for a given model and dataset.
 
     ### Parameters
-    - `rank` (int):
-      The rank of the current process.
-    - `nprocs` (int):
-      The total number of processes.
-    - `model` (Module):
-      The model to test.
-    - `dataset` (Dataset):
-      The dataset to test on.
-    - `epsilons` (List[float]):
-      The list of epsilon values to test.
-    - `delta` (float):
-      The small perturbation for calculating movement vectors.
-    - `batch_size` (int, optional):
-      The batch size for the DataLoader. Defaults to 1.
-    - `num_workers` (int, optional):
-      The number of workers for the DataLoader. Defaults to 0.
-    - `method` (str, optional):
-      The method to use for generating travel directions. Defaults to "fgsm".
-    - `bound` (bool, optional):
-      Whether to clamp the moved data to [0, 1]. Defaults to True.
-    - `verbose` (bool, optional):
-      Whether to print progress. Defaults to False.
+    - `rank (int)`: The rank of the current process.
+    - `nprocs (int)`: The total number of processes.
+    - `model (Module)`: The model to test.
+    - `dataset (Dataset)`: The dataset to test on.
+    - `epsilons (List[float])`: The list of epsilon values to test.
+    - `delta (float)`: The small perturbation for calculating movement vectors.
+    - `batch_size (int, optional)`: The batch size for the DataLoader. Defaults to 1.
+    - `num_workers (int, optional)`: The number of workers for the DataLoader. Defaults to 0.
+    - `method (str, optional)`: The method to use for generating travel directions. Defaults to "fgsm".
+    - `bound (bool, optional)`: Whether to clamp the moved data to [0, 1]. Defaults to True.
+    - `verbose (bool, optional)`: Whether to print progress. Defaults to False.
 
     ### Returns
     - `None`
@@ -279,38 +253,26 @@ class TravelLinearityTest:
     """
     Conducts a linearity test by traveling data along generated directions and measuring cosine similarities.
 
-    ### Parameters
-    - `max_eps` (float):
-      The maximum epsilon value for traveling.
-    - `num_steps` (int):
-      The number of steps between -max_eps and max_eps.
-    - `method` (Literal["fgsm"], optional):
-      The method to use for generating travel directions. Defaults to "fgsm".
-    - `batch_size` (int, optional):
-      The batch size for the DataLoader. Defaults to 1.
-    - `num_workers` (int, optional):
-      The number of workers for the DataLoader. Defaults to 0.
-    - `delta` (float, optional):
-      The small perturbation for calculating movement vectors. Defaults to 1.0e-3.
-    - `seed` (int, optional):
-      The seed for random number generation. Defaults to 0.
-    - `bound` (bool, optional):
-      Whether to clamp the moved data to [0, 1]. Defaults to True.
-    - `use_cuda` (bool, optional):
-      Whether to use CUDA for computation. Defaults to False.
-    - `devices` (Optional[Devices], optional):
-      The devices to use for computation. Defaults to "auto".
+    ### Attributes
+    - `epsilons (List[float])`: The list of epsilon values to test.
+    - `method (Literal["fgsm"])`: The method to use for generating travel directions.
+    - `batch_size (int)`: The batch size for the DataLoader.
+    - `num_workers (int)`: The number of workers for the DataLoader.
+    - `delta (float)`: The small perturbation for calculating movement vectors.
+    - `seed (int)`: The seed for random number generation.
+    - `bound (bool)`: Whether to clamp the moved data to [0, 1].
+    - `use_cuda (bool)`: Whether to use CUDA for computation.
+    - `devices (Optional[Devices])`: The devices to use for computation.
 
     ### Methods
-    - `__call__`:
-      Conducts the linearity test on the given model and dataset.
+    - `__call__(model, dataset, verbose) -> Dict[float, List[float]]`: Conducts the linearity test on the given model and dataset.
     """
 
     def __init__(
         self,
         max_eps: float,
         num_steps: int,
-        method: Literal["fgsm",] = "fgsm",
+        method: Literal["fgsm"] = "fgsm",
         batch_size: int = 1,
         num_workers: int = 0,
         delta: float = 1.0e-3,
@@ -320,26 +282,19 @@ class TravelLinearityTest:
         devices: Optional[Devices] = "auto",
     ) -> None:
         """
-        - `max_eps` (float):
-          The maximum epsilon value for traveling.
-        - `num_steps` (int):
-          The number of steps between -max_eps and max_eps.
-        - `method` (Literal["fgsm"], optional):
-          The method to use for generating travel directions. Defaults to "fgsm".
-        - `batch_size` (int, optional):
-          The batch size for the DataLoader. Defaults to 1.
-        - `num_workers` (int, optional):
-          The number of workers for the DataLoader. Defaults to 0.
-        - `delta` (float, optional):
-          The small perturbation for calculating movement vectors. Defaults to 1.0e-3.
-        - `seed` (int, optional):
-          The seed for random number generation. Defaults to 0.
-        - `bound` (bool, optional):
-          Whether to clamp the moved data to [0, 1]. Defaults to True.
-        - `use_cuda` (bool, optional):
-          Whether to use CUDA for computation. Defaults to False.
-        - `devices` (Optional[Devices], optional):
-          The devices to use for computation. Defaults to "auto".
+        Initialize the TravelLinearityTest class.
+
+        ### Parameters
+        - `max_eps (float)`: The maximum epsilon value for traveling.
+        - `num_steps (int)`: The number of steps between -max_eps and max_eps.
+        - `method (Literal["fgsm"], optional)`: The method to use for generating travel directions. Defaults to "fgsm".
+        - `batch_size (int, optional)`: The batch size for the DataLoader. Defaults to 1.
+        - `num_workers (int, optional)`: The number of workers for the DataLoader. Defaults to 0.
+        - `delta (float, optional)`: The small perturbation for calculating movement vectors. Defaults to 1.0e-3.
+        - `seed (Optional[int], optional)`: The seed for random number generation. Defaults to 0.
+        - `bound (bool, optional)`: Whether to clamp the moved data to [0, 1]. Defaults to True.
+        - `use_cuda (bool, optional)`: Whether to use CUDA for computation. Defaults to False.
+        - `devices (Optional[Devices], optional)`: The devices to use for computation. Defaults to "auto".
         """
         if max_eps == 0:
             self.epsilons = [
@@ -373,16 +328,12 @@ class TravelLinearityTest:
         Conducts the linearity test on the given model and dataset.
 
         ### Parameters
-        - `model` (Module):
-          The model to test.
-        - `dataset` (Dataset):
-          The dataset to test on.
-        - `verbose` (bool, optional):
-          Whether to print progress. Defaults to False.
+        - `model (Module)`: The model to test.
+        - `dataset (Dataset)`: The dataset to test on.
+        - `verbose (bool, optional)`: Whether to print progress. Defaults to False.
 
         ### Returns
-        - `Dict[float, List[float]]`:
-          A dictionary with epsilon values as keys and lists of cosine similarities as values.
+        - `Dict[float, List[float]]`: A dictionary with epsilon values as keys and lists of cosine similarities as values.
         """
         model.eval()
 

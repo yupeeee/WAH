@@ -19,15 +19,11 @@ def load_txt(
     Loads a text file and returns its contents as a list of strings or specified type.
 
     ### Parameters
-    - `path` (Path):
-      The path to the text file.
-    - `dtype` (Type):
-      The type to which each line should be converted.
-      Defaults to `str`.
+    - `path (Path)`: The path to the text file.
+    - `dtype (type)`: The type to which each line should be converted. Defaults to `str`.
 
     ### Returns
-    - `List[str]`:
-      A list of strings or specified type representing the lines in the text file.
+    - `List[str]`: A list of strings or specified type representing the lines in the text file.
 
     ### Notes
     - This function reads the text file line by line, strips the newline characters, and converts each line to the specified type.
@@ -50,13 +46,9 @@ def save_in_txt(
     Saves a list of strings to a text file.
 
     ### Parameters
-    - `lst` (List[str]):
-      The list of strings to save.
-    - `save_name` (str):
-      The name of the text file to save.
-    - `save_dir` (Path):
-      The directory to save the text file in.
-      Defaults to the current directory.
+    - `lst (List[str])`: The list of strings to save.
+    - `save_name (str)`: The name of the text file to save.
+    - `save_dir (Path)`: The directory to save the text file in. Defaults to the current directory.
 
     ### Returns
     - `None`

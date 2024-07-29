@@ -25,14 +25,11 @@ def load_csv(
     Loads a CSV file into a dictionary.
 
     ### Parameters
-    - `csv_path` (Path):
-      The path to the CSV file.
-    - `index_col` (Any):
-      The column to set as index. Defaults to 0.
+    - `csv_path (Path)`: The path to the CSV file.
+    - `index_col (Any)`: The column to set as index. Defaults to 0.
 
     ### Returns
-    - `Dict[Any, List[Any]]`:
-      A dictionary where keys are column names and values are lists of column data.
+    - `Dict[Any, List[Any]]`: A dictionary where keys are column names and values are lists of column data.
 
     ### Notes
     - This function reads the CSV file from the given path and converts it into a dictionary with columns as lists.
@@ -50,14 +47,11 @@ def to_df(
     Converts a dictionary to a DataFrame.
 
     ### Parameters
-    - `dictionary` (Dict):
-      The dictionary to convert.
-    - `index_col` (Any):
-      The column to set as index. Defaults to None.
+    - `dictionary (Dict)`: The dictionary to convert.
+    - `index_col (Any)`: The column to set as index. Defaults to None.
 
     ### Returns
-    - `DataFrame`:
-      A DataFrame created from the dictionary.
+    - `DataFrame`: A DataFrame created from the dictionary.
 
     ### Notes
     - This function creates a DataFrame from the given dictionary.
@@ -81,14 +75,10 @@ def save_in_csv(
     Saves a dictionary to a CSV file.
 
     ### Parameters
-    - `dictionary` (Dict):
-      The dictionary to save.
-    - `save_dir` (Path):
-      The directory to save the CSV file in.
-    - `save_name` (str):
-      The name of the CSV file.
-    - `index_col` (Any):
-      The column to set as index. Defaults to None.
+    - `dictionary (Dict)`: The dictionary to save.
+    - `save_dir (Path)`: The directory to save the CSV file in.
+    - `save_name (str)`: The name of the CSV file.
+    - `index_col (Any)`: The column to set as index. Defaults to None.
 
     ### Returns
     - `None`

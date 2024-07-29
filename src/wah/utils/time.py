@@ -13,8 +13,7 @@ def current_time() -> str:
     - `None`
 
     ### Returns
-    - `str`:
-      The current time formatted as `YYYYMMDDHHMMSSNNNNNNNNN`.
+    - `str`: The current time formatted as `YYYYMMDDHHMMSSNNNNNNNNN`.
 
     ### Notes
     - The function uses `time.time_ns()` to get the current time in nanoseconds.

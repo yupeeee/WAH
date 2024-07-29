@@ -20,15 +20,11 @@ class FeatureExtractor(Module):
     A feature extractor class for extracting features from a specified model.
 
     ### Parameters
-    - `model` (Module):
-      The PyTorch model from which to extract features.
-    - `penultimate_only` (bool, optional):
-      If `True`, only extracts features from the penultimate layer.
-      Defaults to `False`.
+    - `model (Module)`: The PyTorch model from which to extract features.
+    - `penultimate_only (bool, optional)`: If `True`, only extracts features from the penultimate layer. Defaults to `False`.
 
     ### Methods
-    - `forward`:
-      Performs a forward pass through the feature extractor and returns the extracted features.
+    - `forward`: Performs a forward pass through the feature extractor and returns the extracted features.
 
     ### Notes
     - This class uses the `torchvision.models.feature_extraction.create_feature_extractor` to create a feature extractor for the given model.
@@ -42,11 +38,8 @@ class FeatureExtractor(Module):
         penultimate_only: bool = False,
     ) -> None:
         """
-        - `model` (Module):
-          The PyTorch model from which to extract features.
-        - `penultimate_only` (bool, optional):
-          If `True`, only extracts features from the penultimate layer.
-          Defaults to `False`.
+        - `model (Module)`: The PyTorch model from which to extract features.
+        - `penultimate_only (bool, optional)`: If `True`, only extracts features from the penultimate layer. Defaults to `False`.
         """
         super().__init__()
 
@@ -59,7 +52,6 @@ class FeatureExtractor(Module):
             self.feature_layers = {
                 layers[-2]: "features",
             }
-
         else:
             self.feature_layers = dict(
                 (layer, f"{i}_{layer}") for i, layer in enumerate(layers)
@@ -77,12 +69,10 @@ class FeatureExtractor(Module):
         Performs a forward pass through the feature extractor and returns the extracted features.
 
         ### Parameters
-        - `x` (Tensor):
-          The input tensor.
+        - `x (Tensor)`: The input tensor.
 
         ### Returns
-        - `Dict[str, Tensor]`:
-          A dictionary of extracted features with layer names as keys.
+        - `Dict[str, Tensor]`: A dictionary of extracted features with layer names as keys.
 
         ### Notes
         - If the layers have not been checked yet, this method will call `_check_layers` first.
@@ -107,8 +97,7 @@ class FeatureExtractor(Module):
         Checks and filters the layers for feature extraction.
 
         ### Parameters
-        - `x` (Tensor):
-          The input tensor.
+        - `x (Tensor)`: The input tensor.
 
         ### Returns
         - `None`
