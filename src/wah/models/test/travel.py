@@ -16,6 +16,7 @@ from ...typing import (
     Tuple,
 )
 from ...utils.random import seed_everything
+from ...utils.tensor import repeat
 
 __all__ = [
     "Traveler",
@@ -23,6 +24,8 @@ __all__ = [
 
 travel_methods = [
     "fgsm",
+    "signed_rand",
+    "same_signed_rand",
 ]
 
 
@@ -44,7 +47,11 @@ class DirectionGenerator:
     def __init__(
         self,
         model: Module,
-        method: Literal["fgsm"] = "fgsm",
+        method: Literal[
+            "fgsm",
+            "signed_rand",
+            "same_signed_rand",
+        ] = "fgsm",
         device: Optional[Device] = "cpu",
     ) -> None:
         assert (
@@ -80,8 +87,14 @@ class DirectionGenerator:
                 .grad(data, targets)
                 .sign()
             )
-
             directions = signed_grads
+
+        elif self.method == "signed_rand":
+            directions = torch.randn_like(data).sign()
+
+        elif self.method == "same_signed_rand":
+            direction = torch.randn_like(data[0]).sign()
+            directions = repeat(direction, len(data), dim=0)
 
         else:
             raise
@@ -367,7 +380,11 @@ class Traveler:
     def __init__(
         self,
         model: Module,
-        method: Literal["fgsm"] = "fgsm",
+        method: Literal[
+            "fgsm",
+            "signed_rand",
+            "same_signed_rand",
+        ] = "fgsm",
         seed: Optional[int] = 0,
         device: Optional[Device] = "cpu",
         init_eps: float = 1.0e-3,
@@ -380,7 +397,7 @@ class Traveler:
     ) -> None:
         """
         - `model (Module)`: The model to test the data on.
-        - `method (Literal["fgsm"], optional)`: The method to use for generating directions. Defaults to "fgsm".
+        - `method (Literal["fgsm", "signed_rand", "same_signed_rand"], optional)`: The method to use for generating directions. Defaults to "fgsm".
         - `seed (int, optional)`: The seed for random number generation. Defaults to 0.
         - `device (Optional[Device], optional)`: The device to run the model on. Defaults to "cpu".
         - `init_eps (float, optional)`: Initial length of travel. Defaults to 1.0e-3.

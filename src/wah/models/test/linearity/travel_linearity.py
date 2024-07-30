@@ -245,7 +245,7 @@ def run(
             batch_idx += 1
 
     # DDP cleanup
-    if rank != torch.device("cpu"):
+    if rank != "cpu":
         dist.cleanup()
 
 
@@ -255,7 +255,7 @@ class TravelLinearityTest:
 
     ### Attributes
     - `epsilons (List[float])`: The list of epsilon values to test.
-    - `method (Literal["fgsm"])`: The method to use for generating travel directions.
+    - `method (str)`: The method to use for generating travel directions.
     - `batch_size (int)`: The batch size for the DataLoader.
     - `num_workers (int)`: The number of workers for the DataLoader.
     - `delta (float)`: The small perturbation for calculating movement vectors.
@@ -273,7 +273,11 @@ class TravelLinearityTest:
         min_eps: float,
         max_eps: float,
         num_steps: int,
-        method: Literal["fgsm"] = "fgsm",
+        method: Literal[
+            "fgsm",
+            "signed_rand",
+            "same_signed_rand",
+        ] = "fgsm",
         batch_size: int = 1,
         num_workers: int = 0,
         delta: float = 1.0e-3,
@@ -289,7 +293,7 @@ class TravelLinearityTest:
         - `min_eps (float)`: The minimum epsilon value for traveling.
         - `max_eps (float)`: The maximum epsilon value for traveling.
         - `num_steps (int)`: The number of steps between min_eps and max_eps.
-        - `method (Literal["fgsm"], optional)`: The method to use for generating travel directions. Defaults to "fgsm".
+        - `method (str, optional)`: The method to use for generating travel directions. Defaults to "fgsm".
         - `batch_size (int, optional)`: The batch size for the DataLoader. Defaults to 1.
         - `num_workers (int, optional)`: The number of workers for the DataLoader. Defaults to 0.
         - `delta (float, optional)`: The small perturbation for calculating movement vectors. Defaults to 1.0e-3.
