@@ -270,6 +270,7 @@ class TravelLinearityTest:
 
     def __init__(
         self,
+        min_eps: float,
         max_eps: float,
         num_steps: int,
         method: Literal["fgsm"] = "fgsm",
@@ -285,8 +286,9 @@ class TravelLinearityTest:
         Initialize the TravelLinearityTest class.
 
         ### Parameters
+        - `min_eps (float)`: The minimum epsilon value for traveling.
         - `max_eps (float)`: The maximum epsilon value for traveling.
-        - `num_steps (int)`: The number of steps between -max_eps and max_eps.
+        - `num_steps (int)`: The number of steps between min_eps and max_eps.
         - `method (Literal["fgsm"], optional)`: The method to use for generating travel directions. Defaults to "fgsm".
         - `batch_size (int, optional)`: The batch size for the DataLoader. Defaults to 1.
         - `num_workers (int, optional)`: The number of workers for the DataLoader. Defaults to 0.
@@ -296,14 +298,9 @@ class TravelLinearityTest:
         - `use_cuda (bool, optional)`: Whether to use CUDA for computation. Defaults to False.
         - `devices (Optional[Devices], optional)`: The devices to use for computation. Defaults to "auto".
         """
-        if max_eps == 0:
-            self.epsilons = [
-                0.0,
-            ]
-        else:
-            self.epsilons = [
-                float(eps) for eps in torch.linspace(-max_eps, max_eps, num_steps)
-            ]
+        self.epsilons = [
+            float(eps) for eps in torch.linspace(min_eps, max_eps, num_steps)
+        ]
         self.method = method
         self.batch_size = batch_size
         self.num_workers = num_workers

@@ -117,6 +117,8 @@ def run(
         feature_extractor = dist.load_model(rank, feature_extractor)
 
     # compute negative ratios
+    os.makedirs(temp_dir, exist_ok=True)
+
     for batch_idx, data in enumerate(
         tqdm.tqdm(
             dataloader,
