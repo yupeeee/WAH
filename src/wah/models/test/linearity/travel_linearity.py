@@ -156,6 +156,7 @@ def run(
     batch_size: int = 1,
     num_workers: int = 0,
     method: str = "fgsm",
+    seed: Optional[int] = 0,
     bound: bool = True,
     verbose: bool = False,
 ) -> None:
@@ -173,6 +174,7 @@ def run(
     - `num_workers (int, optional)`: The number of workers for the DataLoader. Defaults to 0.
     - `method (str, optional)`: The method to use for generating travel directions. Defaults to "fgsm".
     - `bound (bool, optional)`: Whether to clamp the moved data to [0, 1]. Defaults to True.
+    - `seed (int, optional)`: The seed for random number generation. Defaults to 0.
     - `verbose (bool, optional)`: Whether to print progress. Defaults to False.
 
     ### Returns
@@ -217,6 +219,9 @@ def run(
     os.makedirs(temp_dir, exist_ok=True)
 
     for eps_idx, eps in enumerate(epsilons):
+        if method == "signed_rand":
+            seed_everything(seed)
+
         batch_idx = 0
 
         for data, targets in tqdm.tqdm(
@@ -224,6 +229,9 @@ def run(
             desc=f"[{eps_idx + 1}/{len(epsilons)}] eps={eps}",
             disable=not verbose,
         ):
+            if method == "same_signed_rand":
+                seed_everything(seed)
+
             directions = direction_generator(data, targets)
             cossim = compute_cossim(
                 model=model,
@@ -262,7 +270,7 @@ class TravelLinearityTest:
     - `seed (int)`: The seed for random number generation.
     - `bound (bool)`: Whether to clamp the moved data to [0, 1].
     - `use_cuda (bool)`: Whether to use CUDA for computation.
-    - `devices (Optional[Devices])`: The devices to use for computation.
+    - `devices (Devices)`: The devices to use for computation.
 
     ### Methods
     - `__call__(model, dataset, verbose) -> Dict[float, List[float]]`: Conducts the linearity test on the given model and dataset.
@@ -276,7 +284,6 @@ class TravelLinearityTest:
         method: Literal[
             "fgsm",
             "signed_rand",
-            "same_signed_rand",
         ] = "fgsm",
         batch_size: int = 1,
         num_workers: int = 0,
@@ -297,10 +304,10 @@ class TravelLinearityTest:
         - `batch_size (int, optional)`: The batch size for the DataLoader. Defaults to 1.
         - `num_workers (int, optional)`: The number of workers for the DataLoader. Defaults to 0.
         - `delta (float, optional)`: The small perturbation for calculating movement vectors. Defaults to 1.0e-3.
-        - `seed (Optional[int], optional)`: The seed for random number generation. Defaults to 0.
+        - `seed (int, optional)`: The seed for random number generation. Defaults to 0.
         - `bound (bool, optional)`: Whether to clamp the moved data to [0, 1]. Defaults to True.
         - `use_cuda (bool, optional)`: Whether to use CUDA for computation. Defaults to False.
-        - `devices (Optional[Devices], optional)`: The devices to use for computation. Defaults to "auto".
+        - `devices (Devices, optional)`: The devices to use for computation. Defaults to "auto".
         """
         self.epsilons = [
             float(eps) for eps in torch.linspace(min_eps, max_eps, num_steps)
@@ -311,8 +318,6 @@ class TravelLinearityTest:
         self.delta = delta
         self.seed = seed
         self.bound = bound
-
-        seed_everything(seed)
 
         self.use_cuda = use_cuda
         if self.use_cuda:
@@ -353,6 +358,7 @@ class TravelLinearityTest:
                     self.batch_size,
                     self.num_workers,
                     self.method,
+                    self.seed,
                     self.bound,
                     verbose,
                 ),
@@ -373,6 +379,7 @@ class TravelLinearityTest:
                 batch_size=self.batch_size,
                 num_workers=self.num_workers,
                 method=self.method,
+                seed=self.seed,
                 bound=self.bound,
                 verbose=verbose,
             )
