@@ -28,8 +28,7 @@ __all__ = [
     "EvalTests",
 ]
 
-time_id = current_time()
-temp_dir = f"wahtmpdir@EvalTest{time_id}"
+temp_dir = f"wahtmpdir@EvalTest"
 
 
 def set_loss_fn(
