@@ -28,7 +28,7 @@ __all__ = [
     "FeatureSignTest",
 ]
 
-temp_dir = "wahtmpdir@FeatureSignTest"
+temp_dir = f"wahtmpdir@FeatureSignTest{current_time()}"
 
 
 def compute_negative_ratios(

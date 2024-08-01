@@ -21,7 +21,7 @@ __all__ = [
     "GradTest",
 ]
 
-temp_dir = "wahtmpdir@GradTest"
+temp_dir = f"wahtmpdir@GradTest{current_time()}"
 
 
 def run(
