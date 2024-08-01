@@ -1,13 +1,13 @@
 from .accuracy import AccuracyTest
+from .eval import (
+    EvalTest,
+    EvalTests,
+)
 from .feature_sign import FeatureSignTest
 from .grad import GradTest
 from .linearity import (
     PCALinearityTest,
     TravelLinearityTest,
-)
-from .loss import (
-    LossTest,
-    LossTests,
 )
 from .travel import Traveler
 
@@ -15,12 +15,12 @@ from .travel import Traveler
 
 __all__ = [
     "AccuracyTest",
+    "EvalTest",
+    "EvalTests",
     "FeatureSignTest",
     "GradTest",
     "PCALinearityTest",
     "TravelLinearityTest",
-    "LossTest",
-    "LossTests",
     "Traveler",
     # "FeatureRMSTest",
 ]

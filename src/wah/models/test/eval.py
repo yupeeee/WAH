@@ -18,16 +18,17 @@ from ...typing import (
 )
 from ...datasets.base import ClassificationDataset
 from ...utils import dist
+from ...utils.dictionary import save_in_csv
 from ...utils.path import ls, rmdir
 from ...utils.time import current_time
 from ..load import load_state_dict
 
 __all__ = [
-    "LossTest",
-    "LossTests",
+    "EvalTest",
+    "EvalTests",
 ]
 
-temp_dir = "wahtmpdir@LossTest"
+temp_dir = f"wahtmpdir@EvalTest{current_time()}"
 
 
 def set_loss_fn(
@@ -65,21 +66,25 @@ def run(
     desc: Optional[str] = None,
 ) -> None:
     """
-    Runs the loss computation on the given dataset.
+    Runs the evaluation process for a single process.
 
     ### Parameters
-    - `rank (int)`: The rank of the current process. Use -1 for CPU.
-    - `nprocs (int)`: The total number of processes.
-    - `model (Module)`: The PyTorch model to evaluate.
-    - `dataset (Dataset)`: The dataset to evaluate the model on.
-    - `loss_fn (Module)`: The loss function to use for evaluation.
-    - `batch_size (int)`: The batch size for the DataLoader. Defaults to 1.
-    - `num_workers (int)`: The number of workers for the DataLoader. Defaults to 0.
-    - `verbose (bool)`: Whether to enable verbose output. Defaults to False.
+    - `rank` (int): The rank of the current process.
+    - `nprocs` (int): The total number of processes.
+    - `model (Module)`: The model to evaluate.
+    - `dataset (Dataset)`: The dataset to evaluate on.
+    - `loss_fn (Module)`: The loss function to use.
+    - `batch_size (int)`: The batch size to use. Defaults to 1.
+    - `num_workers (int)`: The number of workers to use for data loading. Defaults to 0.
+    - `verbose (bool)`: Whether to display progress. Defaults to False.
     - `desc (Optional[str])`: Description for the progress bar. Defaults to None.
 
     ### Returns
     - `None`
+
+    ### Notes
+    - This function evaluates the model on the given dataset, computing loss and confidence for each batch.
+    - The results are saved temporarily for later aggregation.
     """
     # if rank == -1: CPU
     if rank == -1:
@@ -107,7 +112,7 @@ def run(
         )
         model = dist.load_model(rank, model)
 
-    # compute loss
+    # evaluate
     os.makedirs(temp_dir, exist_ok=True)
 
     for batch_idx, (indices, (data, targets)) in enumerate(
@@ -125,8 +130,22 @@ def run(
 
         loss: Tensor = loss_fn(outputs, targets)
 
+        confs: Tensor = torch.nn.Softmax(dim=-1)(outputs)
+        preds: Tensor = torch.argmax(confs, dim=-1)
+
+        results: Tensor = torch.eq(preds, targets.to(rank))
+        signed_confs: Tensor = confs[:, targets].diag() * (results.int() - 0.5).sign()
+
+        eval_data = (
+            indices,
+            targets.to(torch.device("cpu")),
+            preds.to(torch.device("cpu")),
+            loss.to(torch.device("cpu")),
+            signed_confs.to(torch.device("cpu")),
+        )
+
         torch.save(
-            (indices, loss.to(torch.device("cpu"))),
+            eval_data,
             os.path.join(
                 temp_dir,
                 f"{batch_idx}-{current_time()}.pt",
@@ -138,21 +157,7 @@ def run(
         dist.cleanup()
 
 
-class LossTest:
-    """
-    A class for testing the loss of a PyTorch model on a given dataset.
-
-    ### Attributes
-    - `loss_fn (Module)`: The loss function module.
-    - `batch_size (int)`: The batch size for the DataLoader. Defaults to 1.
-    - `num_workers (int)`: The number of workers for the DataLoader. Defaults to 0.
-    - `use_cuda (bool)`: Whether to use CUDA for evaluation. Defaults to False.
-    - `devices (Optional[Devices])`: The devices to use for evaluation. Defaults to "auto".
-
-    ### Methods
-    - `__call__(model, dataset, verbose, desc) -> Dict[str, Union[int, float]]`: Evaluates the model on the given dataset and returns the computed loss.
-    """
-
+class EvalTest:
     def __init__(
         self,
         loss: Literal["ce"] = "ce",
@@ -162,14 +167,13 @@ class LossTest:
         devices: Optional[Devices] = "auto",
     ) -> None:
         """
-        Initialize the LossTest class.
+        Initializes the EvalTest class.
 
-        ### Parameters
-        - `loss (Literal["ce"])`: The type of loss function to use. Currently only "ce" (CrossEntropyLoss) is supported.
-        - `batch_size (int)`: The batch size for the DataLoader. Defaults to 1.
-        - `num_workers (int)`: The number of workers for the DataLoader. Defaults to 0.
-        - `use_cuda (bool)`: Whether to use CUDA for evaluation. Defaults to False.
-        - `devices (Optional[Devices])`: The devices to use for evaluation. Defaults to "auto".
+        - `loss (Literal["ce"])`: The loss function to use. Defaults to "ce".
+        - `batch_size (int)`: The batch size to use. Defaults to 1.
+        - `num_workers (int)`: The number of workers for data loading. Defaults to 0.
+        - `use_cuda (bool)`: Whether to use CUDA for computation. Defaults to False.
+        - `devices (Optional[Devices])`: The devices to use for computation. Defaults to "auto".
         """
         self.loss_fn = set_loss_fn(loss=loss)
         self.batch_size = batch_size
@@ -189,16 +193,20 @@ class LossTest:
         desc: Optional[str] = None,
     ) -> Dict[str, Union[int, float]]:
         """
-        Evaluates the model on the given dataset and returns the computed loss.
+        Evaluates the model on the given dataset.
 
         ### Parameters
-        - `model (Module)`: The PyTorch model to evaluate.
-        - `dataset (Dataset)`: The dataset to evaluate the model on.
-        - `verbose (bool)`: Whether to enable verbose output. Defaults to False.
+        - `model (Module)`: The model to evaluate.
+        - `dataset (Dataset)`: The dataset to evaluate on.
+        - `verbose (bool)`: Whether to display progress. Defaults to False.
         - `desc (Optional[str])`: Description for the progress bar. Defaults to None.
 
         ### Returns
-        - `Dict[str, Union[int, float]]`: The computed loss and indices.
+        - `Dict[str, Union[int, float]]`: A dictionary containing evaluation results (indices, ground truths, predictions, losses, confidences).
+
+        ### Notes
+        - This function supports both CPU and GPU evaluation.
+        - The results are aggregated and returned in a dictionary.
         """
         model.eval()
         if isinstance(dataset, ClassificationDataset):
@@ -239,42 +247,47 @@ class LossTest:
                 desc=desc,
             )
 
-        # loss
+        # eval
         indices: List[int] = []
-        loss: List[float] = []
+        ground_truths: List[int] = []
+        preds: List[int] = []
+        losses: List[float] = []
+        confs: List[float] = []
 
         file_names = ls(temp_dir)
 
         for file_name in file_names:
-            i, l = torch.load(os.path.join(temp_dir, file_name))
+            i, g, p, l, c = torch.load(os.path.join(temp_dir, file_name))
             indices.append(i)
-            loss.append(l)
+            ground_truths.append(g)
+            preds.append(p)
+            losses.append(l)
+            confs.append(c)
 
         indices = torch.cat(indices, dim=0)
-        loss = torch.cat(loss, dim=0)
+        ground_truths = torch.cat(ground_truths, dim=0)
+        preds = torch.cat(preds, dim=0)
+        losses = torch.cat(losses, dim=0)
+        confs = torch.cat(confs, dim=0)
 
-        loss = loss[indices]
+        ground_truths = ground_truths[indices]
+        preds = preds[indices]
+        losses = losses[indices]
+        confs = confs[indices]
         indices, _ = indices.sort()
 
         rmdir(temp_dir)
 
         return {
             "idx": [int(i) for i in indices],
-            "loss": [float(l) for l in loss],
+            "gt": [int(g) for g in ground_truths],
+            "pred": [int(p) for p in preds],
+            "loss": [float(l) for l in losses],
+            "conf": [float(c) for c in confs],
         }
 
 
-class LossTests:
-    """
-    A class for running loss tests across multiple checkpoints of a PyTorch model.
-
-    ### Attributes
-    - `test (LossTest)`: An instance of the LossTest class.
-
-    ### Methods
-    - `__call__(model, dataset, ckpt_dir, verbose, desc) -> float`: Evaluates the model across multiple checkpoints and returns the computed losses.
-    """
-
+class EvalTests:
     def __init__(
         self,
         loss: Literal["ce"] = "ce",
@@ -284,16 +297,15 @@ class LossTests:
         devices: Optional[Devices] = "auto",
     ) -> None:
         """
-        Initialize the LossTests class.
+        Initializes the EvalTests class.
 
-        ### Parameters
-        - `loss (Literal["ce"])`: The type of loss function to use. Currently only "ce" (CrossEntropyLoss) is supported.
-        - `batch_size (int)`: The batch size for the DataLoader. Defaults to 1.
-        - `num_workers (int)`: The number of workers for the DataLoader. Defaults to 0.
-        - `use_cuda (bool)`: Whether to use CUDA for evaluation. Defaults to False.
-        - `devices (Optional[Devices])`: The devices to use for evaluation. Defaults to "auto".
+        - `loss (Literal["ce"])`: The loss function to use. Defaults to "ce".
+        - `batch_size (int)`: The batch size to use. Defaults to 1.
+        - `num_workers (int)`: The number of workers for data loading. Defaults to 0.
+        - `use_cuda (bool)`: Whether to use CUDA for computation. Defaults to False.
+        - `devices (Optional[Devices])`: The devices to use for computation. Defaults to "auto".
         """
-        self.test = LossTest(
+        self.test = EvalTest(
             loss=loss,
             batch_size=batch_size,
             num_workers=num_workers,
@@ -306,26 +318,30 @@ class LossTests:
         model: Module,
         dataset: Dataset,
         ckpt_dir: Path,
+        save_dir: Path,
         verbose: bool = False,
         desc: Optional[str] = None,
-    ) -> float:
+    ) -> None:
         """
-        Evaluates the model across multiple checkpoints and returns the computed losses.
+        Evaluates the model on multiple checkpoints.
 
         ### Parameters
-        - `model (Module)`: The PyTorch model to evaluate.
-        - `dataset (Dataset)`: The dataset to evaluate the model on.
-        - `ckpt_dir (Path)`: The directory containing the model checkpoints.
-        - `verbose (bool)`: Whether to enable verbose output. Defaults to False.
+        - `model (Module)`: The model to evaluate.
+        - `dataset (Dataset)`: The dataset to evaluate on.
+        - `ckpt_dir (Path)`: The directory containing the checkpoints.
+        - `save_dir (Path)`: The directory to save the evaluation results.
+        - `verbose (bool)`: Whether to display progress. Defaults to False.
         - `desc (Optional[str])`: Description for the progress bar. Defaults to None.
 
         ### Returns
-        - `float`: The computed losses across checkpoints.
+        - `None`
+
+        ### Notes
+        - This function evaluates the model on all checkpoints in the specified directory.
+        - The results for each checkpoint are saved to the specified directory.
         """
         ckpt_fnames = ls(ckpt_dir, fext=".ckpt", sort=True)
         ckpt_fnames = [fname for fname in ckpt_fnames if "epoch=" in fname]
-
-        loss = []
 
         for epoch, ckpt_fname in enumerate(ckpt_fnames):
             epoch_id = f"epoch={epoch}"
@@ -336,15 +352,16 @@ class LossTests:
                 map_location="cpu",
             )
 
-            loss_per_epoch = self.test(
+            eval_data_per_epoch = self.test(
                 model=model,
                 dataset=dataset,
                 verbose=verbose,
-                desc=f"LossPlot ({epoch_id})" if desc is None else desc,
+                desc=f"EvalTest ({epoch_id})" if desc is None else desc,
             )
 
-            loss.append(loss_per_epoch["loss"])
-
-        loss = torch.Tensor(loss)
-
-        return loss
+            save_in_csv(
+                dictionary=eval_data_per_epoch,
+                save_dir=save_dir,
+                save_name=epoch_id,
+                index_col="idx",
+            )
