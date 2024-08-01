@@ -28,7 +28,8 @@ __all__ = [
     "PCALinearityTest",
 ]
 
-temp_dir = f"wahtmpdir@PCALinearityTest{current_time()}"
+time_id = current_time()
+temp_dir = f"wahtmpdir@PCALinearityTest{time_id}"
 default_pca_dim = 10
 
 

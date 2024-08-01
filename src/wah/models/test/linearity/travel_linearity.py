@@ -26,7 +26,8 @@ __all__ = [
     "TravelLinearityTest",
 ]
 
-temp_dir = f"wahtmpdir@TravelLinearityTest{current_time()}"
+time_id = current_time()
+temp_dir = f"wahtmpdir@TravelLinearityTest{time_id}"
 
 
 def move_x(
