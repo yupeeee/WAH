@@ -13,13 +13,16 @@ from ....typing import (
     Literal,
     Module,
     Optional,
+    Path,
     Tensor,
     Tuple,
 )
 from ....utils import dist
+from ....utils.dictionary import save_in_csv
 from ....utils.path import ls, rmdir
 from ....utils.random import seed_everything
 from ....utils.time import current_time
+from ...load import load_state_dict
 from ..travel import DirectionGenerator
 
 __all__ = [
@@ -411,3 +414,105 @@ class TravelLinearityTest:
         rmdir(temp_dir)
 
         return linearity
+
+
+class TravelLinearityTests:
+    def __init__(
+        self,
+        min_eps: float,
+        max_eps: float,
+        num_steps: int,
+        method: Literal[
+            "fgsm",
+            "signed_rand",
+        ] = "fgsm",
+        batch_size: int = 1,
+        num_workers: int = 0,
+        delta: float = 1.0e-3,
+        seed: Optional[int] = 0,
+        bound: bool = True,
+        use_cuda: bool = False,
+        devices: Optional[Devices] = "auto",
+    ) -> None:
+        """
+        Initializes the TravelLinearityTests class.
+
+        ### Parameters
+        - `min_eps (float)`: The minimum epsilon value for traveling.
+        - `max_eps (float)`: The maximum epsilon value for traveling.
+        - `num_steps (int)`: The number of steps between min_eps and max_eps.
+        - `method (str, optional)`: The method to use for generating travel directions. Defaults to "fgsm".
+        - `batch_size (int, optional)`: The batch size for the DataLoader. Defaults to 1.
+        - `num_workers (int, optional)`: The number of workers for the DataLoader. Defaults to 0.
+        - `delta (float, optional)`: The small perturbation for calculating movement vectors. Defaults to 1.0e-3.
+        - `seed (int, optional)`: The seed for random number generation. Defaults to 0.
+        - `bound (bool, optional)`: Whether to clamp the moved data to [0, 1]. Defaults to True.
+        - `use_cuda (bool, optional)`: Whether to use CUDA for computation. Defaults to False.
+        - `devices (Devices, optional)`: The devices to use for computation. Defaults to "auto".
+        """
+        self.test = TravelLinearityTest(
+            min_eps=min_eps,
+            max_eps=max_eps,
+            num_steps=num_steps,
+            method=method,
+            batch_size=batch_size,
+            num_workers=num_workers,
+            delta=delta,
+            seed=seed,
+            bound=bound,
+            use_cuda=use_cuda,
+            devices=devices,
+        )
+
+    def __call__(
+        self,
+        model: Module,
+        dataset: Dataset,
+        ckpt_dir: Path,
+        save_dir: Path,
+        verbose: bool = False,
+        desc: Optional[str] = None,
+    ) -> None:
+        """
+        Conducts the linearity test on the given model and dataset on multiple checkpoints.
+
+        ### Parameters
+        - `model (Module)`: The model to evaluate.
+        - `dataset (Dataset)`: The dataset to evaluate on.
+        - `ckpt_dir (Path)`: The directory containing the checkpoints.
+        - `save_dir (Path)`: The directory to save the test results.
+        - `verbose (bool)`: Whether to display progress. Defaults to False.
+        - `desc (Optional[str])`: Description for the progress bar. Defaults to None.
+
+        ### Returns
+        - `None`
+
+        ### Notes
+        - This function tests the model on all checkpoints in the specified directory.
+        - The results for each checkpoint are saved to the specified directory.
+        """
+        ckpt_fnames = ls(ckpt_dir, fext=".ckpt", sort=True)
+        ckpt_fnames = [fname for fname in ckpt_fnames if "epoch=" in fname]
+
+        for epoch, ckpt_fname in enumerate(ckpt_fnames):
+            epoch_id = f"epoch={epoch}"
+
+            load_state_dict(
+                model,
+                os.path.join(ckpt_dir, ckpt_fname),
+                map_location="cpu",
+            )
+
+            linearity_data_per_epoch = self.test(
+                model=model,
+                dataset=dataset,
+                verbose=verbose,
+                desc=f"TravelLinearityTest ({epoch_id})" if desc is None else desc,
+            )
+
+            save_in_csv(
+                dictionary=linearity_data_per_epoch,
+                save_dir=save_dir,
+                save_name=epoch_id,
+                index_col="idx",
+            )
