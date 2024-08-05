@@ -339,8 +339,8 @@ class ImageNetVal(ClassificationDataset):
 
         if self.transform == "auto":
             self.transform = self.TRANSFORM["val"]
-        elif self.transform == "tt":
-            self.transform = self.TRANSFORM["tt"]
+        elif self.transform is not None:
+            self.transform = self.TRANSFORM[self.transform]
         else:
             pass
 
