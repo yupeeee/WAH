@@ -45,6 +45,10 @@ class ScatterPlot2D(Plot2D):
         ylim: Optional[Tuple[float, float]] = None,
         yticks: Optional[Iterable[float]] = None,
         yticklabels: Optional[Iterable[str]] = None,
+        clabel: Optional[str] = None,
+        clim: Optional[Tuple[float, float]] = None,
+        cticks: Optional[Tuple[float, float]] = None,
+        cticklabels: Optional[Tuple[float, float]] = None,
         grid_alpha: Optional[float] = 0.0,
     ) -> None:
         super().__init__(
@@ -61,6 +65,14 @@ class ScatterPlot2D(Plot2D):
             yticklabels,
             grid_alpha,
         )
+        self.clabel = clabel
+        self.clim = clim
+        self.cticks = cticks
+        self.cticklabels = (
+            [str(c) for c in cticks]
+            if cticks is not None and cticklabels is None
+            else cticklabels
+        )
 
     def _plot(
         self,
@@ -68,10 +80,19 @@ class ScatterPlot2D(Plot2D):
         ax: Axes,
         x: Iterable[float],
         y: Iterable[float],
+        c: Optional[Iterable[float]] = None,
         *args,
         **kwargs,
     ) -> None:
-        ax.scatter(x, y, *args, **kwargs)
+        if c is not None:
+            cmin, cmax = self.clim
+            plot = ax.scatter(x, y, c=c, vmin=cmin, vmax=cmax, *args, **kwargs)
+            cbar = fig.colorbar(plot, ax=ax)
+            cbar.set_label(self.clabel)
+            cbar.set_ticks(self.cticks)
+            cbar.set_ticklabels(self.cticklabels)
+        else:
+            ax.scatter(x, y, *args, **kwargs)
 
 
 class DensityScatterPlot2D(Plot2D):
