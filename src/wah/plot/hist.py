@@ -2,6 +2,7 @@ import numpy as np
 
 from ..typing import (
     Axes,
+    Figure,
     Iterable,
     Optional,
     Tuple,
@@ -84,6 +85,7 @@ class HistPlot2D(Plot2D):
 
     def _plot(
         self,
+        fig: Figure,
         ax: Axes,
         x: Iterable[float],
         x_min: float,

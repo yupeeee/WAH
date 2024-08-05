@@ -3,6 +3,7 @@ import numpy as np
 from ..typing import (
     Axes,
     Dict,
+    Figure,
     Iterable,
     List,
     Optional,
@@ -86,6 +87,7 @@ class DistPlot2D(Plot2D):
 
     def _plot(
         self,
+        fig: Figure,
         ax: Axes,
         data_dict: Dict[float, List[float]],
         *args,

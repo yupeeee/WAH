@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 
 from ..typing import (
     Axes,
+    Figure,
     Iterable,
     Optional,
     Path,
@@ -98,7 +99,7 @@ class Plot2D:
 
         self.grid_alpha = grid_alpha
 
-    def _plot(self, ax: Axes, *args, **kwargs) -> None:
+    def _plot(self, fig: Figure, ax: Axes, *args, **kwargs) -> None:
         """
         Abstract method to be implemented by subclasses for specific plotting logic.
 
@@ -133,14 +134,14 @@ class Plot2D:
         if self.fontsize is not None:
             plt.rcParams.update({"font.size": self.fontsize})
 
-        _, ax = plt.subplots(
+        fig, ax = plt.subplots(
             nrows=1,
             ncols=1,
             figsize=self.figsize,
         )
         ax.set_title(self.title)
 
-        self._plot(ax, *args, **kwargs)
+        self._plot(fig, ax, *args, **kwargs)
 
         ax.set_xlabel(self.xlabel)
         if self.xlim is not None:

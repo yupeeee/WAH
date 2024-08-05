@@ -13,7 +13,9 @@ from typing import (
 )
 
 from lightning import Trainer
+from matplotlib.figure import Figure
 from matplotlib.pyplot import Axes
+from numpy import ndarray as NDArray
 from pandas import DataFrame
 from torch import Tensor
 from torch import device as Device
@@ -43,12 +45,14 @@ __all__ = [
     "Device",
     "Devices",
     "Dict",
+    "Figure",
     "Iterable",
     "List",
     "Literal",
     "LRScheduler",
     "Metric",
     "Module",
+    "NDArray",
     "Optimizer",
     "Optional",
     "Parameter",
