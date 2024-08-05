@@ -1,6 +1,7 @@
 import os
 
 import pandas as pd
+import torch
 
 from ..typing import (
     Any,
@@ -8,12 +9,14 @@ from ..typing import (
     Dict,
     List,
     Path,
+    Tensor,
 )
 
 __all__ = [
     "load_csv",
     "to_df",
     "save_in_csv",
+    "to_tensor",
 ]
 
 
@@ -102,3 +105,29 @@ def save_in_csv(
 
     else:
         df.to_csv(save_path, mode="w")
+
+
+def to_tensor(
+    dictionary: Dict,
+) -> Tensor:
+    """
+    Converts a dictionary of lists into a tensor.
+
+    ### Parameters
+    - `dictionary (Dict)`:
+      The dictionary to convert, where each key maps to a list of numerical values.
+
+    ### Returns
+    - `Tensor`:
+      A tensor containing the values from the dictionary.
+
+    ### Notes
+    - This function extracts the values from each key in the dictionary, assuming they are lists of numerical values, and converts them into a tensor.
+    - The resulting tensor will have a shape determined by the lengths of the lists in the dictionary values.
+    """
+    values = []
+
+    for v in dictionary.values():
+        values.append(v)
+
+    return torch.Tensor(values)
