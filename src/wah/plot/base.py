@@ -83,7 +83,7 @@ class Plot2D:
         self.xticks = xticks
         self.xticklabels = (
             [str(x) for x in xticks]
-            if xticks is not None and yticklabels is None
+            if xticks is not None and xticklabels is None
             else xticklabels
         )
 
