@@ -172,6 +172,7 @@ def load_model(
     num_channels: int = 3,
     load_from: Literal["timm", "torchvision"] = "timm",
     map_location: Optional[Device] = "cpu",
+    make_feature_2d: Optional[bool] = False,
     **kwargs,
 ) -> Module:
     """
@@ -179,16 +180,17 @@ def load_model(
 
     ### Parameters
     - `name (str)`: The name of the model to load.
-    - `weights (str, optional)`: The path to the weights file, or "auto" to load pretrained weights, or weight specification to load pretrained torchvision model. Defaults to None.
-    - `num_classes (int, optional)`: The number of output classes. Defaults to 1000 (ImageNet).
-    - `image_size (int, optional)`: The input image size. Defaults to 224 (ImageNet).
-    - `num_channels (int, optional)`: The number of input channels. Defaults to 3 (RGB).
-    - `load_from (Literal["timm", "torchvision"], optional)`: The library to load the model from. Defaults to "timm".
-    - `map_location (Device, optional)`: The device to map the weights to. Defaults to "cpu".
+    - `weights (Optional[str])`: The path to the weights file, or "auto" to load pretrained weights, or weight specification to load pretrained torchvision model. Defaults to None.
+    - `num_classes (int)`: The number of output classes. Defaults to 1000.
+    - `image_size (int)`: The input image size. Defaults to 224.
+    - `num_channels (int)`: The number of input channels. Defaults to 3.
+    - `load_from (Literal["timm", "torchvision"])`: The library to load the model from. Defaults to "timm".
+    - `map_location (Optional[str])`: The device to map the weights to. Defaults to "cpu".
+    - `make_feature_2d (Optional[bool])`: Whether to modify the model to have a 2D feature output. Defaults to False.
     - `**kwargs`: Additional keyword arguments for the model.
 
     ### Returns
-    - `Module`: The loaded model.
+    - `nn.Module`: The loaded model.
 
     ### Raises
     - `ValueError`: If the specified library (`load_from`) is not supported.
@@ -201,12 +203,13 @@ def load_model(
         weights if weights is not None and os.path.exists(weights) else None
     )
     pretrained = True if weights == "auto" else False
+    output_size = 2 if make_feature_2d else num_classes
 
     if load_from == "timm":
         model = load_timm_model(
             name=name,
             pretrained=pretrained,
-            num_classes=num_classes,
+            num_classes=output_size,
             image_size=image_size,
             num_channels=num_channels,
             **kwargs,
@@ -216,13 +219,23 @@ def load_model(
         model = load_torchvision_model(
             name=name,
             weights=weights,
-            num_classes=num_classes,
+            num_classes=output_size,
             image_size=image_size,
             **kwargs,
         )
 
     else:
         raise ValueError(f"Unsupported library: {load_from}")
+
+    if make_feature_2d:
+        model = torch.nn.Sequential(
+            OrderedDict(
+                {
+                    "model": model,
+                    "classifier": torch.nn.Linear(2, num_classes),
+                }
+            )
+        )
 
     if weights_path is not None:
         load_state_dict(
