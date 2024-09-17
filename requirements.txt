@@ -1,5 +1,6 @@
 lightning
 matplotlib
+numpy
 pandas
 pyperclip
 PyYAML

@@ -14,6 +14,7 @@ for GPU computation.
 ```text
 lightning
 matplotlib
+numpy
 pandas
 pyperclip
 PyYAML
@@ -31,3 +32,133 @@ webdriver_manager
 
 - [Model Training](https://github.com/yupeeee/WAH/tree/main/examples/model_training)
 - [Model Evaluation](https://github.com/yupeeee/WAH/tree/main/examples/model_evaluation)
+- [Geodesic Optimization](https://github.com/yupeeee/WAH/tree/main/examples/geodesic_optimization)
+
+
+## Structure
+
+### `classification`
+- `attacks`
+    - fgsm:
+    `FGSM`,
+    `IFGSM`
+- `datasets`
+    - base:
+    `ClassificationDataset`
+    - cifar10:
+    `CIFAR10`
+    - cifar100:
+    `CIFAR100`
+    - dataloader
+        - \_\_init\_\_:
+        `to_dataloader`
+        - transforms:
+        `CollateFunction`
+    - imagenet:
+    `ImageNet`
+    - stl10:
+    `STL10`
+    - utils:
+    `compute_mean_and_std`,
+    `DeNormalize`,
+    `Normalize`,
+    `portion_dataset`,
+    `tensor_to_dataset`
+- `models`
+    - feature_extraction:
+    `FeatureExtractor`
+    - load:
+    `add_preprocess`,
+    `load_model`,
+    `load_state_dict`
+    - replace:
+        - \_\_init\_\_:
+        `Replacer`
+- `test`
+    - accuracy:
+    `AccuracyTest`
+    - eval:
+    `EvalTest`
+    - pred:
+    `PredTest`
+- `train`
+    - train:
+    `Wrapper`,
+    `load_trainer`
+
+### `np`
+
+### `path`
+`basename`,
+`clean`,
+`dirname`,
+`exists`,
+`isdir`,
+`join`,
+`ls`,
+`mkdir`,
+`rmdir`,
+`rmfile`,
+`splitext`
+
+### `plot`
+- dist:
+`DistPlot2D`
+- hist:
+`HistPlot2D`
+- mat:
+`MatShow2D`
+- quiver:
+`QuiverPlot2D`,
+`TrajPlot2D`
+- scatter:
+`GridPlot2D`,
+`ScatterPlot2D`
+
+### `riemann`
+- geodesic:
+`optimize_geodesic`
+- jacobian:
+`compute_jacobian`
+
+### `tensor`
+`broadcasted_mul`,
+`create_1d_traj`,
+`create_2d_grid`,
+`flatten_batch`,
+`repeat`,
+`stretch`
+
+### `torch`
+
+### `utils`
+- args:
+`ArgumentParser`
+- dictionary:
+`dict_to_df`,
+`dict_to_tensor`,
+`load_csv_to_dict`,
+`load_yaml_to_dict`,
+`save_dict_to_csv`
+- download:
+`disable_ssl_verification`,
+`download_url`,
+`md5_check`
+- lst:
+`load_txt_to_list`,
+`save_list_to_txt`,
+`sort_str_list`
+- module:
+`_getattr`,
+`get_attrs`,
+`get_module_name`,
+`get_module_params`,
+`get_named_modules`,
+`get_valid_attr`
+- random:
+`seed`,
+`unseed`
+- time:
+`time`
+- zip:
+`extract`

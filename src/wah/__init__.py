@@ -1,16 +1,22 @@
+import numpy as np
+import torch
+
 from . import (
-    attacks,
-    datasets,
-    models,
+    classification,
+    path,
     plot,
+    riemann,
+    tensor,
     utils,
 )
-from .utils import *
 
 __all__ = [
-    "attacks",
-    "datasets",
-    "models",
+    "classification",
+    "np",
+    "path",
     "plot",
+    "riemann",
+    "tensor",
+    "torch",
+    "utils",
 ]
-__all__ += utils.__all__

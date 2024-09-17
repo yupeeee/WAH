@@ -1,94 +1,52 @@
 import hashlib
-import os
 import ssl
-from urllib.request import (
-    Request,
-    urlopen,
-)
+from urllib.request import Request, urlopen
 
 from tqdm import tqdm
 
-from ..typing import (
-    Path,
-)
+from .. import path as _path
+from ..typing import Path
 
 __all__ = [
-    "disable_verification",
-    "urlretrieve",
-    "check",
+    "disable_ssl_verification",
     "download_url",
+    "md5_check",
 ]
 
 
-def disable_verification() -> None:
-    """
-    Disables SSL certificate verification.
-
-    ### Parameters
-    - `None`
-
-    ### Returns
-    - `None`
-
-    ### Notes
-    - This function sets the default SSL context to an unverified context, disabling SSL certificate verification.
-    - This is useful for downloading files from servers with self-signed certificates or other SSL issues.
-    """
+def disable_ssl_verification() -> None:
     ssl._create_default_https_context = ssl._create_unverified_context
 
 
-def urlretrieve(
+def download_url(
     url: str,
-    fpath: Path,
-    chunk_size: int = 1024 * 32,
-    **kwargs,
-) -> None:
-    """
-    Downloads a file from a URL and saves it to the specified path with a progress bar.
+    root: Path,
+) -> Path:
+    fname = _path.basename(url)
+    fpath = _path.join(root, fname)
 
-    ### Parameters
-    - `url (str)`: The URL of the file to download.
-    - `fpath (Path)`: The path where the downloaded file will be saved.
-    - `chunk_size (int)`: The size of each chunk to read during download. Defaults to 32 KB.
-    - `**kwargs`: Additional keyword arguments to pass to `tqdm`.
+    _path.mkdir(root)
 
-    ### Returns
-    - `None`
+    # skip download if downloaded
+    if _path.exists(fpath):
+        print(f"{fname} already downloaded to {root}.")
 
-    ### Notes
-    - This function uses `urlopen` to download the file in chunks, displaying a progress bar with `tqdm`.
-    - A custom user-agent is used for the request headers.
-    """
-    headers = {"user-agent": "yupeeee/wah"}
-    request = Request(url, headers=headers)
+    # download if undownloaded
+    else:
+        urlretrieve(
+            url,
+            fpath,
+            desc=f"Downloading {fname} to {root}",
+        )
 
-    with urlopen(request) as response:
-        with open(fpath, "wb") as fh, tqdm(total=response.length, **kwargs) as pbar:
-            while chunk := response.read(chunk_size):
-                fh.write(chunk)
-                pbar.update(len(chunk))
+    return fpath
 
 
-def check(
+def md5_check(
     fpath: Path,
     checksum: str,
     chunk_size: int = 1024 * 32,
 ) -> bool:
-    """
-    Verifies the checksum of a file.
-
-    ### Parameters
-    - `fpath (Path)`: The path to the file to check.
-    - `checksum (str)`: The expected MD5 checksum of the file.
-    - `chunk_size (int)`: The size of each chunk to read during check. Defaults to 32 KB.
-
-    ### Returns
-    - `bool`: `True` if the file's checksum matches the expected checksum, otherwise `False`.
-
-    ### Notes
-    - This function reads the file in binary mode and computes its MD5 checksum.
-    - It compares the computed checksum with the expected checksum.
-    """
     with open(fpath, "rb") as f:
         h = hashlib.md5()
 
@@ -105,39 +63,17 @@ def check(
             return False
 
 
-def download_url(
+def urlretrieve(
     url: str,
-    root: Path,
-) -> Path:
-    """
-    Downloads a file from the given URL to the specified root directory.
+    fpath: Path,
+    chunk_size: int = 1024 * 32,
+    **kwargs,
+) -> None:
+    headers = {"user-agent": "yupeeee/wah"}
+    request = Request(url, headers=headers)
 
-    ### Parameters
-    - `url (str)`: The URL of the file to download.
-    - `root (Path)`: The root directory where the file will be saved.
-
-    ### Returns
-    - `Path`: The file path where the downloaded file is saved.
-
-    ### Notes
-    - This function checks if the file has already been downloaded to avoid redundant downloads.
-    - It creates the root directory if it does not exist.
-    """
-    fname = os.path.basename(url)
-    fpath = os.fspath(os.path.join(root, fname))
-
-    os.makedirs(root, exist_ok=True)
-
-    # skip download if downloaded
-    if os.path.exists(fpath):
-        print(f"{fname} already downloaded to {root}.")
-
-    # download if undownloaded
-    else:
-        urlretrieve(
-            url,
-            fpath,
-            desc=f"Downloading {fname} to {root}",
-        )
-
-    return fpath
+    with urlopen(request) as response:
+        with open(fpath, "wb") as fh, tqdm(total=response.length, **kwargs) as pbar:
+            while chunk := response.read(chunk_size):
+                fh.write(chunk)
+                pbar.update(len(chunk))

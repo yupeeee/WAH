@@ -16,7 +16,7 @@ Second, write your own *config.yaml* file (which will do **everything** for you)
 --- # config.yaml
 
 task: classification
-devices: gpu:0
+devices: cuda:0
 
 
 #
@@ -59,12 +59,13 @@ criterion_cfg:
 #
 metrics:
 - "acc@1"
-- "ce@l1"
-- "ce@sign"
+# - "ce@l1"
+# - "ce@sign"
 
 track:
 # - "feature_rms"
-- "grad_l2"
+# - "feature_sign"
+# - "grad_l2"
 # - "param_svdval_max"
 - "state_dict"
 
@@ -79,9 +80,9 @@ track:
   device(s) to be utilized for computation.
   Examples are given below:
   - `"cpu"`: use CPU for training.
-  - `"gpu"`: use GPU for training.
-  - `"gpu:0"`: use single GPU (id: 0) for training.
-  - `"gpu:1,2"`: use multiple GPUs (id: 1, 2) for training.
+  - `"gpu"` or `"cuda"`: use GPU for training.
+  - `"gpu:0"` or `"cuda:0"`: use single GPU (id: 0) for training.
+  - `"gpu:1,2"` or `"cuda:1,2"`: use multiple GPUs (id: 1, 2) for training.
   - `"auto"`: automatically detects available accelerators and utilizes them for training.
 
 - **num_classes** (*int*) -
@@ -164,27 +165,28 @@ track:
   values to track during the training and validation stages.
   Supported values to track are as follows:
   - `"feature_rms"`: RMS (Root Mean Square) values of features.
+  - `"feature_sign"`: ratio of negative elements in features.
   - `"grad_l2"`: L2 norm values of gradients.
-  - `"param_svdval_max"`: Maximum value of singular values of parameter matrices.
+  - `"param_svdval_max"`: maximum value of singular values of parameter matrices.
   - `"state_dict"`: model weights (state dictionaries) per training epochs.
 
 Third, load your *config.yaml* file.
 
 ```python
-config = wah.config.load(PATH_TO_CONFIG)
+config = wah.utils.load_yaml_to_dict(PATH_TO_CONFIG)
 ```
 
 Fourth, load your dataloaders.
 
 ```python
-train_dataset = wah.datasets.CIFAR10(
+train_dataset = wah.classification.datasets.CIFAR10(
     root=...,
     split="train",
     transform="auto",
     target_transform="auto",
     download=True,
 )
-val_dataset = wah.datasets.CIFAR10(
+val_dataset = wah.classification.datasets.CIFAR10(
     root=...,
     split="test",
     transform="auto",
@@ -192,12 +194,12 @@ val_dataset = wah.datasets.CIFAR10(
     download=True,
 )
 
-train_dataloader = wah.datasets.to_dataloader(
+train_dataloader = wah.classification.datasets.to_dataloader(
     dataset=train_dataset,
     train=True,
     **config,
 )
-val_dataloader = wah.datasets.to_dataloader(
+val_dataloader = wah.classification.datasets.to_dataloader(
     dataset=val_dataset,
     train=False,
     **config,
@@ -207,20 +209,20 @@ val_dataloader = wah.datasets.to_dataloader(
 Fifth, load your model.
 
 ```python
-model = wah.models.load_model(
+model = wah.classification.models.load_model(
     name="resnet50",
     weights=None,
     num_classes=config["num_classes"],
     image_size=32,
     num_channels=3,
 )
-model = wah.models.Wrapper(model, config)
+model = wah.classification.train.Wrapper(model, config)
 ```
 
 Finally, train your model!
 
 ```python
-trainer = wah.models.load_trainer(
+trainer = wah.classification.train.load_trainer(
     config=config,
     save_dir=TRAIN_LOG_ROOT,
     name="cifar10-resnet50",
@@ -235,7 +237,7 @@ trainer.fit(
 You can check your train logs by running the following command:
 
 ```commandline
-tensorboard --logdir TRAIN_LOG_ROOT
+tensorboard --logdir TRAIN_LOG_ROOT --port 6006
 ```
 
 ### References

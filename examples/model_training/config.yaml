@@ -2,7 +2,7 @@
 --- # config.yaml
 
 task: classification
-devices: gpu:0
+devices: cuda:0
 
 
 #
@@ -45,13 +45,13 @@ criterion_cfg:
 #
 metrics:
 - "acc@1"
-- "ce@l1"
-- "ce@sign"
+# - "ce@l1"
+# - "ce@sign"
 
 track:
 # - "feature_rms"
-- "feature_sign"
-- "grad_l2"
+# - "feature_sign"
+# - "grad_l2"
 # - "param_svdval_max"
 - "state_dict"
 
