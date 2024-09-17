@@ -109,8 +109,7 @@ if __name__ == "__main__":
     losses_plot.plot(losses_dict)
     losses_plot.save(
         wah.path.join(
-            "./geodesic/imagenet",
-            args.model,
+            save_dir,
             f"loss_{data_id}.png",
         )
     )
