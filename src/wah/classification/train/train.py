@@ -66,7 +66,8 @@ class Wrapper(L.LightningModule):
         ):
             self.sync_dist = True
 
-        self.criterion = load_criterion(config)
+        self.train_criterion = load_criterion(config, train=True)
+        self.val_criterion = load_criterion(config, train=False)
 
         # metrics (default)
         self.lr = MeanMetric()
@@ -129,7 +130,7 @@ class Wrapper(L.LightningModule):
         data, targets = batch
 
         outputs: Tensor = self.model(data)
-        loss: Tensor = self.criterion(outputs, targets)
+        loss: Tensor = self.train_criterion(outputs, targets)
 
         self.train_loss(loss / data.size(0))
 
@@ -236,7 +237,7 @@ class Wrapper(L.LightningModule):
         data, targets = batch
 
         outputs: Tensor = self.model(data)
-        loss: Tensor = self.criterion(outputs, targets)
+        loss: Tensor = self.val_criterion(outputs, targets)
 
         # metrics
         self.val_loss(loss / data.size(0))

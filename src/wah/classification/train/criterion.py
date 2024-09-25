@@ -1,6 +1,6 @@
 from torch import nn
 
-from ...typing import Config, Module
+from ...typing import Config, Module, Optional
 
 __all__ = [
     "load_criterion",
@@ -9,6 +9,7 @@ __all__ = [
 
 def load_criterion(
     config: Config,
+    train: Optional[bool] = True,
 ) -> Module:
     """
     Loads a criterion (loss function) based on the given YAML configuration.
@@ -25,6 +26,9 @@ def load_criterion(
     criterion_cfg = {}
     if "criterion_cfg" in config.keys():
         criterion_cfg = config["criterion_cfg"]
+
+        if train is False and "label_smoothing" in criterion_cfg.keys():
+            criterion_cfg["label_smoothing"] = 0.0
 
     criterion = criterion(**criterion_cfg)
 
