@@ -145,7 +145,7 @@ def load_model(
             )
         )
 
-    if weights_path is not None and _path.exists(weights_path):
+    if weights_path is not None:
         load_state_dict(
             model=model,
             state_dict_path=weights_path,
