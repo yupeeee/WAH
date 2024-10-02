@@ -45,12 +45,14 @@ class Wrapper(L.LightningModule):
         preds: Tensor = torch.argmax(confs, dim=-1)
 
         results: Tensor = torch.eq(preds, targets)
-        signed_confs: Tensor = confs[:, targets].diag() * (results.int() - 0.5).sign()
+        signed_confs: Tensor = confs[:, preds].diag() * (results.int() - 0.5).sign()
+        signed_target_confs: Tensor = confs[:, targets].diag() * (results.int() - 0.5).sign()
 
         self.res_dict["gt"].append(targets.cpu())
         self.res_dict["pred"].append(preds.cpu())
         self.res_dict["loss"].append(losses.cpu())
         self.res_dict["conf"].append(signed_confs.cpu())
+        self.res_dict["gt_conf"].append(signed_target_confs.cpu())
 
     def on_test_epoch_end(self) -> None:
         pass
@@ -149,6 +151,7 @@ class EvalTest:
             "pred": [],
             "loss": [],
             "conf": [],
+            "gt_conf": [],
         }
         model = Wrapper(model, self.config, res_dict)
         dataloader = to_dataloader(
@@ -167,4 +170,5 @@ class EvalTest:
             "pred": [int(p) for p in torch.cat(res_dict["pred"])],
             "loss": [float(l) for l in torch.cat(res_dict["loss"])],
             "conf": [float(c) for c in torch.cat(res_dict["conf"])],
+            "gt_conf": [float(gc) for gc in torch.cat(res_dict["gt_conf"])],
         }

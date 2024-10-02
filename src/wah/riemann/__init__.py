@@ -1,13 +1,15 @@
 from .geodesic import (
     optimize_geodesic,
 )
-from .jacobian import (
+from .grad import (
     compute_jacobian,
+    compute_hessian,
 )
 
 __all__ = [
     # geodesic
     "optimize_geodesic",
-    # jacobian
+    # grad
     "compute_jacobian",
+    "compute_hessian",
 ]

@@ -161,9 +161,11 @@ class GridPlot2D(ScatterPlot2D):
     def __init__(
         self,
         figsize: Optional[Tuple[float, float]] = (5, 5),
+        **kwargs,
     ) -> None:
         super().__init__(
             figsize=figsize,
+            **kwargs,
         )
 
     def _plot(
