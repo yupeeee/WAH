@@ -32,10 +32,11 @@ class Wrapper(L.LightningModule):
         self.softmax = Softmax(dim=-1)
 
     def test_step(self, batch, batch_idx):
+        indices: Tensor
         data: Tensor
         targets: Tensor
 
-        data, targets = batch
+        indices, (data, targets) = batch
 
         outputs: Tensor = self.model(data)
 
@@ -45,9 +46,11 @@ class Wrapper(L.LightningModule):
         preds: Tensor = torch.argmax(confs, dim=-1)
 
         results: Tensor = torch.eq(preds, targets)
-        signed_confs: Tensor = confs[:, preds].diag() * (results.int() - 0.5).sign()
-        signed_target_confs: Tensor = confs[:, targets].diag() * (results.int() - 0.5).sign()
+        signs: Tensor = (results.int() - 0.5).sign()
+        signed_confs: Tensor = confs[:, preds].diag() * signs
+        signed_target_confs: Tensor = confs[:, targets].diag() * signs
 
+        self.res_dict["idx"].append(indices.cpu())
         self.res_dict["gt"].append(targets.cpu())
         self.res_dict["pred"].append(preds.cpu())
         self.res_dict["loss"].append(losses.cpu())
@@ -147,12 +150,14 @@ class EvalTest:
         - This method wraps the model in a `Wrapper` class, converts the dataset into a DataLoader, and runs the evaluation using the Lightning Trainer.
         """
         res_dict = {
+            "idx": [],
             "gt": [],
             "pred": [],
             "loss": [],
             "conf": [],
             "gt_conf": [],
         }
+        dataset.set_return_w_index()
         model = Wrapper(model, self.config, res_dict)
         dataloader = to_dataloader(
             dataset=dataset,
@@ -166,6 +171,7 @@ class EvalTest:
         )
 
         return {
+            "idx": [int(i) for i in torch.cat(res_dict["idx"])],
             "gt": [int(g) for g in torch.cat(res_dict["gt"])],
             "pred": [int(p) for p in torch.cat(res_dict["pred"])],
             "loss": [float(l) for l in torch.cat(res_dict["loss"])],
