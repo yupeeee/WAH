@@ -31,6 +31,13 @@ class Wrapper(L.LightningModule):
         )
         self.softmax = Softmax(dim=-1)
 
+        self.idx = []
+        self.gt = []
+        self.pred = []
+        self.loss = []
+        self.conf = []
+        self.gt_conf = []
+
     def test_step(self, batch, batch_idx):
         indices: Tensor
         data: Tensor
@@ -50,15 +57,27 @@ class Wrapper(L.LightningModule):
         signed_confs: Tensor = confs[:, preds].diag() * signs
         signed_target_confs: Tensor = confs[:, targets].diag() * signs
 
-        self.res_dict["idx"].append(indices.cpu())
-        self.res_dict["gt"].append(targets.cpu())
-        self.res_dict["pred"].append(preds.cpu())
-        self.res_dict["loss"].append(losses.cpu())
-        self.res_dict["conf"].append(signed_confs.cpu())
-        self.res_dict["gt_conf"].append(signed_target_confs.cpu())
+        self.idx.append(indices.cpu())
+        self.gt.append(targets.cpu())
+        self.pred.append(preds.cpu())
+        self.loss.append(losses.cpu())
+        self.conf.append(signed_confs.cpu())
+        self.gt_conf.append(signed_target_confs.cpu())
 
     def on_test_epoch_end(self) -> None:
-        pass
+        idx = self.all_gather(self.idx)
+        gt = self.all_gather(self.gt)
+        pred = self.all_gather(self.pred)
+        loss = self.all_gather(self.loss)
+        conf = self.all_gather(self.conf)
+        gt_conf = self.all_gather(self.gt_conf)
+
+        self.res_dict["idx"] = [int(i) for i in torch.cat(idx)]
+        self.res_dict["gt"] = [int(g) for g in torch.cat(gt)]
+        self.res_dict["pred"] = [int(p) for p in torch.cat(pred)]
+        self.res_dict["loss"] = [float(l) for l in torch.cat(loss)]
+        self.res_dict["conf"] = [float(c) for c in torch.cat(conf)]
+        self.res_dict["gt_conf"] = [float(gc) for gc in torch.cat(gt_conf)]
 
 
 class EvalTest:
@@ -149,14 +168,7 @@ class EvalTest:
         ### Notes
         - This method wraps the model in a `Wrapper` class, converts the dataset into a DataLoader, and runs the evaluation using the Lightning Trainer.
         """
-        res_dict = {
-            "idx": [],
-            "gt": [],
-            "pred": [],
-            "loss": [],
-            "conf": [],
-            "gt_conf": [],
-        }
+        res_dict = {}
         dataset.set_return_w_index()
         model = Wrapper(model, self.config, res_dict)
         dataloader = to_dataloader(
@@ -170,11 +182,4 @@ class EvalTest:
             dataloaders=dataloader,
         )
 
-        return {
-            "idx": [int(i) for i in torch.cat(res_dict["idx"])],
-            "gt": [int(g) for g in torch.cat(res_dict["gt"])],
-            "pred": [int(p) for p in torch.cat(res_dict["pred"])],
-            "loss": [float(l) for l in torch.cat(res_dict["loss"])],
-            "conf": [float(c) for c in torch.cat(res_dict["conf"])],
-            "gt_conf": [float(gc) for gc in torch.cat(res_dict["gt_conf"])],
-        }
+        return res_dict
