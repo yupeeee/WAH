@@ -65,19 +65,27 @@ class Wrapper(L.LightningModule):
         self.gt_conf.append(signed_target_confs.cpu())
 
     def on_test_epoch_end(self) -> None:
-        idx = self.all_gather(self.idx)
-        gt = self.all_gather(self.gt)
-        pred = self.all_gather(self.pred)
-        loss = self.all_gather(self.loss)
-        conf = self.all_gather(self.conf)
-        gt_conf = self.all_gather(self.gt_conf)
+        idx: List[Tensor] = self.all_gather(self.idx)
+        gt: List[Tensor] = self.all_gather(self.gt)
+        pred: List[Tensor] = self.all_gather(self.pred)
+        loss: List[Tensor] = self.all_gather(self.loss)
+        conf: List[Tensor] = self.all_gather(self.conf)
+        gt_conf: List[Tensor] = self.all_gather(self.gt_conf)
 
-        self.res_dict["idx"] = [int(i) for i in torch.cat(idx)]
-        self.res_dict["gt"] = [int(g) for g in torch.cat(gt)]
-        self.res_dict["pred"] = [int(p) for p in torch.cat(pred)]
-        self.res_dict["loss"] = [float(l) for l in torch.cat(loss)]
-        self.res_dict["conf"] = [float(c) for c in torch.cat(conf)]
-        self.res_dict["gt_conf"] = [float(gc) for gc in torch.cat(gt_conf)]
+        idx = torch.cat(idx, dim=-1).flatten()
+        idx, indices = torch.sort(idx)
+        gt = torch.cat(gt, dim=-1).flatten()[indices]
+        pred = torch.cat(pred, dim=-1).flatten()[indices]
+        loss = torch.cat(loss, dim=-1).flatten()[indices]
+        conf = torch.cat(conf, dim=-1).flatten()[indices]
+        gt_conf = torch.cat(gt_conf, dim=-1).flatten()[indices]
+
+        self.res_dict["idx"] = [int(i) for i in idx]
+        self.res_dict["gt"] = [int(g) for g in gt]
+        self.res_dict["pred"] = [int(p) for p in pred]
+        self.res_dict["loss"] = [float(l) for l in loss]
+        self.res_dict["conf"] = [float(c) for c in conf]
+        self.res_dict["gt_conf"] = [float(gc) for gc in gt_conf]
 
 
 class EvalTest:

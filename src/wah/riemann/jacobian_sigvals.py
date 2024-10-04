@@ -23,6 +23,8 @@ class Wrapper(L.LightningModule):
         self.model = model
         self.res_dict = res_dict
 
+        self.sigval = []
+
     def test_step(self, batch: Tensor, batch_idx):
         batch_size = len(batch)
         input_dim = batch[0].numel()
@@ -37,10 +39,21 @@ class Wrapper(L.LightningModule):
 
         sigvals: Tensor = torch.linalg.svdvals(J)
 
-        self.res_dict["sigval"].append(sigvals.cpu())
+        self.sigval.append(sigvals.cpu())
 
     def on_test_epoch_end(self) -> None:
-        pass
+        sigval: List[Tensor] = self.all_gather(self.sigval)
+        print(sigval.shape)
+
+        # idx = torch.cat(idx, dim=-1).flatten()
+        # idx, indices = torch.sort(idx)
+        # gt = torch.cat(gt, dim=-1).flatten()[indices]
+        # pred = torch.cat(pred, dim=-1).flatten()[indices]
+        # loss = torch.cat(loss, dim=-1).flatten()[indices]
+        # conf = torch.cat(conf, dim=-1).flatten()[indices]
+        # gt_conf = torch.cat(gt_conf, dim=-1).flatten()[indices]
+
+        # self.res_dict["idx"] = [int(i) for i in idx]
 
 
 class JacobianSigVals:
@@ -77,9 +90,7 @@ class JacobianSigVals:
         model: Module,
         dataset: Dataset,
     ) -> Tensor:
-        res_dict = {
-            "sigval": [],
-        }
+        res_dict = {}
         model = Wrapper(model, res_dict)
         dataloader = to_dataloader(
             dataset=dataset,

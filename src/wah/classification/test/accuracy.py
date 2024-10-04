@@ -1,4 +1,5 @@
 import lightning as L
+import torch
 
 from ... import utils
 from ...typing import Config, Dataset, Devices, Dict, List, Module, Optional, Tensor
@@ -23,6 +24,8 @@ class Wrapper(L.LightningModule):
         self.config = config
         self.res_dict = res_dict
 
+        self.corrects = []
+
     def test_step(self, batch, batch_idx):
         data: Tensor
         targets: Tensor
@@ -33,10 +36,13 @@ class Wrapper(L.LightningModule):
         _, preds = outputs.topk(k=self.config["top_k"], dim=-1)
 
         for k in range(self.config["top_k"]):
-            self.res_dict["corrects"] += float(preds[:, k].eq(targets).sum().to("cpu"))
+            self.corrects.append(preds[:, k].eq(targets).sum().cpu())
 
     def on_test_epoch_end(self) -> None:
-        pass
+        corrects: List[Tensor] = self.all_gather(self.corrects)
+        corrects = torch.cat(corrects, dim=-1).flatten().sum()
+
+        self.res_dict["corrects"] = float(corrects)
 
 
 class AccuracyTest:
@@ -117,9 +123,7 @@ class AccuracyTest:
         ### Returns
         - `float`: The top-k accuracy of the model on the dataset.
         """
-        res_dict = {
-            "corrects": 0.0,
-        }
+        res_dict = {}
         model = Wrapper(model, self.config, res_dict)
         dataloader = to_dataloader(
             dataset=dataset,

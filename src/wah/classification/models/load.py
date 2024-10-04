@@ -176,12 +176,12 @@ def load_state_dict(
         if "feature_extractor." in key:
             del state_dict[key]
 
-        # make_feature_2d = True
-        elif "model.model." in key:
-            state_dict[key.replace("model.model", "model")] = state_dict.pop(key)
+        # # make_feature_2d = True
+        # elif "model.model." in key:
+        #     state_dict[key.replace("model.model", "model")] = state_dict.pop(key)
 
-        elif "model." in key:
-            state_dict[key.replace("model.", "")] = state_dict.pop(key)
+        # elif "model." in key:
+        #     state_dict[key.replace("model.", "")] = state_dict.pop(key)
 
         else:
             continue

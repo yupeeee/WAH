@@ -1,9 +1,9 @@
 import lightning as L
 import torch
-from torch.nn import CrossEntropyLoss, Softmax
+from torch.nn import Softmax
 
 from ... import utils
-from ...typing import Config, Dataset, Devices, Dict, List, Module, Optional, Tensor
+from ...typing import Dataset, Devices, Dict, List, Module, Optional, Tensor
 from ..datasets import to_dataloader
 from ..train.utils import load_accelerator_and_devices
 
@@ -16,35 +16,41 @@ class Wrapper(L.LightningModule):
     def __init__(
         self,
         model: Module,
-        config: Config,
         res_dict: Dict[str, List],
     ) -> None:
         super().__init__()
 
         self.model = model
-        self.config = config
         self.res_dict = res_dict
 
-        self.criterion = CrossEntropyLoss(
-            reduction="none",
-            label_smoothing=self.config["label_smoothing"],
-        )
         self.softmax = Softmax(dim=-1)
 
+        self.idx = []
+        self.pred = []
+
     def test_step(self, batch, batch_idx):
+        indices: Tensor
         data: Tensor
 
-        data = batch
+        indices, data = batch
 
         outputs: Tensor = self.model(data)
 
         confs: Tensor = self.softmax(outputs)
         preds: Tensor = torch.argmax(confs, dim=-1)
 
-        self.res_dict["pred"].append(preds.cpu())
+        self.idx.append(indices.cpu())
+        self.pred.append(preds.cpu())
 
     def on_test_epoch_end(self) -> None:
-        pass
+        idx: List[Tensor] = self.all_gather(self.idx)
+        pred: List[Tensor] = self.all_gather(self.pred)
+
+        idx = torch.cat(idx, dim=-1).flatten()
+        idx, indices = torch.sort(idx)
+        pred = torch.cat(pred, dim=-1).flatten()[indices]
+
+        self.res_dict["pred"] = [int(p) for p in pred]
 
 
 class PredTest:
@@ -54,7 +60,6 @@ class PredTest:
         num_workers: int,
         mixup_alpha: Optional[float] = 0.0,
         cutmix_alpha: Optional[float] = 0.0,
-        label_smoothing: Optional[float] = 0.0,
         seed: Optional[int] = None,
         devices: Optional[Devices] = "auto",
     ) -> None:
@@ -62,7 +67,6 @@ class PredTest:
         self.num_workers = num_workers
         self.mixup_alpha = mixup_alpha
         self.cutmix_alpha = cutmix_alpha
-        self.label_smoothing = label_smoothing
         self.seed = seed
         self.devices = devices
 
@@ -82,7 +86,6 @@ class PredTest:
             "num_workers": self.num_workers,
             "mixup_alpha": self.mixup_alpha,
             "cutmix_alpha": self.cutmix_alpha,
-            "label_smoothing": self.label_smoothing,
         }
 
     def __call__(
@@ -90,9 +93,9 @@ class PredTest:
         model: Module,
         dataset: Dataset,
     ) -> List[int]:
-        res_dict = {
-            "pred": [],
-        }
+        res_dict = {}
+        dataset.set_return_data_only()
+        dataset.set_return_w_index()
         model = Wrapper(model, self.config, res_dict)
         dataloader = to_dataloader(
             dataset=dataset,
@@ -105,4 +108,4 @@ class PredTest:
             dataloaders=dataloader,
         )
 
-        return [int(p) for p in torch.cat(res_dict["pred"])]
+        return res_dict["pred"]
