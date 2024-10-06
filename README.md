@@ -99,6 +99,7 @@ webdriver_manager
 `mkdir`,
 `rmdir`,
 `rmfile`,
+`split`,
 `splitext`
 
 ### `plot`
@@ -106,6 +107,8 @@ webdriver_manager
 `DistPlot2D`
 - hist:
 `HistPlot2D`
+- image:
+`ImShow`
 - mat:
 `MatShow2D`
 - quiver:
@@ -118,11 +121,12 @@ webdriver_manager
 ### `riemann`
 - geodesic:
 `optimize_geodesic`
-- jacobian:
-`compute_jacobian`
+- grad:
+`compute_jacobian`,
+`compute_hessian`
 
 ### `tensor`
-`broadcasted_mul`,
+`broadcasted_elementwise_mul`,
 `create_1d_traj`,
 `create_2d_grid`,
 `flatten_batch`,

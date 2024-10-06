@@ -10,27 +10,29 @@ __all__ = [
 
 class Plot2D:
     """
-    A class for creating 2D plots with customizable settings.
+    A class for creating customizable 2D plots using matplotlib.
 
-    ### Attributes:
-    - `figsize (Optional[Tuple[float, float]])`: The size of the figure.
-    - `fontsize (Optional[float])`: The font size for the plot text.
-    - `title (Optional[str])`: The title of the plot.
-    - `xlabel (Optional[str])`: The label for the x-axis.
-    - `xlim (Optional[Tuple[float, float]])`: The limits for the x-axis.
-    - `xticks (Optional[Iterable[float]])`: The tick values for the x-axis.
-    - `xticklabels (Optional[Iterable[str]])`: The tick labels for the x-axis.
-    - `ylabel (Optional[str])`: The label for the y-axis.
-    - `ylim (Optional[Tuple[float, float]])`: The limits for the y-axis.
-    - `yticks (Optional[Iterable[float]])`: The tick values for the y-axis.
-    - `yticklabels (Optional[Iterable[str]])`: The tick labels for the y-axis.
-    - `grid_alpha (Optional[float])`: The alpha transparency for the grid.
+    ### Attributes
+    - `figsize` (Tuple[float, float], optional): Size of the figure.
+    - `fontsize` (float, optional): Font size for the plot text.
+    - `title` (str, optional): Title of the plot.
 
-    ### Methods:
-    - `_plot(fig: Figure, ax: Axes, *args, **kwargs) -> None`: Abstract method to be implemented by subclasses for specific plotting logic.
-    - `plot(*args, **kwargs) -> None`: Creates the plot with the specified settings.
-    - `show() -> None`: Displays the plot.
-    - `save(save_path: Path, use_auto_settings: bool = True, **kwargs) -> None`: Saves the plot to the specified path with optional settings.
+    - `xlabel` (str, optional): Label for the x-axis.
+    - `xlim` (Tuple[float, float], optional): Limits for the x-axis.
+    - `xticks` (Iterable[float], optional): Tick positions on the x-axis.
+    - `xticklabels` (Iterable[str], optional): Labels for the x-axis ticks.
+
+    - `ylabel` (str, optional): Label for the y-axis.
+    - `ylim` (Tuple[float, float], optional): Limits for the y-axis.
+    - `yticks` (Iterable[float], optional): Tick positions on the y-axis.
+    - `yticklabels` (Iterable[str], optional): Labels for the y-axis ticks.
+
+    - `grid_alpha` (float, optional): Transparency of the grid. Defaults to `0.0`.
+
+    ### Methods
+    - `plot(*args, **kwargs)`: Generates and customizes the plot with provided data and parameters.
+    - `show()`: Displays the plot.
+    - `save(save_path: Path, use_auto_settings: bool = True, **kwargs)`: Saves the plot to a specified path.
     """
 
     def __init__(
@@ -49,18 +51,21 @@ class Plot2D:
         grid_alpha: Optional[float] = 0.0,
     ) -> None:
         """
-        - `figsize (Optional[Tuple[float, float]])`: The size of the figure. Defaults to None.
-        - `fontsize (Optional[float])`: The font size for the plot text. Defaults to None.
-        - `title (Optional[str])`: The title of the plot. Defaults to None.
-        - `xlabel (Optional[str])`: The label for the x-axis. Defaults to None.
-        - `xlim (Optional[Tuple[float, float]])`: The limits for the x-axis. Defaults to None.
-        - `xticks (Optional[Iterable[float]])`: The tick values for the x-axis. Defaults to None.
-        - `xticklabels (Optional[Iterable[str]])`: The tick labels for the x-axis. Defaults to None.
-        - `ylabel (Optional[str])`: The label for the y-axis. Defaults to None.
-        - `ylim (Optional[Tuple[float, float]])`: The limits for the y-axis. Defaults to None.
-        - `yticks (Optional[Iterable[float]])`: The tick values for the y-axis. Defaults to None.
-        - `yticklabels (Optional[Iterable[str]])`: The tick labels for the y-axis. Defaults to None.
-        - `grid_alpha (Optional[float])`: The alpha transparency for the grid. Defaults to 0.0.
+        - `figsize` (Tuple[float, float], optional): Figure size.
+        - `fontsize` (float, optional): Font size for the plot text.
+        - `title` (str, optional): Title of the plot.
+
+        - `xlabel` (str, optional): X-axis label.
+        - `xlim` (Tuple[float, float], optional): X-axis limits.
+        - `xticks` (Iterable[float], optional): X-axis tick positions.
+        - `xticklabels` (Iterable[str], optional): X-axis tick labels.
+
+        - `ylabel` (str, optional): Y-axis label.
+        - `ylim` (Tuple[float, float], optional): Y-axis limits.
+        - `yticks` (Iterable[float], optional): Y-axis tick positions.
+        - `yticklabels` (Iterable[str], optional): Y-axis tick labels.
+
+        - `grid_alpha` (float, optional): Alpha (transparency) for the grid. Defaults to `0.0`.
         """
         self.figsize = figsize
         self.fontsize = fontsize
@@ -90,34 +95,26 @@ class Plot2D:
 
     def _plot(self, fig: Figure, ax: Axes, *args, **kwargs) -> None:
         """
-        Abstract method to be implemented by subclasses for specific plotting logic.
+        Abstract method for plotting, intended to be implemented by subclasses.
 
-        ### Parameters:
-        - `fig (Figure)`: The Matplotlib figure.
-        - `ax (Axes)`: The Matplotlib axes to plot on.
+        ### Parameters
+        - `fig` (Figure): The matplotlib figure object.
+        - `ax` (Axes): The matplotlib axes object.
         - `*args`: Additional arguments for plotting.
         - `**kwargs`: Additional keyword arguments for plotting.
 
-        ### Raises:
-        - `NotImplementedError`: If the method is not implemented by a subclass.
-
-        ### Notes:
-        - This method should be overridden in subclasses to define specific plotting behavior.
+        ### Raises
+        - `NotImplementedError`: This method must be implemented in subclasses.
         """
         raise NotImplementedError
 
     def plot(self, *args, **kwargs) -> None:
         """
-        Creates the plot with the specified settings.
+        Generates the plot based on the provided data and customization parameters.
 
-        ### Parameters:
-        - `*args`: Additional arguments for plotting.
-        - `**kwargs`: Additional keyword arguments for plotting.
-
-        ### Notes:
-        - This method sets up the plot using the provided settings (e.g., title, labels, limits) and calls the `_plot` method to handle the actual plotting logic.
-        - If any of the settings (e.g., figsize, fontsize) are passed via `kwargs`, they will override the instance attributes.
-        - The method uses Matplotlib to create the figure and axes.
+        ### Parameters
+        - `*args`: Data for plotting.
+        - `**kwargs`: Additional keyword arguments to customize the plot.
         """
         params = [p for p in dir(self) if p[0] != "_" and p != "plot"]
 
@@ -154,13 +151,7 @@ class Plot2D:
 
     def show(self) -> None:
         """
-        Displays the plot.
-
-        ### Returns:
-        - `None`
-
-        ### Notes:
-        - This method calls `plt.show()` to display the plot in an interactive window.
+        Displays the generated plot.
         """
         plt.show()
 
@@ -171,17 +162,12 @@ class Plot2D:
         **kwargs,
     ) -> None:
         """
-        Saves the plot to the specified path with optional settings.
+        Saves the plot to the specified file path.
 
-        ### Parameters:
-        - `save_path (Path)`: The path to save the plot.
-        - `use_auto_settings (bool)`: Whether to use automatic settings for saving the plot. Defaults to True.
-        - `**kwargs`: Additional keyword arguments for saving the plot.
-
-        ### Notes:
-        - This method saves the plot to the specified `save_path` using Matplotlib's `plt.savefig()` function.
-        - If `use_auto_settings` is True, the method automatically adjusts settings such as DPI and padding to optimize the saved plot.
-        - The directory specified in `save_path` is created if it does not exist.
+        ### Parameters
+        - `save_path` (Path): The path where the plot will be saved.
+        - `use_auto_settings` (bool, optional): Whether to apply default saving settings (DPI, tight layout). Defaults to `True`.
+        - `**kwargs`: Additional arguments for `plt.savefig`.
         """
         if use_auto_settings:
             kwargs["dpi"] = 300

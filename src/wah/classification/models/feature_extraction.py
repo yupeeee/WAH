@@ -13,11 +13,34 @@ __all__ = [
 
 
 class FeatureExtractor(Module):
+    """
+    A class for extracting features from intermediate layers of a model.
+
+    This class leverages `torchvision.models.feature_extraction.create_feature_extractor`
+    to retrieve features from specific layers of a model. It supports extracting features
+    from all layers or only the penultimate layer.
+
+    ### Attributes
+    - `model` (Module): The model from which features are extracted.
+    - `penultimate_only` (bool): If `True`, only the penultimate layer's features are returned. Defaults to `False`.
+    - `feature_layers` (Dict[str, str]): A dictionary mapping original layer names to internal feature layer names.
+    - `feature_extractor` (Module): The feature extractor created from the model and the specified layers.
+    - `checked_layers` (bool): Whether the layers have been verified through a forward pass.
+
+    ### Methods
+    - `forward(x: Tensor) -> Dict[str, Tensor]`: Extracts features from the specified layers in the model.
+    - `_check_layers(x: Tensor) -> None`: Validates and updates the list of layers based on a forward pass.
+    """
+
     def __init__(
         self,
         model: Module,
         penultimate_only: bool = False,
     ) -> None:
+        """
+        - `model` (Module): The model from which to extract features.
+        - `penultimate_only` (bool, optional): If `True`, only the penultimate layer's features are returned. Defaults to `False`.
+        """
         super().__init__()
 
         self.model = model
@@ -38,6 +61,15 @@ class FeatureExtractor(Module):
         self.checked_layers: bool = False
 
     def forward(self, x):
+        """
+        Extracts features from the specified layers in the model.
+
+        ### Parameters
+        - `x` (Tensor): The input tensor to pass through the model.
+
+        ### Returns
+        - `Dict[str, Tensor]`: A dictionary of extracted features from the specified layers.
+        """
         if not self.checked_layers:
             self._check_layers(x)
 
@@ -56,6 +88,14 @@ class FeatureExtractor(Module):
         return features
 
     def _check_layers(self, x) -> None:
+        """
+        Validates and updates the list of layers by performing a forward pass.
+
+        This method checks which layers produce valid outputs and updates the feature extractor to only include these layers.
+
+        ### Parameters
+        - `x` (Tensor): The input tensor to test the layers of the model.
+        """
         assert not self.checked_layers
 
         layers = []

@@ -17,6 +17,18 @@ def broadcasted_elementwise_mul(
     vec: Tensor,
     dim: int,
 ) -> Tensor:
+    """
+    Performs element-wise multiplication of a matrix and a vector,
+    broadcasting the vector to match the matrix dimensions.
+
+    ### Parameters
+    - `mat` (Tensor): The matrix to be multiplied.
+    - `vec` (Tensor): The vector to be broadcasted and multiplied.
+    - `dim` (int): The dimension along which to broadcast the vector.
+
+    ### Returns
+    - `Tensor`: The result of the element-wise multiplication.
+    """
     assert mat.shape[dim] == len(vec)
 
     # expand vec to match shape with mat
@@ -33,6 +45,19 @@ def create_1d_traj(
     num_steps: int,
     eps: float,
 ) -> Tensor:
+    """
+    Creates a 1D trajectory by perturbing a tensor `x` along the direction `d`
+    over a range of `num_steps` steps.
+
+    ### Parameters
+    - `x` (Tensor): The starting point of the trajectory.
+    - `d` (Tensor): The direction along which to perturb `x`.
+    - `num_steps` (int): The number of steps for the trajectory.
+    - `eps` (float): The maximum perturbation.
+
+    ### Returns
+    - `Tensor`: The 1D trajectory tensor.
+    """
     shape = (num_steps, *x.shape)
 
     # reshape x, d
@@ -57,6 +82,20 @@ def create_2d_grid(
     num_steps: int,
     eps: float,
 ) -> Tensor:
+    """
+    Creates a 2D grid by perturbing a tensor `x` along two directions, `d1` and `d2`,
+    over a range of `num_steps` steps.
+
+    ### Parameters
+    - `x` (Tensor): The starting point of the grid.
+    - `d1` (Tensor): The first direction along which to perturb `x`.
+    - `d2` (Tensor): The second direction along which to perturb `x`.
+    - `num_steps` (int): The number of steps for each direction.
+    - `eps` (float): The maximum perturbation.
+
+    ### Returns
+    - `Tensor`: The 2D grid tensor.
+    """
     shape = (num_steps * num_steps, *x.shape)
 
     # reshape x, d1
@@ -88,6 +127,15 @@ def create_2d_grid(
 def flatten_batch(
     batch: Union[Tensor, Sequence[Tensor]],
 ) -> Tensor:
+    """
+    Flattens a batch of tensors or a sequence of tensors into a single tensor.
+
+    ### Parameters
+    - `batch` (Union[Tensor, Sequence[Tensor]]): A batch of tensors or sequence of tensors.
+
+    ### Returns
+    - `Tensor`: The flattened batch.
+    """
     if isinstance(batch, Sequence):
         batch = [x for x in batch if x is not None]
         batch = torch.cat(batch, dim=0)
@@ -102,6 +150,17 @@ def repeat(
     repeat: int,
     dim: int = 0,
 ) -> Tensor:
+    """
+    Repeats a tensor along a specified dimension.
+
+    ### Parameters
+    - `x` (Tensor): The tensor to be repeated.
+    - `repeat` (int): The number of repetitions.
+    - `dim` (int, optional): The dimension along which to repeat. Defaults to `0`.
+
+    ### Returns
+    - `Tensor`: The repeated tensor.
+    """
     x = x.unsqueeze(dim)
     output_shape = torch.ones(size=(len(x.shape),), dtype=int)
     output_shape[dim] = repeat
@@ -114,6 +173,17 @@ def stretch(
     strength: int,
     dim: Union[int, Sequence[int]] = 0,
 ) -> Tensor:
+    """
+    Stretches a tensor by repeating elements along specified dimensions.
+
+    ### Parameters
+    - `x` (Tensor): The tensor to be stretched.
+    - `strength` (int): The number of times to repeat elements.
+    - `dim` (Union[int, Sequence[int]], optional): The dimension(s) to stretch. Defaults to `0`.
+
+    ### Returns
+    - `Tensor`: The stretched tensor.
+    """
     if isinstance(dim, int):
         dim = [dim]
 

@@ -11,6 +11,15 @@ __all__ = [
 def _dict_to_mat(
     data_dict: Dict[float, List[float]],
 ) -> Tuple[List[float], np.ndarray]:
+    """
+    Converts a dictionary of data into a tuple of keys and a 2D numpy array.
+
+    ### Parameters
+    - `data_dict` (Dict[float, List[float]]): Dictionary where keys are floats and values are lists of floats.
+
+    ### Returns
+    - `Tuple[List[float], np.ndarray]`: A tuple with keys and the values converted into a 2D numpy array.
+    """
     keys = []
     vals = []
 
@@ -30,25 +39,15 @@ def _dict_to_mat(
 
 class DistPlot2D(Plot2D):
     """
-    A class for creating 2D distribution plots (mean, min, max, and quartile values) with customizable settings.
+    A class for creating 2D distribution plots using matplotlib, extending the `Plot2D` class.
 
-    ### Attributes
-    - `figsize` (Optional[Tuple[float, float]])`: The size of the figure.
-    - `fontsize` (Optional[float])`: The font size for the plot text.
-    - `title` (Optional[str])`: The title of the plot.
-    - `xlabel` (Optional[str])`: The label for the x-axis.
-    - `xlim` (Optional[Tuple[float, float]])`: The limits for the x-axis.
-    - `xticks` (Optional[Iterable[float]])`: The tick values for the x-axis.
-    - `xticklabels` (Optional[Iterable[str]])`: The tick labels for the x-axis.
-    - `ylabel` (Optional[str])`: The label for the y-axis.
-    - `ylim` (Optional[Tuple[float, float]])`: The limits for the y-axis.
-    - `yticks` (Optional[Iterable[float]])`: The tick values for the y-axis.
-    - `yticklabels` (Optional[Iterable[str]])`: The tick labels for the y-axis.
-    - `grid_alpha` (Optional[float])`: The alpha transparency for the grid.
+    Inherits plot settings and customization from `Plot2D`, and adds functionality to plot distributions with means,
+    quantiles, and ranges.
 
-    ### Methods
-    - `__init__(...)`: Initializes the DistPlot2D object with customizable settings.
-    - `_plot(fig, ax, data_dict, *args, **kwargs) -> None`: Plots the 2D distribution plot based on the provided data dictionary.
+    ### Plot Components
+    - Means are plotted as red dots.
+    - Minimum and maximum values are shown as shaded areas.
+    - Quartiles are shown as a shaded area between Q1 and Q3, and Q2 is plotted as a line.
     """
 
     def __init__(
@@ -67,18 +66,21 @@ class DistPlot2D(Plot2D):
         grid_alpha: Optional[float] = 0.0,
     ) -> None:
         """
-        - `figsize (Optional[Tuple[float, float]])`: The size of the figure. Defaults to None.
-        - `fontsize (Optional[float])`: The font size for the plot text. Defaults to None.
-        - `title (Optional[str])`: The title of the plot. Defaults to None.
-        - `xlabel (Optional[str])`: The label for the x-axis. Defaults to None.
-        - `xlim (Optional[Tuple[float, float]])`: The limits for the x-axis. Defaults to None.
-        - `xticks (Optional[Iterable[float]])`: The tick values for the x-axis. Defaults to None.
-        - `xticklabels (Optional[Iterable[str]])`: The tick labels for the x-axis. Defaults to None.
-        - `ylabel (Optional[str])`: The label for the y-axis. Defaults to None.
-        - `ylim (Optional[Tuple[float, float]])`: The limits for the y-axis. Defaults to None.
-        - `yticks (Optional[Iterable[float]])`: The tick values for the y-axis. Defaults to None.
-        - `yticklabels (Optional[Iterable[str]])`: The tick labels for the y-axis. Defaults to None.
-        - `grid_alpha (Optional[float])`: The alpha transparency for the grid. Defaults to 0.0.
+        - `figsize` (Tuple[float, float], optional): Figure size.
+        - `fontsize` (float, optional): Font size for the plot text.
+        - `title` (str, optional): Title of the plot.
+
+        - `xlabel` (str, optional): X-axis label.
+        - `xlim` (Tuple[float, float], optional): X-axis limits.
+        - `xticks` (Iterable[float], optional): X-axis tick positions.
+        - `xticklabels` (Iterable[str], optional): X-axis tick labels.
+
+        - `ylabel` (str, optional): Y-axis label.
+        - `ylim` (Tuple[float, float], optional): Y-axis limits.
+        - `yticks` (Iterable[float], optional): Y-axis tick positions.
+        - `yticklabels` (Iterable[str], optional): Y-axis tick labels.
+
+        - `grid_alpha` (float, optional): Alpha (transparency) for the grid. Defaults to `0.0`.
         """
         super().__init__(
             figsize,
@@ -104,20 +106,17 @@ class DistPlot2D(Plot2D):
         **kwargs,
     ) -> None:
         """
-        Plots the 2D distribution plot based on the provided data dictionary.
+        Plots distribution data from a dictionary, showing the means, quantiles, and ranges.
 
         ### Parameters
-        - `fig (Figure)`: The Matplotlib figure object.
-        - `ax (Axes)`: The Matplotlib axes object.
-        - `data_dict (Dict[float, List[float]])`: A dictionary where keys are x-values and values are lists of y-values representing distributions.
-        - `*args`: Additional arguments for plotting.
-        - `**kwargs`: Additional keyword arguments for plotting.
+        - `fig` (Figure): Matplotlib figure object.
+        - `ax` (Axes): Matplotlib axes object.
+        - `data_dict` (Dict[float, List[float]]): Dictionary containing x-values (keys) and a list of y-values (values).
 
-        ### Returns
-        - `None`
-
-        ### Notes
-        - This method generates a scatter plot of the means, fills the area between min and max values, and adds lines and areas for quartiles (Q1, Q2, Q3).
+        ### Plot Components
+        - Means are plotted as red dots.
+        - Minimum and maximum values are shown as shaded areas.
+        - Quartiles are shown as a shaded area between Q1 and Q3, and Q2 is plotted as a line.
         """
         x, y = _dict_to_mat(data_dict)
 

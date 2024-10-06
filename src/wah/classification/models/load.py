@@ -29,6 +29,16 @@ def add_preprocess(
     model: Module,
     preprocess: Union[Module, Transform],
 ) -> Module:
+    """
+    Adds preprocessing to a model pipeline using `torch.nn.Sequential`.
+
+    ### Parameters
+    - `model` (Module): The model to which preprocessing is added.
+    - `preprocess` (Union[Module, Transform]): The preprocessing transform or module to apply.
+
+    ### Returns
+    - `Module`: A sequential model where preprocessing is applied before the model.
+    """
     return torch.nn.Sequential(
         OrderedDict(
             [
@@ -47,6 +57,20 @@ def load_timm_model(
     num_channels: int = 3,
     **kwargs,
 ) -> Module:
+    """
+    Loads a model from the timm library.
+
+    ### Parameters
+    - `name` (str): The name of the model to load.
+    - `pretrained` (bool, optional): Whether to load a pretrained model. Defaults to `False`.
+    - `num_classes` (int, optional): The number of output classes. Defaults to `1000`.
+    - `image_size` (int, optional): The input image size. Defaults to `224`.
+    - `num_channels` (int, optional): The number of input channels. Defaults to `3`.
+    - `**kwargs`: Additional keyword arguments passed to `timm.create_model`.
+
+    ### Returns
+    - `Module`: The loaded model.
+    """
     assert name in timm.list_models(), (
         f"timm does not support {name}. "
         f"Check timm.list_models() for supported models."
@@ -79,6 +103,19 @@ def load_torchvision_model(
     image_size: int = 224,
     **kwargs,
 ) -> Module:
+    """
+    Loads a model from the torchvision library.
+
+    ### Parameters
+    - `name` (str): The name of the model to load.
+    - `weights` (Optional[str], optional): Path to the pretrained weights. Defaults to `None`.
+    - `num_classes` (int, optional): The number of output classes. Defaults to `1000`.
+    - `image_size` (int, optional): The input image size. Defaults to `224`.
+    - `**kwargs`: Additional keyword arguments passed to the torchvision model.
+
+    ### Returns
+    - `Module`: The loaded model.
+    """
     assert name in models.list_models(), (
         f"torchvision does not support {name}. "
         f"Check torchvision.models.list_models() for supported models."
@@ -109,6 +146,23 @@ def load_model(
     make_feature_2d: Optional[bool] = False,
     **kwargs,
 ) -> Module:
+    """
+    Loads a model from either the timm or torchvision library.
+
+    ### Parameters
+    - `name` (str): The name of the model to load.
+    - `weights` (Optional[str], optional): Path to the pretrained weights. Defaults to `None`.
+    - `num_classes` (int, optional): The number of output classes. Defaults to `1000`.
+    - `image_size` (int, optional): The input image size. Defaults to `224`.
+    - `num_channels` (int, optional): The number of input channels. Defaults to `3`.
+    - `load_from` (Literal["timm", "torchvision"], optional): Whether to load the model from timm or torchvision. Defaults to `"timm"`.
+    - `map_location` (Optional[Device], optional): The device to load the model on. Defaults to `"cpu"`.
+    - `make_feature_2d` (Optional[bool], optional): If `True`, the model's output will be converted to a 2D feature map.
+    - `**kwargs`: Additional keyword arguments passed to the model.
+
+    ### Returns
+    - `Module`: The loaded model.
+    """
     weights_path: Path = weights if weights is not None else None
     pretrained = True if weights == "auto" else False
     output_size = 2 if make_feature_2d else num_classes
@@ -160,6 +214,14 @@ def load_state_dict(
     state_dict_path: Path,
     map_location: Optional[Device] = "cpu",
 ) -> None:
+    """
+    Loads a state dictionary into the model.
+
+    ### Parameters
+    - `model` (Module): The model to load the state dictionary into.
+    - `state_dict_path` (Path): The path to the state dictionary.
+    - `map_location` (Optional[Device], optional): The device to map the model's parameters to. Defaults to `"cpu"`.
+    """
     assert _path.exists(state_dict_path), f"{state_dict_path} does not exist."
 
     state_dict: Dict[str, Tensor] = torch.load(

@@ -16,6 +16,19 @@ def _getattr(
     module: Module,
     attr: str,
 ) -> Module:
+    """
+    Retrieves a nested attribute from a module.
+
+    ### Parameters
+    - `module` (Module): The module from which to retrieve the attribute.
+    - `attr` (str): The attribute string, which can include nested attributes separated by dots.
+
+    ### Returns
+    - `Module`: The module or submodule referred to by the attribute.
+
+    ### Raises
+    - `AttributeError`: If the attribute is not found.
+    """
     try:
         for a in attr.split("."):
             if attr.isnumeric():
@@ -30,6 +43,15 @@ def _getattr(
 def get_attrs(
     model: Module,
 ) -> List[str]:
+    """
+    Retrieves a list of valid attribute names from a model, excluding dropouts.
+
+    ### Parameters
+    - `model` (Module): The model from which to retrieve attribute names.
+
+    ### Returns
+    - `List[str]`: A list of valid attribute names from the model.
+    """
     names = get_named_modules(model)
 
     attrs = []
@@ -66,12 +88,35 @@ def get_attrs(
 def get_module_name(
     module: Module,
 ) -> str:
+    """
+    Returns the class name of a module.
+
+    ### Parameters
+    - `module` (Module): The module whose class name is being retrieved.
+
+    ### Returns
+    - `str`: The name of the module's class.
+    """
     return module.__class__.__name__
 
 
 def get_module_params(
     module: Module,
 ) -> Tuple[List[Any], Dict[str, Any]]:
+    """
+    Parses and returns the parameters of a module.
+
+    ### Parameters
+    - `module` (Module): The module whose parameters are being retrieved.
+
+    ### Returns
+    - `Tuple[List[Any], Dict[str, Any]]`: A tuple containing:
+        - A list of positional arguments (args).
+        - A dictionary of keyword arguments (kwargs).
+
+    ### Notes
+    - Uses string manipulation to extract arguments and keyword arguments from the module's string representation.
+    """
     # "Module(param0, arg1=(param1, ), arg2=param2, ...)"
     s = str(module).replace("\n", "")
 
@@ -122,6 +167,15 @@ def get_module_params(
 def get_named_modules(
     model: Module,
 ) -> List[str]:
+    """
+    Retrieves the names of all named submodules within a model.
+
+    ### Parameters
+    - `model` (Module): The model from which to retrieve submodule names.
+
+    ### Returns
+    - `List[str]`: A list of submodule names.
+    """
     return [name for name, _ in model.named_modules()]
 
 
@@ -129,6 +183,16 @@ def get_valid_attr(
     model: Module,
     attr: str,
 ) -> str:
+    """
+    Retrieves a valid attribute string from a model.
+
+    ### Parameters
+    - `model` (Module): The model from which to retrieve the attribute.
+    - `attr` (str): The attribute string, potentially containing nested attributes.
+
+    ### Returns
+    - `str`: A valid attribute string, or `None` if no valid attribute is found.
+    """
     attrs = attr.split(".")
     valid_attr = []
 

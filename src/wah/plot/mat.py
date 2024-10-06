@@ -9,6 +9,16 @@ __all__ = [
 
 
 class MatShow2D(Plot2D):
+    """
+    A class for creating 2D matrix plots using `matshow` in matplotlib, extending the `Plot2D` class.
+
+    Inherits plot settings and customization from `Plot2D`, and adds functionality to plot matrices with color bars.
+
+    ### Plot Components
+    - The matrix is displayed as a heatmap with color mapping.
+    - An optional color bar can be added with customizable ticks and labels.
+    """
+
     def __init__(
         self,
         figsize: Optional[Tuple[float, float]] = None,
@@ -25,6 +35,24 @@ class MatShow2D(Plot2D):
         cticks: Optional[Tuple[float, float]] = None,
         cticklabels: Optional[Tuple[float, float]] = None,
     ) -> None:
+        """
+        - `figsize` (Tuple[float, float], optional): Figure size.
+        - `fontsize` (float, optional): Font size for the plot text.
+        - `title` (str, optional): Title of the plot.
+
+        - `xlabel` (str, optional): X-axis label.
+        - `xticks` (Iterable[float], optional): X-axis tick positions.
+        - `xticklabels` (Iterable[str], optional): X-axis tick labels.
+
+        - `ylabel` (str, optional): Y-axis label.
+        - `yticks` (Iterable[float], optional): Y-axis tick positions.
+        - `yticklabels` (Iterable[str], optional): Y-axis tick labels.
+
+        - `clabel` (str, optional): Label for the color bar.
+        - `clim` (Tuple[float, float], optional): Minimum and maximum limits for the color bar.
+        - `cticks` (Tuple[float, float], optional): Tick positions for the color bar.
+        - `cticklabels` (Tuple[float, float], optional): Labels for the color bar ticks.
+        """
         super().__init__(
             figsize=figsize,
             fontsize=fontsize,
@@ -57,6 +85,19 @@ class MatShow2D(Plot2D):
         *args,
         **kwargs,
     ) -> None:
+        """
+        Plots a 2D matrix as a heatmap using `matshow`.
+
+        ### Parameters
+        - `fig` (Figure): Matplotlib figure object.
+        - `ax` (Axes): Matplotlib axes object.
+        - `mat` (Tensor): A 2D tensor representing the matrix to plot.
+        - `cmap` (str, optional): Colormap to use for the matrix plot. Defaults to `"viridis"`.
+
+        ### Plot Components
+        - The matrix is displayed as a heatmap with color mapping.
+        - An optional color bar is added with customizable ticks and labels.
+        """
         self.xlim = (0, mat.size(0) - 1)
         self.ylim = (0, mat.size(1) - 1)
 

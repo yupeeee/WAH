@@ -13,8 +13,20 @@ def compute_jacobian(
     model: Module,
     x: Tensor,
     device: Optional[Device] = "cpu",
-    reshape: Optional[bool] = True,
+    reshape: Optional[bool] = False,
 ) -> Tensor:
+    """
+    Computes the Jacobian of the model's output with respect to the input `x`.
+
+    ### Parameters
+    - `model` (Module): The model whose Jacobian is to be computed.
+    - `x` (Tensor): The input tensor.
+    - `device` (Device, optional): The device to use for computation. Defaults to `"cpu"`.
+    - `reshape` (bool, optional): If `True`, reshapes the Jacobian into a 2D matrix (output_dim, input_dim). Defaults to `False`.
+
+    ### Returns
+    - `Tensor`: The computed Jacobian matrix.
+    """
     x_dim = x.numel()
     model = model.eval().to(device)
     x = x.to(device)
@@ -34,8 +46,23 @@ def compute_hessian(
     func=None,
     args=None,
     device: Optional[Device] = "cpu",
-    reshape: Optional[bool] = True,
+    reshape: Optional[bool] = False,
 ) -> Tensor:
+    """
+    Computes the Hessian of the model's output with respect to the input `x`.
+    Optionally, a custom function `func` can be used to compute the Hessian.
+
+    ### Parameters
+    - `model` (Module): The model whose Hessian is to be computed.
+    - `x` (Tensor): The input tensor.
+    - `func` (optional): A custom function to compute the Hessian for. Defaults to `None`.
+    - `args` (optional): Additional arguments to pass to the function `func`. Defaults to `None`.
+    - `device` (Device, optional): The device to use for computation. Defaults to `"cpu"`.
+    - `reshape` (bool, optional): If `True`, reshapes the Hessian into a 2D matrix (input_dim, input_dim). Defaults to `False`.
+
+    ### Returns
+    - `Tensor`: The computed Hessian matrix.
+    """
     x_dim = x.numel()
 
     model = model.eval().to(device)

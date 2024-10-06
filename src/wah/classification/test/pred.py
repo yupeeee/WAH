@@ -54,6 +54,21 @@ class Wrapper(L.LightningModule):
 
 
 class PredTest:
+    """
+    A class for evaluating a model and collecting predictions for a dataset.
+
+    ### Attributes
+    - `batch_size` (int): The batch size for the test.
+    - `num_workers` (int): The number of workers for the DataLoader.
+    - `mixup_alpha` (Optional[float]): Alpha value for Mixup data augmentation. Defaults to `0.0`.
+    - `cutmix_alpha` (Optional[float]): Alpha value for CutMix data augmentation. Defaults to `0.0`.
+    - `seed` (Optional[int]): Random seed for deterministic behavior. Defaults to `None`.
+    - `devices` (Optional[Devices]): The devices to run the test on. Defaults to `"auto"`.
+
+    ### Methods
+    - `__call__(model: Module, dataset: Dataset) -> List[int]`: Runs the test and returns a list of predictions.
+    """
+
     def __init__(
         self,
         batch_size: int,
@@ -63,6 +78,14 @@ class PredTest:
         seed: Optional[int] = None,
         devices: Optional[Devices] = "auto",
     ) -> None:
+        """
+        - `batch_size` (int): The batch size for the test.
+        - `num_workers` (int): The number of workers for the DataLoader.
+        - `mixup_alpha` (Optional[float], optional): Alpha value for Mixup data augmentation. Defaults to `0.0`.
+        - `cutmix_alpha` (Optional[float], optional): Alpha value for CutMix data augmentation. Defaults to `0.0`.
+        - `seed` (Optional[int], optional): Random seed for deterministic behavior. Defaults to `None`.
+        - `devices` (Optional[Devices], optional): The devices to run the test on. Defaults to `"auto"`.
+        """
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.mixup_alpha = mixup_alpha
@@ -93,6 +116,16 @@ class PredTest:
         model: Module,
         dataset: Dataset,
     ) -> List[int]:
+        """
+        Runs the test for the given model and dataset.
+
+        ### Parameters
+        - `model` (Module): The model to be evaluated.
+        - `dataset` (Dataset): The dataset to evaluate the model on.
+
+        ### Returns
+        - `List[int]`: A list of predicted labels for the dataset.
+        """
         res_dict = {}
         dataset.set_return_data_only()
         dataset.set_return_w_index()

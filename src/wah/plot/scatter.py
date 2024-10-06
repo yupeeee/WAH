@@ -11,29 +11,14 @@ __all__ = [
 
 class ScatterPlot2D(Plot2D):
     """
-    A class for creating 2D scatter plots with customizable settings.
+    A class for creating 2D scatter plots using matplotlib, extending the `Plot2D` class.
 
-    ### Attributes
-    - `figsize (Optional[Tuple[float, float]])`: The size of the figure.
-    - `fontsize (Optional[float])`: The font size for the plot text.
-    - `title (Optional[str])`: The title of the plot.
-    - `xlabel (Optional[str])`: The label for the x-axis.
-    - `xlim (Optional[Tuple[float, float]])`: The limits for the x-axis.
-    - `xticks (Optional[Iterable[float]])`: The tick values for the x-axis.
-    - `xticklabels (Optional[Iterable[str]])`: The tick labels for the x-axis.
-    - `ylabel (Optional[str])`: The label for the y-axis.
-    - `ylim (Optional[Tuple[float, float]])`: The limits for the y-axis.
-    - `yticks (Optional[Iterable[float]])`: The tick values for the y-axis.
-    - `yticklabels (Optional[Iterable[str]])`: The tick labels for the y-axis.
-    - `clabel (Optional[str])`: The label for the colorbar.
-    - `clim (Optional[Tuple[float, float]])`: The limits for the colorbar.
-    - `cticks (Optional[Tuple[float, float]])`: The tick values for the colorbar.
-    - `cticklabels (Optional[Tuple[float, float]])`: The tick labels for the colorbar.
-    - `grid_alpha (Optional[float])`: The alpha transparency for the grid.
+    Inherits plot settings and customization from `Plot2D`, and adds functionality for plotting scatter plots with optional color bars and identity lines.
 
-    ### Methods
-    - `__init__(...)`: Initializes the ScatterPlot2D object with customizable settings.
-    - `_plot(fig, ax, x, y, c, *args, **kwargs) -> None`: Plots the scatter plot with optional color mapping.
+    ### Plot Components
+    - Data points are displayed as individual scatter points.
+    - Optionally, a color bar can be added to represent an additional dimension of data.
+    - An optional identity line can be plotted, showing where `x = y`.
     """
 
     def __init__(
@@ -56,22 +41,25 @@ class ScatterPlot2D(Plot2D):
         grid_alpha: Optional[float] = 0.0,
     ) -> None:
         """
-        - `figsize (Optional[Tuple[float, float]])`: The size of the figure. Defaults to None.
-        - `fontsize (Optional[float])`: The font size for the plot text. Defaults to None.
-        - `title (Optional[str])`: The title of the plot. Defaults to None.
-        - `xlabel (Optional[str])`: The label for the x-axis. Defaults to None.
-        - `xlim (Optional[Tuple[float, float]])`: The limits for the x-axis. Defaults to None.
-        - `xticks (Optional[Iterable[float]])`: The tick values for the x-axis. Defaults to None.
-        - `xticklabels (Optional[Iterable[str]])`: The tick labels for the x-axis. Defaults to None.
-        - `ylabel (Optional[str])`: The label for the y-axis. Defaults to None.
-        - `ylim (Optional[Tuple[float, float]])`: The limits for the y-axis. Defaults to None.
-        - `yticks (Optional[Iterable[float]])`: The tick values for the y-axis. Defaults to None.
-        - `yticklabels (Optional[Iterable[str]])`: The tick labels for the y-axis. Defaults to None.
-        - `clabel (Optional[str])`: The label for the colorbar. Defaults to None.
-        - `clim (Optional[Tuple[float, float]])`: The limits for the colorbar. Defaults to None.
-        - `cticks (Optional[Tuple[float, float]])`: The tick values for the colorbar. Defaults to None.
-        - `cticklabels (Optional[Tuple[float, float]])`: The tick labels for the colorbar. Defaults to None.
-        - `grid_alpha (Optional[float])`: The alpha transparency for the grid. Defaults to 0.0.
+        - `figsize` (Tuple[float, float], optional): Figure size.
+        - `fontsize` (float, optional): Font size for the plot text.
+        - `title` (str, optional): Title of the plot.
+
+        - `xlabel` (str, optional): X-axis label.
+        - `xlim` (Tuple[float, float], optional): X-axis limits.
+        - `xticks` (Iterable[float], optional): X-axis tick positions.
+        - `xticklabels` (Iterable[str], optional): X-axis tick labels.
+
+        - `ylabel` (str, optional): Y-axis label.
+        - `ylim` (Tuple[float, float], optional): Y-axis limits.
+        - `yticks` (Iterable[float], optional): Y-axis tick positions.
+        - `yticklabels` (Iterable[str], optional): Y-axis tick labels.
+
+        - `clabel` (str, optional): Label for the color bar.
+        - `clim` (Tuple[float, float], optional): Minimum and maximum values for the color bar.
+        - `cticks` (Tuple[float, float], optional): Positions for the color bar ticks.
+        - `cticklabels` (Tuple[float, float], optional): Labels for the color bar ticks.
+        - `grid_alpha` (float, optional): Alpha (transparency) for the grid. Defaults to `0.0`.
         """
         super().__init__(
             figsize,
@@ -108,22 +96,20 @@ class ScatterPlot2D(Plot2D):
         **kwargs,
     ) -> None:
         """
-        Plots the scatter plot with optional color mapping.
+        Plots a 2D scatter plot.
 
         ### Parameters
-        - `fig (Figure)`: The Matplotlib figure object.
-        - `ax (Axes)`: The Matplotlib axes object.
-        - `x (Iterable[float])`: The x-coordinates of the points.
-        - `y (Iterable[float])`: The y-coordinates of the points.
-        - `c (Optional[Iterable[float]])`: The color values for the points. Defaults to None.
-        - `*args`: Additional arguments for plotting.
-        - `**kwargs`: Additional keyword arguments for plotting.
+        - `fig` (Figure): Matplotlib figure object.
+        - `ax` (Axes): Matplotlib axes object.
+        - `x` (Iterable[float]): X-coordinates of the scatter points.
+        - `y` (Iterable[float]): Y-coordinates of the scatter points.
+        - `c` (Iterable[float], optional): Optional color data for the points.
+        - `plot_identity_line` (bool, optional): If `True`, plots a dashed identity line (`x = y`). Defaults to `False`.
 
-        ### Returns
-        - `None`
-
-        ### Notes
-        - This method generates a scatter plot of the data using Matplotlib. If `c` is provided, a colorbar is added to the plot.
+        ### Plot Components
+        - Data points are displayed as scatter points.
+        - A color bar can be added for color-coded data representation.
+        - Optionally, an identity line can be plotted to compare `x` and `y` values.
         """
         if c is not None:
             if self.clim is not None:
@@ -158,11 +144,26 @@ class ScatterPlot2D(Plot2D):
 
 
 class GridPlot2D(ScatterPlot2D):
+    """
+    A class for creating grid plots using scatter points and connecting lines, extending `ScatterPlot2D`.
+
+    Inherits functionality from `ScatterPlot2D` and customizes it for displaying structured grids with connecting lines.
+
+    ### Plot Components
+    - Scatter points are arranged in a grid.
+    - Points in the same row or column are connected with lines.
+    - Each point can be color-coded based on its position.
+    """
+
     def __init__(
         self,
         figsize: Optional[Tuple[float, float]] = (5, 5),
         **kwargs,
     ) -> None:
+        """
+        - `figsize` (Tuple[float, float], optional): Figure size. Defaults to `(5, 5)`.
+        - `**kwargs`: Additional keyword arguments passed to the parent class.
+        """
         super().__init__(
             figsize=figsize,
             **kwargs,
@@ -180,6 +181,22 @@ class GridPlot2D(ScatterPlot2D):
         *args,
         **kwargs,
     ) -> None:
+        """
+        Plots a 2D grid with scatter points and connecting lines.
+
+        ### Parameters
+        - `fig` (Figure): Matplotlib figure object.
+        - `ax` (Axes): Matplotlib axes object.
+        - `grid` (Tensor): Tensor of shape `(height*width, 2)` representing the grid points.
+        - `height` (int): Number of rows in the grid.
+        - `width` (int): Number of columns in the grid.
+        - `line_width` (int, optional): Line width for the grid connections. Defaults to `2`.
+        - `point_size` (int, optional): Size of the scatter points. Defaults to `200`.
+
+        ### Plot Components
+        - Points in the grid are connected by lines along rows and columns.
+        - Each point is displayed as a scatter point, color-coded by its position.
+        """
         assert (
             len(grid.shape) == 2 and grid.size(dim=-1) == 2
         ), f"grid shape must be (height*width, 2), got {tuple(grid.shape)}"

@@ -6,6 +6,13 @@ __all__ = [
 
 
 def time() -> str:
+    """
+    Returns the current time as a formatted string including both seconds and nanoseconds.
+
+    ### Returns
+    - `str`: The current time in the format `YYYYMMDDHHMMSSNNNNNNNNN`,
+    where the first part represents the date and time in years, months, days, hours, minutes, and seconds, followed by nanoseconds.
+    """
     current_time_ns = _time.time_ns()
 
     seconds = current_time_ns // 1_000_000_000

@@ -47,19 +47,19 @@ class Wrapper(L.LightningModule):
 
 class AccuracyTest:
     """
-    A class for evaluating the top-k accuracy of a neural network model on a given dataset.
+    A class for evaluating the top-k accuracy of a model on a given dataset using PyTorch Lightning.
 
     ### Attributes
-    - `batch_size` (int): The batch size to use during evaluation.
-    - `num_workers` (int): The number of worker threads for loading data.
-    - `top_k` (int, optional): The value of k for top-k accuracy. Defaults to 1.
-    - `mixup_alpha` (float, optional): The alpha value for mixup augmentation. Defaults to 0.0.
-    - `cutmix_alpha` (float, optional): The alpha value for cutmix augmentation. Defaults to 0.0.
-    - `seed` (int, optional): The random seed for reproducibility. Defaults to None.
-    - `devices` (Devices, optional): The devices to use for computation. Defaults to "auto".
+    - `batch_size` (int): The batch size for the test.
+    - `num_workers` (int): The number of workers for the DataLoader.
+    - `top_k` (Optional[int]): The value of `k` for top-k accuracy. Defaults to `1`.
+    - `mixup_alpha` (Optional[float]): Alpha value for Mixup data augmentation. Defaults to `0.0`.
+    - `cutmix_alpha` (Optional[float]): Alpha value for CutMix data augmentation. Defaults to `0.0`.
+    - `seed` (Optional[int]): Random seed for deterministic behavior. Defaults to `None`.
+    - `devices` (Optional[Devices]): The devices to run the test on. Defaults to `"auto"`.
 
     ### Methods
-    - `__call__(model, dataset) -> float`: Evaluates the accuracy of the model on the given dataset.
+    - `__call__(model: Module, dataset: Dataset) -> float`: Runs the accuracy test and returns the accuracy.
     """
 
     def __init__(
@@ -73,13 +73,13 @@ class AccuracyTest:
         devices: Optional[Devices] = "auto",
     ) -> None:
         """
-        - `batch_size` (int): The batch size to use during evaluation.
-        - `num_workers` (int): The number of worker threads for loading data.
-        - `top_k` (int, optional): The value of k for top-k accuracy. Defaults to 1.
-        - `mixup_alpha` (float, optional): The alpha value for mixup augmentation. Defaults to 0.0.
-        - `cutmix_alpha` (float, optional): The alpha value for cutmix augmentation. Defaults to 0.0.
-        - `seed` (int, optional): The random seed for reproducibility. Defaults to None.
-        - `devices` (Devices, optional): The devices to use for computation. Defaults to "auto".
+        - `batch_size` (int): The batch size for the test.
+        - `num_workers` (int): The number of workers for the DataLoader.
+        - `top_k` (Optional[int], optional): The value of `k` for top-k accuracy. Defaults to `1`.
+        - `mixup_alpha` (Optional[float], optional): Alpha value for Mixup data augmentation. Defaults to `0.0`.
+        - `cutmix_alpha` (Optional[float], optional): Alpha value for CutMix data augmentation. Defaults to `0.0`.
+        - `seed` (Optional[int], optional): Random seed for deterministic behavior. Defaults to `None`.
+        - `devices` (Optional[Devices], optional): The devices to run the test on. Defaults to `"auto"`.
         """
         self.batch_size = batch_size
         self.num_workers = num_workers
@@ -114,14 +114,14 @@ class AccuracyTest:
         dataset: Dataset,
     ) -> float:
         """
-        Evaluates the accuracy of the model on the given dataset.
+        Runs the accuracy test for the given model and dataset.
 
         ### Parameters
-        - `model (Module)`: The neural network model to evaluate.
-        - `dataset (Dataset)`: The dataset to evaluate the model on.
+        - `model` (Module): The model to be evaluated.
+        - `dataset` (Dataset): The dataset to evaluate the model on.
 
         ### Returns
-        - `float`: The top-k accuracy of the model on the dataset.
+        - `float`: The computed accuracy of the model on the dataset.
         """
         res_dict = {}
         model = Wrapper(model, self.config, res_dict)

@@ -90,22 +90,32 @@ class Wrapper(L.LightningModule):
 
 class EvalTest:
     """
-    Performs evaluation of a model on a given dataset with support for techniques like Mixup, CutMix, and label smoothing.
+    A class for evaluating a model on a dataset and collecting various metrics
+    such as predictions, losses, and confidence scores.
 
     ### Attributes
-    - `batch_size (int)`: The number of samples per batch.
-    - `num_workers (int)`: The number of worker threads for loading data.
-    - `mixup_alpha (Optional[float])`: The alpha value for Mixup augmentation. Defaults to 0.0.
-    - `cutmix_alpha (Optional[float])`: The alpha value for CutMix augmentation. Defaults to 0.0.
-    - `label_smoothing (Optional[float])`: The label smoothing factor. Defaults to 0.0.
-    - `seed (Optional[int])`: The seed for random number generators to ensure reproducibility. Defaults to None.
-    - `devices (Optional[Devices])`: The devices to run the evaluation on (e.g., CPU, GPU). Defaults to "auto".
-    - `runner (L.Trainer)`: The Lightning Trainer used to run the evaluation.
-    - `config (Dict[str, Any])`: The configuration dictionary storing the evaluation settings.
+    - `batch_size` (int): The batch size for the test.
+    - `num_workers` (int): The number of workers for the DataLoader.
+    - `mixup_alpha` (Optional[float]): Alpha value for Mixup data augmentation. Defaults to `0.0`.
+    - `cutmix_alpha` (Optional[float]): Alpha value for CutMix data augmentation. Defaults to `0.0`.
+    - `label_smoothing` (Optional[float]): The amount of label smoothing to apply to the loss. Defaults to `0.0`.
+    - `seed` (Optional[int]): Random seed for deterministic behavior. Defaults to `None`.
+    - `devices` (Optional[Devices]): The devices to run the test on. Defaults to `"auto"`.
 
     ### Methods
-    - `__init__(...)`: Initializes the EvalTest class with the specified configuration.
-    - `__call__(model, dataset) -> Dict[str, List[float]]`: Evaluates the model on the provided dataset and returns the evaluation metrics.
+    - `__call__(model: Module, dataset: Dataset) -> Dict[str, List[float]]`:
+    Runs the evaluation and returns a dictionary of results.
+
+    ### Resulting Dictionary
+    The returned dictionary contains the following keys:
+    - `idx` (List[int]): The indices of the samples in the dataset.
+    - `gt` (List[int]): The ground truth labels for each sample.
+    - `pred` (List[int]): The predicted labels for each sample.
+    - `loss` (List[float]): The loss values for each sample.
+    - `conf` (List[float]): The confidence scores for the predicted labels,
+    with the sign indicating correctness (positive for correct predictions, negative for incorrect).
+    - `gt_conf` (List[float]): The confidence scores for the ground truth labels,
+    with the sign indicating correctness (positive for correct predictions, negative for incorrect).
     """
 
     def __init__(
@@ -119,13 +129,13 @@ class EvalTest:
         devices: Optional[Devices] = "auto",
     ) -> None:
         """
-        - `batch_size (int)`: The number of samples per batch.
-        - `num_workers (int)`: The number of worker threads for loading data.
-        - `mixup_alpha (Optional[float])`: The alpha value for Mixup augmentation. Defaults to 0.0.
-        - `cutmix_alpha (Optional[float])`: The alpha value for CutMix augmentation. Defaults to 0.0.
-        - `label_smoothing (Optional[float])`: The label smoothing factor. Defaults to 0.0.
-        - `seed (Optional[int])`: The seed for random number generators to ensure reproducibility. Defaults to None.
-        - `devices (Optional[Devices])`: The devices to run the evaluation on (e.g., CPU, GPU). Defaults to "auto".
+        - `batch_size` (int): The batch size for the test.
+        - `num_workers` (int): The number of workers for the DataLoader.
+        - `mixup_alpha` (Optional[float], optional): Alpha value for Mixup data augmentation. Defaults to `0.0`.
+        - `cutmix_alpha` (Optional[float], optional): Alpha value for CutMix data augmentation. Defaults to `0.0`.
+        - `label_smoothing` (Optional[float], optional): The amount of label smoothing to apply to the loss. Defaults to `0.0`.
+        - `seed` (Optional[int], optional): Random seed for deterministic behavior. Defaults to `None`.
+        - `devices` (Optional[Devices], optional): The devices to run the test on. Defaults to `"auto"`.
         """
         self.batch_size = batch_size
         self.num_workers = num_workers
@@ -160,21 +170,15 @@ class EvalTest:
         dataset: Dataset,
     ) -> Dict[str, List[float]]:
         """
-        Evaluates the model on the provided dataset and returns the evaluation metrics.
+        Runs the evaluation for the given model and dataset.
 
         ### Parameters
-        - `model (Module)`: The neural network model to evaluate.
-        - `dataset (Dataset)`: The dataset on which the evaluation is performed.
+        - `model` (Module): The model to be evaluated.
+        - `dataset` (Dataset): The dataset to evaluate the model on.
 
         ### Returns
-        - `Dict[str, List[float]]`: A dictionary containing the evaluation metrics:
-            - `gt`: Ground truth labels.
-            - `pred`: Predicted labels.
-            - `loss`: Loss values for each sample.
-            - `conf`: Confidence scores for each prediction.
-
-        ### Notes
-        - This method wraps the model in a `Wrapper` class, converts the dataset into a DataLoader, and runs the evaluation using the Lightning Trainer.
+        - `Dict[str, List[float]]`: A dictionary containing evaluation results
+        including predictions, losses, and confidence scores.
         """
         res_dict = {}
         dataset.set_return_w_index()

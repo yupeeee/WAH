@@ -9,6 +9,15 @@ __all__ = [
 
 
 class ImShow:
+    """
+    A class for displaying images using matplotlib, supporting grayscale and RGB images.
+
+    ### Plot Components
+    - Images are displayed in a grid of subplots with customizable dimensions.
+    - Supports both grayscale and RGB image formats.
+    - Optionally removes axis lines and labels from the subplots.
+    """
+
     def __init__(
         self,
         height: int,
@@ -16,6 +25,12 @@ class ImShow:
         scale: float = 1.0,
         no_axis: bool = True,
     ) -> None:
+        """
+        - `height` (int): Number of rows in the grid of subplots.
+        - `width` (int): Number of columns in the grid of subplots.
+        - `scale` (float, optional): Scaling factor for the size of each subplot. Defaults to `1.0`.
+        - `no_axis` (bool, optional): If `True`, hides the axis lines and labels. Defaults to `True`.
+        """
         self.height = height
         self.width = width
         self.scale = scale
@@ -25,13 +40,34 @@ class ImShow:
         self,
         image: Tensor,
     ) -> bool:
-        """Helper function to determine if an image is grayscale."""
+        """
+        Checks whether the image is grayscale.
+
+        ### Parameters
+        - `image` (Tensor): Image tensor to check.
+
+        ### Returns
+        - `bool`: `True` if the image is grayscale, `False` otherwise.
+        """
         return image.dim() == 2 or (image.dim() == 3 and image.size(0) == 1)
 
     def plot(
         self,
         images: Tensor,
     ) -> None:
+        """
+        Plots a grid of images using matplotlib.
+
+        ### Parameters
+        - `images` (Tensor): A batch of images to display.
+        Should have shape `(N, C, H, W)` where `N` is the number of images, `C` is the number of channels, and `H`, `W` are the height and width of each image.
+
+        ### Plot Components
+        - Images are arranged in a grid of size `(height, width)` with customizable scaling.
+        - Grayscale images are displayed using a grayscale colormap.
+        - RGB images are displayed with their original colors.
+        - Axis labels can be hidden based on the `no_axis` attribute.
+        """
         num_images = images.size(0)
         fig, axes = plt.subplots(
             nrows=self.height,
@@ -63,13 +99,7 @@ class ImShow:
 
     def show(self) -> None:
         """
-        Displays the plot.
-
-        ### Returns:
-        - `None`
-
-        ### Notes:
-        - This method calls `plt.show()` to display the plot in an interactive window.
+        Displays the plotted images.
         """
         plt.show()
 
@@ -80,17 +110,12 @@ class ImShow:
         **kwargs,
     ) -> None:
         """
-        Saves the plot to the specified path with optional settings.
+        Saves the plotted images to the specified file path.
 
-        ### Parameters:
-        - `save_path (Path)`: The path to save the plot.
-        - `use_auto_settings (bool)`: Whether to use automatic settings for saving the plot. Defaults to True.
-        - `**kwargs`: Additional keyword arguments for saving the plot.
-
-        ### Notes:
-        - This method saves the plot to the specified `save_path` using Matplotlib's `plt.savefig()` function.
-        - If `use_auto_settings` is True, the method automatically adjusts settings such as DPI and padding to optimize the saved plot.
-        - The directory specified in `save_path` is created if it does not exist.
+        ### Parameters
+        - `save_path` (Path): The path where the images will be saved.
+        - `use_auto_settings` (bool, optional): Whether to apply default saving settings (DPI, tight layout). Defaults to `True`.
+        - `**kwargs`: Additional arguments for `plt.savefig`.
         """
         if use_auto_settings:
             kwargs["dpi"] = 300
