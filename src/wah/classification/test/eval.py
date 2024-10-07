@@ -79,14 +79,12 @@ class Wrapper(L.LightningModule):
         conf = torch.cat(conf, dim=1).permute(1, 0).flatten()
         gt_conf = torch.cat(gt_conf, dim=1).permute(1, 0).flatten()
 
-        self.res_dict = {
-            "idx": [int(i) for i in idx],
-            "gt": [int(g) for g in gt],
-            "pred": [int(p) for p in pred],
-            "loss": [float(l) for l in loss],
-            "conf": [float(c) for c in conf],
-            "gt_conf": [float(gc) for gc in gt_conf],
-        }
+        self.res_dict["idx"] = [int(i) for i in idx]
+        self.res_dict["gt"] = [int(g) for g in gt]
+        self.res_dict["pred"] = [int(p) for p in pred]
+        self.res_dict["loss"] = [float(l) for l in loss]
+        self.res_dict["conf"] = [float(c) for c in conf]
+        self.res_dict["gt_conf"] = [float(gc) for gc in gt_conf]
 
 
 class EvalTest:

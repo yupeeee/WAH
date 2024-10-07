@@ -124,6 +124,8 @@ webdriver_manager
 - grad:
 `compute_jacobian`,
 `compute_hessian`
+- jacobian_sigvals:
+`JacobianSigVals`
 
 ### `tensor`
 `broadcasted_elementwise_mul`,
