@@ -23,6 +23,7 @@ class Wrapper(L.LightningModule):
         self.model = model
         self.res_dict = res_dict
 
+        self.num_data = []
         self.sigval = []
 
     def test_step(self, batch: Tensor, batch_idx):
@@ -39,10 +40,16 @@ class Wrapper(L.LightningModule):
 
         sigvals: Tensor = torch.linalg.svdvals(J)
 
+        self.num_data.append(batch_size)
         self.sigval.append(sigvals.cpu())
 
     def on_test_epoch_end(self) -> None:
+        num_data: List[int] = self.all_gather(self.num_data)
         sigval: List[Tensor] = self.all_gather(self.sigval)
+
+        num_data = sum(num_data)
+        sigval = torch.cat(sigval, dim=1).permute(1, 0, -1)
+        print(num_data)
         print(sigval.shape)
 
         # idx = torch.cat(idx, dim=-1).flatten()
