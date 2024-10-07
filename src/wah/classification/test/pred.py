@@ -25,30 +25,24 @@ class Wrapper(L.LightningModule):
 
         self.softmax = Softmax(dim=-1)
 
-        self.idx = []
         self.pred = []
 
     def test_step(self, batch, batch_idx):
-        indices: Tensor
         data: Tensor
 
-        indices, data = batch
+        data = batch
 
         outputs: Tensor = self.model(data)
 
         confs: Tensor = self.softmax(outputs)
         preds: Tensor = torch.argmax(confs, dim=-1)
 
-        self.idx.append(indices.cpu())
         self.pred.append(preds.cpu())
 
     def on_test_epoch_end(self) -> None:
-        idx: List[Tensor] = self.all_gather(self.idx)
         pred: List[Tensor] = self.all_gather(self.pred)
 
-        idx = torch.cat(idx, dim=-1).flatten()
-        idx, indices = torch.sort(idx)
-        pred = torch.cat(pred, dim=-1).flatten()[indices]
+        pred = torch.cat(pred, dim=1).permute(1, 0).flatten()
 
         self.res_dict["pred"] = [int(p) for p in pred]
 
@@ -128,7 +122,6 @@ class PredTest:
         """
         res_dict = {}
         dataset.set_return_data_only()
-        dataset.set_return_w_index()
         model = Wrapper(model, self.config, res_dict)
         dataloader = to_dataloader(
             dataset=dataset,
