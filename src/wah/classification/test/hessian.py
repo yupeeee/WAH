@@ -1,14 +1,14 @@
 import lightning as L
 import torch
-from torch.func import jacrev
+from torch.func import hessian
 
-from .. import utils
-from ..classification.datasets import to_dataloader
-from ..classification.train.utils import load_accelerator_and_devices
-from ..typing import Dataset, Devices, Dict, List, Module, Optional, Tensor
+from ... import utils
+from ...classification.datasets import to_dataloader
+from ...classification.train.utils import load_accelerator_and_devices
+from ...typing import Dataset, Devices, Dict, List, Module, Optional, Tensor
 
 __all__ = [
-    "JacobianSigVals",
+    "HessianSigVals",
 ]
 
 
@@ -17,28 +17,32 @@ class Wrapper(L.LightningModule):
         self,
         model: Module,
         res_dict: Dict[str, List],
+        criterion: str = "CrossEntropyLoss",
     ) -> None:
         super().__init__()
 
         self.model = model
         self.res_dict = res_dict
+        self.criterion = getattr(torch.nn, criterion)()
 
         self.num_data = []
         self.sigval = []
 
     def test_step(self, batch: Tensor, batch_idx):
-        batch_size = len(batch)
+        data, targets = batch
+
+        batch_size = len(data)
         input_dim = batch[0].numel()
 
         # enable gradients
         with torch.inference_mode(False):
-            batch = batch.clone().detach().requires_grad_(True)
-            J: Tensor = jacrev(self.model)(batch)
+            data = data.clone().detach().requires_grad_(True)
+            H: Tensor = hessian(lambda x: self.criterion(self.model(x), targets))(data)
 
-        assert J.requires_grad
-        J = J.detach().reshape(batch_size, -1, input_dim)
+        assert H.requires_grad
+        H = H.detach().reshape(batch_size, input_dim, input_dim)
 
-        sigvals: Tensor = torch.linalg.svdvals(J)
+        sigvals: Tensor = torch.linalg.svdvals(H)
 
         self.num_data.append(batch_size)
         self.sigval.append(sigvals.cpu())
@@ -53,7 +57,7 @@ class Wrapper(L.LightningModule):
         self.res_dict["sigval"] = sigval
 
 
-class JacobianSigVals:
+class HessianSigVals:
     def __init__(
         self,
         batch_size: int,
@@ -86,9 +90,10 @@ class JacobianSigVals:
         self,
         model: Module,
         dataset: Dataset,
+        criterion: str = "CrossEntropyLoss",
     ) -> Tensor:
         res_dict = {}
-        model = Wrapper(model, res_dict)
+        model = Wrapper(model, res_dict, criterion)
         dataloader = to_dataloader(
             dataset=dataset,
             train=False,

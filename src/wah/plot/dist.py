@@ -1,6 +1,6 @@
 import numpy as np
 
-from ..typing import Axes, Dict, Figure, Iterable, List, Optional, Tensor, Tuple
+from ..typing import Axes, Dict, Figure, Iterable, List, Optional, Tensor, Tuple, Union
 from .base import Plot2D
 
 __all__ = [
@@ -101,7 +101,7 @@ class DistPlot2D(Plot2D):
         self,
         fig: Figure,
         ax: Axes,
-        data_dict: Dict[float, List[float]],
+        data: Union[Tensor, Dict[float, List[float]]],
         *args,
         **kwargs,
     ) -> None:
@@ -111,14 +111,24 @@ class DistPlot2D(Plot2D):
         ### Parameters
         - `fig` (Figure): Matplotlib figure object.
         - `ax` (Axes): Matplotlib axes object.
-        - `data_dict` (Dict[float, List[float]]): Dictionary containing x-values (keys) and a list of y-values (values).
+        - `data` (Union[Tensor, Dict[float, List[float]]]): Data to plot, either as a tensor or a dictionary.
 
         ### Plot Components
         - Means are plotted as red dots.
         - Minimum and maximum values are shown as shaded areas.
         - Quartiles are shown as a shaded area between Q1 and Q3, and Q2 is plotted as a line.
         """
-        x, y = _dict_to_mat(data_dict)
+        if isinstance(data, Tensor):
+            assert len(data.shape) == 2, f"Input tensor must be 2D, got {data.shape}"
+
+            x = np.arange(len(data))
+            y = np.array(data)
+
+        elif isinstance(data, dict):
+            x, y = _dict_to_mat(data)
+
+        else:
+            raise ValueError(f"Unsupported data type: {type(data)}")
 
         means = np.mean(y, axis=-1)
         maxs = np.max(y, axis=-1)

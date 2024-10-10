@@ -4,6 +4,9 @@ from .accuracy import (
 from .eval import (
     EvalTest,
 )
+from .hessian import (
+    HessianSigVals,
+)
 from .pred import (
     PredTest,
 )
@@ -17,6 +20,8 @@ __all__ = [
     "AccuracyTest",
     # eval
     "EvalTest",
+    # hessian
+    "HessianSigVals",
     # pred
     "PredTest",
     # travel

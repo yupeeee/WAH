@@ -79,6 +79,8 @@ webdriver_manager
     `AccuracyTest`
     - eval:
     `EvalTest`
+    - hessian:
+    `HessianSigVals`
     - pred:
     `PredTest`
 - `train`
