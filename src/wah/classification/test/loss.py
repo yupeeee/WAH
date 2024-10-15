@@ -8,7 +8,7 @@ from ..datasets import to_dataloader
 from ..train.utils import load_accelerator_and_devices
 
 __all__ = [
-    "EvalTest",
+    "LossTest",
 ]
 
 
@@ -26,71 +26,36 @@ class Wrapper(L.LightningModule):
         self.res_dict = res_dict
 
         self.criterion = CrossEntropyLoss(
-            reduction="none",
             label_smoothing=self.config["label_smoothing"],
         )
         self.softmax = Softmax(dim=-1)
 
-        self.idx = []
-        self.gt = []
-        self.pred = []
         self.loss = []
-        self.conf = []
-        self.gt_conf = []
 
     def test_step(self, batch, batch_idx):
-        indices: Tensor
         data: Tensor
         targets: Tensor
 
-        indices, (data, targets) = batch
+        data, targets = batch
 
         outputs: Tensor = self.model(data)
 
         losses: Tensor = self.criterion(outputs, targets)
 
-        confs: Tensor = self.softmax(outputs)
-        preds: Tensor = torch.argmax(confs, dim=-1)
-
-        results: Tensor = torch.eq(preds, targets)
-        signs: Tensor = (results.int() - 0.5).sign()
-        signed_confs: Tensor = confs[:, preds].diag() * signs
-        signed_target_confs: Tensor = confs[:, targets].diag() * signs
-
-        self.idx.append(indices.cpu())
-        self.gt.append(targets.cpu())
-        self.pred.append(preds.cpu())
         self.loss.append(losses.cpu())
-        self.conf.append(signed_confs.cpu())
-        self.gt_conf.append(signed_target_confs.cpu())
 
     def on_test_epoch_end(self) -> None:
-        idx: List[Tensor] = self.all_gather(self.idx)
-        gt: List[Tensor] = self.all_gather(self.gt)
-        pred: List[Tensor] = self.all_gather(self.pred)
         loss: List[Tensor] = self.all_gather(self.loss)
-        conf: List[Tensor] = self.all_gather(self.conf)
-        gt_conf: List[Tensor] = self.all_gather(self.gt_conf)
+        if loss[0].dim() == 0:
+            loss = [l.unsqueeze(0) for l in loss]
+        loss = torch.cat(loss, dim=-1).flatten().mean()
 
-        idx = torch.cat(idx, dim=1).permute(1, 0).flatten()
-        gt = torch.cat(gt, dim=1).permute(1, 0).flatten()
-        pred = torch.cat(pred, dim=1).permute(1, 0).flatten()
-        loss = torch.cat(loss, dim=1).permute(1, 0).flatten()
-        conf = torch.cat(conf, dim=1).permute(1, 0).flatten()
-        gt_conf = torch.cat(gt_conf, dim=1).permute(1, 0).flatten()
-
-        self.res_dict["idx"] = [int(i) for i in idx]
-        self.res_dict["gt"] = [int(g) for g in gt]
-        self.res_dict["pred"] = [int(p) for p in pred]
-        self.res_dict["loss"] = [float(l) for l in loss]
-        self.res_dict["conf"] = [float(c) for c in conf]
-        self.res_dict["gt_conf"] = [float(gc) for gc in gt_conf]
+        self.res_dict["loss"] = float(loss)
 
 
-class EvalTest:
+class LossTest:
     """
-    A class for evaluating a model on a dataset and collecting various metrics
-    such as predictions, losses, and confidence scores.
+    A class for evaluating the average loss of a model on a given dataset using PyTorch Lightning.
 
     ### Attributes
     - `batch_size` (int): The batch size for the test.
@@ -103,19 +68,7 @@ class EvalTest:
     - `verbose` (Optional[bool], optional): Whether to show progress bar and model summary during testing. Defaults to `True`.
 
     ### Methods
-    - `__call__(model: Module, dataset: Dataset) -> Dict[str, List[float]]`:
-    Runs the evaluation and returns a dictionary of results.
-
-    ### Resulting Dictionary
-    The returned dictionary contains the following keys:
-    - `idx` (List[int]): The indices of the samples in the dataset.
-    - `gt` (List[int]): The ground truth labels for each sample.
-    - `pred` (List[int]): The predicted labels for each sample.
-    - `loss` (List[float]): The loss values for each sample.
-    - `conf` (List[float]): The confidence scores for the predicted labels,
-    with the sign indicating correctness (positive for correct predictions, negative for incorrect).
-    - `gt_conf` (List[float]): The confidence scores for the ground truth labels,
-    with the sign indicating correctness (positive for correct predictions, negative for incorrect).
+    - `__call__(model: Module, dataset: Dataset) -> float`: Runs the loss evaluation and returns the average loss.
     """
 
     def __init__(
@@ -176,20 +129,18 @@ class EvalTest:
         self,
         model: Module,
         dataset: Dataset,
-    ) -> Dict[str, List[float]]:
+    ) -> float:
         """
-        Runs the evaluation for the given model and dataset.
+        Runs the loss evaluation for the given model and dataset.
 
         ### Parameters
         - `model` (Module): The model to be evaluated.
         - `dataset` (Dataset): The dataset to evaluate the model on.
 
         ### Returns
-        - `Dict[str, List[float]]`: A dictionary containing evaluation results
-        including predictions, losses, and confidence scores.
+        - `float`: The computed mean loss of the model on the dataset.
         """
         res_dict = {}
-        dataset.set_return_w_index()
         model = Wrapper(model, self.config, res_dict)
         dataloader = to_dataloader(
             dataset=dataset,
@@ -202,4 +153,4 @@ class EvalTest:
             dataloaders=dataloader,
         )
 
-        return res_dict
+        return res_dict["loss"]

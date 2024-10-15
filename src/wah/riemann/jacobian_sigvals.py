@@ -60,14 +60,19 @@ class JacobianSigVals:
         num_workers: int,
         seed: Optional[int] = None,
         devices: Optional[Devices] = "auto",
+        verbose: Optional[bool] = True,
     ) -> None:
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.seed = seed
         self.devices = devices
+        self.verbose = verbose
 
-        utils.random.seed(self.seed)
+        utils.seed(self.seed)
         accelerator, devices = load_accelerator_and_devices(self.devices)
+
+        if not verbose:
+            utils.disable_lightning_logging()
 
         self.runner = L.Trainer(
             accelerator=accelerator,
@@ -76,6 +81,8 @@ class JacobianSigVals:
             max_epochs=1,
             log_every_n_steps=None,
             deterministic="warn" if self.seed is not None else False,
+            enable_progress_bar=verbose,
+            enable_model_summary=verbose,
         )
         self.config = {
             "batch_size": self.batch_size,

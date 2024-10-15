@@ -7,6 +7,9 @@ from .eval import (
 from .hessian import (
     HessianSigVals,
 )
+from .loss import (
+    LossTest,
+)
 from .pred import (
     PredTest,
 )
@@ -22,6 +25,8 @@ __all__ = [
     "EvalTest",
     # hessian
     "HessianSigVals",
+    # loss
+    "LossTest",
     # pred
     "PredTest",
     # travel

@@ -131,9 +131,10 @@ class Plot2D:
             ncols=1,
             figsize=self.figsize,
         )
-        ax.set_title(self.title)
 
         self._plot(fig, ax, *args, **kwargs)
+
+        ax.set_title(self.title)
 
         ax.set_xlabel(self.xlabel)
         if self.xlim is not None:

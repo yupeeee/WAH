@@ -40,6 +40,8 @@ class Wrapper(L.LightningModule):
 
     def on_test_epoch_end(self) -> None:
         corrects: List[Tensor] = self.all_gather(self.corrects)
+        if corrects[0].dim() == 0:
+            corrects = [c.unsqueeze(0) for c in corrects]
         corrects = torch.cat(corrects, dim=-1).flatten().sum()
 
         self.res_dict["corrects"] = float(corrects)
@@ -57,6 +59,7 @@ class AccuracyTest:
     - `cutmix_alpha` (Optional[float]): Alpha value for CutMix data augmentation. Defaults to `0.0`.
     - `seed` (Optional[int]): Random seed for deterministic behavior. Defaults to `None`.
     - `devices` (Optional[Devices]): The devices to run the test on. Defaults to `"auto"`.
+    - `verbose` (Optional[bool], optional): Whether to show progress bar and model summary during testing. Defaults to `True`.
 
     ### Methods
     - `__call__(model: Module, dataset: Dataset) -> float`: Runs the accuracy test and returns the accuracy.
@@ -71,6 +74,7 @@ class AccuracyTest:
         cutmix_alpha: Optional[float] = 0.0,
         seed: Optional[int] = None,
         devices: Optional[Devices] = "auto",
+        verbose: Optional[bool] = True,
     ) -> None:
         """
         - `batch_size` (int): The batch size for the test.
@@ -80,6 +84,7 @@ class AccuracyTest:
         - `cutmix_alpha` (Optional[float], optional): Alpha value for CutMix data augmentation. Defaults to `0.0`.
         - `seed` (Optional[int], optional): Random seed for deterministic behavior. Defaults to `None`.
         - `devices` (Optional[Devices], optional): The devices to run the test on. Defaults to `"auto"`.
+        - `verbose` (Optional[bool], optional): Whether to show progress bar and model summary during testing. Defaults to `True`.
         """
         self.batch_size = batch_size
         self.num_workers = num_workers
@@ -88,9 +93,13 @@ class AccuracyTest:
         self.cutmix_alpha = cutmix_alpha
         self.seed = seed
         self.devices = devices
+        self.verbose = verbose
 
-        utils.random.seed(self.seed)
+        utils.seed(self.seed)
         accelerator, devices = load_accelerator_and_devices(self.devices)
+
+        if not verbose:
+            utils.disable_lightning_logging()
 
         self.runner = L.Trainer(
             accelerator=accelerator,
@@ -99,6 +108,8 @@ class AccuracyTest:
             max_epochs=1,
             log_every_n_steps=None,
             deterministic="warn" if self.seed is not None else False,
+            enable_progress_bar=verbose,
+            enable_model_summary=verbose,
         )
         self.config = {
             "batch_size": self.batch_size,

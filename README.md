@@ -81,9 +81,14 @@ webdriver_manager
     `EvalTest`
     - hessian:
     `HessianSigVals`
+    - loss:
+    `LossTest`
     - pred:
     `PredTest`
 - `train`
+    - plot:
+    `proj_train_path_to_2d`,
+    `TrainPathPlot2D`
     - train:
     `Wrapper`,
     `load_trainer`
@@ -152,6 +157,8 @@ webdriver_manager
 `disable_ssl_verification`,
 `download_url`,
 `md5_check`
+- logs:
+`disable_lightning_logging`
 - lst:
 `load_txt_to_list`,
 `save_list_to_txt`,

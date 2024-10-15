@@ -57,7 +57,7 @@ class Wrapper(L.LightningModule):
         self.config = config
         self.save_hyperparameters(config)
 
-        utils.random.seed(init_seed(config))
+        utils.seed(init_seed(config))
 
         self.sync_dist: bool = False
         if (

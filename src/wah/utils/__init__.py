@@ -13,6 +13,9 @@ from .download import (
     download_url,
     md5_check,
 )
+from .logs import (
+    disable_lightning_logging,
+)
 from .lst import (
     load_txt_to_list,
     save_list_to_txt,
@@ -50,6 +53,8 @@ __all__ = [
     "disable_ssl_verification",
     "download_url",
     "md5_check",
+    # logs
+    "disable_lightning_logging",
     # lst
     "load_txt_to_list",
     "save_list_to_txt",
