@@ -1,7 +1,5 @@
-import numpy as np
 import torch
 import tqdm
-from sklearn.decomposition import PCA
 
 from ... import path, utils
 from ...plot.base import Plot2D
@@ -15,7 +13,6 @@ from ...typing import (
     Figure,
     List,
     Module,
-    NDArray,
     Optional,
     Path,
     Tensor,
@@ -34,8 +31,11 @@ def load_weights(
     model: Module,
     weights_dir: Path,
     epoch_interval: Optional[int] = 1,
-) -> NDArray:
+) -> Tensor:
     weights: List[Tensor] = []
+
+    init_weights_vec = torch.nn.utils.parameters_to_vector(model.parameters()).detach()
+    weights.append(init_weights_vec.unsqueeze(dim=0))
 
     # locate weights to load
     state_dict_paths = [
@@ -61,43 +61,50 @@ def load_weights(
     # weights.shape: (num_epochs // epoch_interval, #params)
     weights: Tensor = torch.cat(weights, dim=0)
 
-    return weights.numpy()
+    return weights
 
 
 def perform_pca(
-    weights: NDArray,
-) -> Tuple[NDArray, NDArray, NDArray, float]:
-    print(f"Projecting weights using PCA... ({weights.shape[-1]}D -> 2D)")
+    weights: Tensor,
+    q: Optional[int] = 20,
+) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+    print(f"Projecting weights using PCA... ({weights.shape[-1]}D -> {q}D)")
 
-    pca = PCA(n_components=2)
+    weights_mean = torch.mean(weights, dim=0)
+    weights = weights - weights_mean
+    _, S, V = torch.pca_lowrank(weights, q=q)
 
-    weights_proj = pca.fit_transform(weights)
-    weights_mean = pca.mean_
-    basis = pca.components_
-    explained_variance_ratio = pca.explained_variance_ratio_.sum()
+    explained_variance = S**2 / (weights.size(0) - 1)
+    components = V.T
 
-    print(f"done. (Explained variance ratio: {explained_variance_ratio * 100:.2f}%)")
+    weights_proj = torch.matmul(weights, components.T)
 
-    return weights_proj, weights_mean, basis, explained_variance_ratio
+    print("done.")
+
+    return explained_variance, components, weights_proj, weights_mean
 
 
 def create_2d_grid(
-    weights_proj: NDArray,
+    weights_proj: Tensor,
     num_steps: Optional[int] = 10,
-) -> Tuple[NDArray, NDArray]:
-    # Create a grid of points around the projected weights for contour plotting
+) -> Tuple[Tensor, Tensor]:
+    # Ensure the input is on the CPU (since grid generation works on CPU tensors)
+    weights_proj = weights_proj.cpu()
+
+    # Compute min and max along each axis
     x_min, x_max = weights_proj[:, 0].min(), weights_proj[:, 0].max()
     y_min, y_max = weights_proj[:, 1].min(), weights_proj[:, 1].max()
 
-    # Padding (10%)
+    # Add 10% padding around the min and max
     x_eps = (x_max - x_min) * 0.1
     y_eps = (y_max - y_min) * 0.1
     x_min, x_max = x_min - x_eps, x_max + x_eps
     y_min, y_max = y_min - y_eps, y_max + y_eps
 
-    x_grid, y_grid = np.meshgrid(
-        np.linspace(x_min, x_max, num_steps), np.linspace(y_min, y_max, num_steps)
-    )
+    # Create grid points using torch.linspace and meshgrid
+    x_grid = torch.linspace(x_min, x_max, num_steps)
+    y_grid = torch.linspace(y_min, y_max, num_steps)
+    x_grid, y_grid = torch.meshgrid(x_grid, y_grid, indexing="ij")
 
     return x_grid, y_grid
 
@@ -106,12 +113,12 @@ def load_2d_coordinates_to_model_weights(
     model: Module,
     x: float,
     y: float,
-    weights_mean: NDArray,
-    basis: NDArray,
+    weights_mean: Tensor,
+    components: Tensor,
 ) -> None:
-    weights_vec = x * basis[0] + y * basis[1] + weights_mean
+    weights_vec = x * components[0] + y * components[1] + weights_mean
     torch.nn.utils.vector_to_parameters(
-        vec=torch.from_numpy(weights_vec),
+        vec=weights_vec,
         parameters=model.parameters(),
     )
 
@@ -121,9 +128,10 @@ def proj_train_path_to_2d(
     model: Module,
     train_dir: Path,
     epoch_interval: Optional[int] = 1,
+    q: Optional[int] = 20,
     num_steps: Optional[int] = 10,
     devices: Optional[Devices] = "auto",
-) -> Dict[str, Any]:
+) -> Dict[str, Tensor]:
     # load config
     config: Config = utils.load_yaml_to_dict(path.join(train_dir, "hparams.yaml"))
 
@@ -132,13 +140,11 @@ def proj_train_path_to_2d(
     weights = load_weights(model, weights_dir, epoch_interval)
 
     # PCA projection
-    weights_proj, weights_mean, basis, explained_variance_ratio = perform_pca(
-        weights,
-    )
+    explained_variance, components, weights_proj, weights_mean = perform_pca(weights, q)
 
     # create 2d grid of weights for loss contour
     loss_xs, loss_ys = create_2d_grid(weights_proj, num_steps)
-    loss_zs = np.zeros_like(loss_xs)
+    loss_zs = torch.zeros_like(loss_xs)
 
     # Loop over grid points and compute loss by converting 2D coordinates back to full-dimensional weights
     for k in tqdm.trange(
@@ -153,7 +159,7 @@ def proj_train_path_to_2d(
             x=loss_xs[i, j],
             y=loss_ys[i, j],
             weights_mean=weights_mean,
-            basis=basis,
+            components=components,
         )
 
         # Compute the loss for the current set of weights
@@ -172,9 +178,10 @@ def proj_train_path_to_2d(
     print("done.")
 
     return {
-        "explained_variance_ratio": explained_variance_ratio,
-        "basis": basis,
+        "explained_variance": explained_variance,
+        "components": components,
         "weights_proj": weights_proj,
+        "weights_mean": weights_mean,
         "loss_xs": loss_xs,
         "loss_ys": loss_ys,
         "loss_zs": loss_zs,
@@ -184,6 +191,7 @@ def proj_train_path_to_2d(
 class TrainPathPlot2D(Plot2D):
     def __init__(
         self,
+        log_contour: Optional[bool] = False,
         figsize: Optional[Tuple[float, float]] = None,
         fontsize: Optional[float] = None,
         title: Optional[str] = None,
@@ -205,6 +213,7 @@ class TrainPathPlot2D(Plot2D):
         )
         self.cmap = cmap
 
+        self.log_contour = log_contour
         self.train_path_data: Dict[str, Any] = None
 
     def make_data(
@@ -213,6 +222,7 @@ class TrainPathPlot2D(Plot2D):
         model: Module,
         train_dir: Path,
         epoch_interval: Optional[int] = 1,
+        q: Optional[int] = 20,
         num_steps: Optional[int] = 10,
         seed: Optional[int] = 0,
         devices: Optional[Devices] = "auto",
@@ -224,6 +234,7 @@ class TrainPathPlot2D(Plot2D):
             model=model,
             train_dir=train_dir,
             epoch_interval=epoch_interval,
+            q=q,
             num_steps=num_steps,
             devices=devices,
         )
@@ -243,19 +254,30 @@ class TrainPathPlot2D(Plot2D):
         ), f"No data available for plotting. Please generate new data or load existing data."
 
         # Title: explained variance ratio
-        self.title = f"Explained variance ratio: {self.train_path_data['explained_variance_ratio'] * 100:.2f}%"
+        explained_variance_ratios: Tensor = self.train_path_data["explained_variance"]
+        explained_variance_ratios = (
+            explained_variance_ratios / explained_variance_ratios.sum()
+        )
+        explained_variance_ratio = (
+            explained_variance_ratios[0] + explained_variance_ratios[1]
+        )  # PC1 + PC2
+        self.title = f"Explained variance ratio: {explained_variance_ratio * 100:.2f}%"
 
         # Loss contour
         contour = ax.contourf(
             self.train_path_data["loss_xs"],
             self.train_path_data["loss_ys"],
-            self.train_path_data["loss_zs"],
+            (
+                torch.log(self.train_path_data["loss_zs"])
+                if self.log_contour
+                else self.train_path_data["loss_zs"]
+            ),
             levels=100,
             cmap=self.cmap,
             alpha=0.8,
         )
         cbar = fig.colorbar(contour, ax=ax)
-        cbar.set_label("Loss")
+        cbar.set_label("log(Loss)" if self.log_contour else "Loss")
 
         # Train trajectory
         xs = self.train_path_data["weights_proj"][:, 0]
@@ -264,8 +286,8 @@ class TrainPathPlot2D(Plot2D):
         ax.quiver(
             xs[:-1],
             ys[:-1],
-            np.diff(xs),
-            np.diff(ys),
+            torch.diff(xs),
+            torch.diff(ys),
             angles="xy",
             scale_units="xy",
             scale=1,
