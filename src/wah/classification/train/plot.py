@@ -1,3 +1,5 @@
+import gc
+
 import torch
 import tqdm
 
@@ -34,8 +36,11 @@ def load_weights(
 ) -> Tensor:
     weights: List[Tensor] = []
 
-    init_weights_vec = torch.nn.utils.parameters_to_vector(model.parameters()).detach()
-    weights.append(init_weights_vec.unsqueeze(dim=0))
+    with torch.no_grad():
+        init_weights_vec = torch.nn.utils.parameters_to_vector(
+            model.parameters()
+        ).detach()
+        weights.append(init_weights_vec.unsqueeze(dim=0))
 
     # locate weights to load
     state_dict_paths = [
@@ -142,6 +147,9 @@ def proj_train_path_to_2d(
     # PCA projection
     explained_variance, components, weights_proj, weights_mean = perform_pca(weights, q)
 
+    del weights
+    gc.collect()
+
     # create 2d grid of weights for loss contour
     loss_xs, loss_ys = create_2d_grid(weights_proj, num_steps)
     loss_zs = torch.zeros_like(loss_xs)
@@ -174,6 +182,8 @@ def proj_train_path_to_2d(
             verbose=False,
         )
         loss_zs[i, j] = test(model, dataset)
+
+        gc.collect()
 
     print("done.")
 
