@@ -54,7 +54,7 @@ def get_attrs(
     """
     names = get_named_modules(model)
 
-    attrs = []
+    attrs: List[str] = []
 
     for name in names:
         attr = get_valid_attr(model, name)
@@ -77,7 +77,8 @@ def get_attrs(
     valid_attrs = []
 
     for i in range(len(attrs) - 1):
-        if attrs[i] not in attrs[i + 1]:
+        # if attrs[i] not in attrs[i + 1]: << cannot detect cases like ..., "norm", "fc_norm", ... (excludes "norm")
+        if attrs[i + 1].replace(attrs[i], "")[0] != ".":
             valid_attrs.append(attrs[i])
 
     valid_attrs.append(attrs[-1])
