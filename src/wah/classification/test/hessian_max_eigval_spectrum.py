@@ -149,6 +149,9 @@ class Wrapper(L.LightningModule):
 
         # enable gradients
         with torch.inference_mode(False):
+            data = data.clone().detach()
+            targets = targets.clone().detach()
+
             max_eigval = _compute_hessian_max_eigval(
                 model=self.model,
                 data=data,
@@ -157,7 +160,7 @@ class Wrapper(L.LightningModule):
                 max_iter=self.max_iter,
                 tol=self.tol,
             )
-            self.max_eigvals.append(max_eigval.cpu())
+            self.max_eigvals.append(max_eigval.detach().cpu())
 
     def on_test_epoch_end(self) -> None:
         max_eigvals: List[Tensor] = self.all_gather(self.max_eigvals)
