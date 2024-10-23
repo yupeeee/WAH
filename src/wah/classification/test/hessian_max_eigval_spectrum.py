@@ -90,6 +90,7 @@ def _compute_hessian_max_eigval(
     """
     # Randomly initialize a vector for power iteration
     v = [torch.randn_like(p) for p in list(model.parameters())]
+    max_eigval: Tensor
     shapes = [p.shape for p in v]
 
     for _ in tqdm.trange(
@@ -101,7 +102,8 @@ def _compute_hessian_max_eigval(
 
         # Normalize the vector
         Hv_flat = _flatten(Hv)
-        Hv_flat = Hv_flat / torch.norm(Hv_flat)
+        max_eigval = torch.norm(Hv_flat)
+        Hv_flat = Hv_flat / max_eigval
 
         # Check for convergence
         if torch.allclose(_flatten(v), Hv_flat, atol=tol):
@@ -118,10 +120,6 @@ def _compute_hessian_max_eigval(
             v.append(hv)
             i += numel
 
-    # Calculate the top eigenvalue
-    Hv = _flatten(_hvp(model, data, targets, criterion, v))
-    max_eigval = torch.dot(_flatten(v).T, Hv)
-
     return max_eigval
 
 
@@ -132,7 +130,7 @@ class Wrapper(L.LightningModule):
         res_dict: Dict[str, List],
         criterion: str = "CrossEntropyLoss",
         max_iter: int = 1000,
-        tol: float = 1e-7,
+        tol: float = 1e-8,
     ) -> None:
         super().__init__()
 
