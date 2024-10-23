@@ -1,5 +1,5 @@
 import lightning as L
-import torch
+# import torch
 from torchmetrics import MeanMetric
 
 from ... import utils
@@ -13,6 +13,7 @@ from ...typing import (
     Path,
     SummaryWriter,
     Tensor,
+    Trainer,
     Tuple,
 )
 from . import track
@@ -249,30 +250,30 @@ class Wrapper(L.LightningModule):
 
             metric(outputs, targets)
 
-        # track; if not checked_layers, check
-        if self._track.FEATURE_RMS or self._track.FEATURE_SIGN:
-            with torch.no_grad():
-                if self.feature_extractor.checked_layers is False:
-                    _ = self.feature_extractor(data)
+        # # track; if not checked_layers, check
+        # if self._track.FEATURE_RMS or self._track.FEATURE_SIGN:
+        #     with torch.no_grad():
+        #         if self.feature_extractor.checked_layers is False:
+        #             _ = self.feature_extractor(data)
 
-                    if self._track.FEATURE_RMS:
-                        self.train_rms = dict(
-                            (i_layer, [])
-                            for i_layer in self.feature_extractor.feature_layers.values()
-                        )
-                        self.val_rms = dict(
-                            (i_layer, [])
-                            for i_layer in self.feature_extractor.feature_layers.values()
-                        )
-                    if self._track.FEATURE_SIGN:
-                        self.train_sign = dict(
-                            (i_layer, [])
-                            for i_layer in self.feature_extractor.feature_layers.values()
-                        )
-                        self.val_sign = dict(
-                            (i_layer, [])
-                            for i_layer in self.feature_extractor.feature_layers.values()
-                        )
+        #             if self._track.FEATURE_RMS:
+        #                 self.train_rms = dict(
+        #                     (i_layer, [])
+        #                     for i_layer in self.feature_extractor.feature_layers.values()
+        #                 )
+        #                 self.val_rms = dict(
+        #                     (i_layer, [])
+        #                     for i_layer in self.feature_extractor.feature_layers.values()
+        #                 )
+        #             if self._track.FEATURE_SIGN:
+        #                 self.train_sign = dict(
+        #                     (i_layer, [])
+        #                     for i_layer in self.feature_extractor.feature_layers.values()
+        #                 )
+        #                 self.val_sign = dict(
+        #                     (i_layer, [])
+        #                     for i_layer in self.feature_extractor.feature_layers.values()
+        #                 )
 
         # track
         if self._track.FEATURE_RMS:
@@ -330,7 +331,7 @@ def load_trainer(
     save_dir: Path,
     name: str,
     version: Optional[str] = None,
-) -> L.Trainer:
+) -> Trainer:
     """
     Loads the PyTorch Lightning trainer based on the configuration.
 

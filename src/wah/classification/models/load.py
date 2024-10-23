@@ -227,6 +227,7 @@ def load_state_dict(
     state_dict: Dict[str, Tensor] = torch.load(
         state_dict_path,
         map_location=map_location,
+        weights_only=True,
     )
 
     # if state_dict is "last.ckpt", i.e., contains other data

@@ -1,6 +1,6 @@
 from ast import literal_eval
 
-from ..typing import Any, Dict, List, Module, Tuple
+from ..typing import Any, Dict, List, Module, Optional, Tuple
 
 __all__ = [
     "_getattr",
@@ -42,15 +42,23 @@ def _getattr(
 
 def get_attrs(
     model: Module,
+    skip_dropout: Optional[bool] = True,
+    skip_identity: Optional[bool] = True,
+    specify: Optional[str] = None,
 ) -> List[str]:
     """
-    Retrieves a list of valid attribute names from a model, excluding dropouts.
+    Retrieves a list of valid attribute names from a model, with options to exclude dropout and identity layers,
+    and to specify a particular type of module.
 
     ### Parameters
     - `model` (Module): The model from which to retrieve attribute names.
+    - `skip_dropout` (bool, optional): Whether to skip layers that include dropout modules. Defaults to `True`.
+    - `skip_identity` (bool, optional): Whether to skip layers that are instances of `torch.nn.Identity`. Defaults to `True`.
+    - `specify` (str, optional): If provided, only returns attributes corresponding to this specific module type (e.g., "Conv2d").
+    If `None`, all valid attributes are returned. Defaults to `None`.
 
     ### Returns
-    - `List[str]`: A list of valid attribute names from the model.
+    - `List[str]`: A list of valid attribute names from the model that match the specified conditions.
     """
     names = get_named_modules(model)
 
@@ -68,7 +76,11 @@ def get_attrs(
             continue
 
         # module is dropout
-        if "drop" in attr:
+        if skip_dropout and "drop" in attr:
+            continue
+
+        # module is Identity()
+        if skip_identity and get_module_name(_getattr(model, attr)) == "Identity":
             continue
 
         if attr not in attrs:
@@ -82,6 +94,13 @@ def get_attrs(
             valid_attrs.append(attrs[i])
 
     valid_attrs.append(attrs[-1])
+
+    if specify is not None:
+        valid_attrs = [
+            attr
+            for attr in valid_attrs
+            if get_module_name(_getattr(model, attr)) == specify
+        ]
 
     return valid_attrs
 

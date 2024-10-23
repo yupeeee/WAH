@@ -21,6 +21,7 @@ from torch import Tensor
 from torch import device as Device
 from torch.nn import Module, Parameter
 from torch.optim import Optimizer
+from torch.utils.hooks import RemovableHandle
 from torch.utils.tensorboard.writer import SummaryWriter
 
 # ImportError: cannot import name 'LRScheduler' from 'torch.optim.lr_scheduler'
@@ -55,9 +56,11 @@ __all__ = [
     "Optimizer",
     "Optional",
     "Path",
+    "RemovableHandle",
     "Sequence",
     "SummaryWriter",
     "Tensor",
+    "Trainer",
     "Transform",
     "Tuple",
     "Union",
