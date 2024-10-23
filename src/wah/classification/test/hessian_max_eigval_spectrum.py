@@ -166,7 +166,7 @@ class Wrapper(L.LightningModule):
         max_eigvals: List[Tensor] = self.all_gather(self.max_eigvals)
         if max_eigvals[0].dim() == 0:
             max_eigvals = [e.unsqueeze(0) for e in max_eigvals]
-        max_eigvals = torch.cat(max_eigvals, dim=1).permute(1, 0).flatten()
+        max_eigvals = torch.cat(max_eigvals, dim=-1).flatten()
 
         self.res_dict["max_eigvals"] = [float(e) for e in max_eigvals]
 
