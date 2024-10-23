@@ -181,7 +181,7 @@ class HessianMaxEigValSpectrum:
     - `verbose` (Optional[bool]): Whether to show progress bar and model summary during testing. Defaults to `True`.
 
     ### Methods
-    - `__call__(model: Module, dataset: Dataset, criterion: str = "CrossEntropyLoss", max_iter: int = 1000, tol: float = 1e-7) -> List[float]`:
+    - `__call__(model: Module, dataset: Dataset, criterion: str = "CrossEntropyLoss", max_iter: int = 1000, tol: float = 1e-8) -> List[float]`:
       Runs the Hessian maximum eigenvalue computation and returns the maximum eigenvalues.
     """
 
@@ -230,7 +230,7 @@ class HessianMaxEigValSpectrum:
         dataset: Dataset,
         criterion: str = "CrossEntropyLoss",
         max_iter: int = 1000,
-        tol: float = 1e-7,
+        tol: float = 1e-8,
     ) -> List[float]:
         """
         Runs the Hessian maximum eigenvalue computation for the given model and dataset.
@@ -240,7 +240,7 @@ class HessianMaxEigValSpectrum:
         - `dataset` (Dataset): The dataset to compute the Hessian matrix on.
         - `criterion` (str, optional): The loss function to use when computing the Hessian. Defaults to `"CrossEntropyLoss"`.
         - `max_iter` (int, optional): Maximum number of iterations for the power method. Defaults to `1000`.
-        - `tol` (float, optional): Convergence tolerance. Defaults to `1e-7`.
+        - `tol` (float, optional): Convergence tolerance. Defaults to `1e-8`.
 
         ### Returns
         - `List[float]`: The computed maximum eigenvalues of the Hessian matrix for the dataset.
