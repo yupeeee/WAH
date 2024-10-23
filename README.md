@@ -79,8 +79,8 @@ webdriver_manager
     `AccuracyTest`
     - eval:
     `EvalTest`
-    - hessian:
-    `HessianSigVals`
+    - hessian_max_eigval_spectrum:
+    `HessianMaxEigValSpectrum`
     - loss:
     `LossTest`
     - pred:

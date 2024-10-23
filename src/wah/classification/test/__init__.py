@@ -4,8 +4,8 @@ from .accuracy import (
 from .eval import (
     EvalTest,
 )
-from .hessian import (
-    HessianSigVals,
+from .hessian_max_eigval_spectrum import (
+    HessianMaxEigValSpectrum,
 )
 from .loss import (
     LossTest,
@@ -23,8 +23,8 @@ __all__ = [
     "AccuracyTest",
     # eval
     "EvalTest",
-    # hessian
-    "HessianSigVals",
+    # hessian_max_eigval_spectrum
+    "HessianMaxEigValSpectrum",
     # loss
     "LossTest",
     # pred

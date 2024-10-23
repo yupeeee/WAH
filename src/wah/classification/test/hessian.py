@@ -12,6 +12,12 @@ __all__ = [
 ]
 
 
+def compute_loss_wrt_params(params, model, data, targets, criterion):
+    torch.nn.utils.vector_to_parameters(params, model.parameters())
+    outputs = model(data)
+    return criterion(outputs, targets)
+
+
 class Wrapper(L.LightningModule):
     def __init__(
         self,
@@ -22,6 +28,7 @@ class Wrapper(L.LightningModule):
             "param",
             "input",
         ] = "param",
+        use_half: Optional[bool] = False,
     ) -> None:
         assert wrt in [
             "param",
@@ -34,6 +41,10 @@ class Wrapper(L.LightningModule):
         self.res_dict = res_dict
         self.criterion = getattr(torch.nn, criterion)()
         self.wrt = wrt
+        self.use_half = use_half
+
+        if self.use_half:
+            self.model = model.half()
 
         self.num_data = []
         self.sigval = []
@@ -41,13 +52,19 @@ class Wrapper(L.LightningModule):
     def test_step(self, batch: Tensor, batch_idx):
         data, targets = batch
 
+        if self.use_half:
+            data = data.half()
+            targets = targets.half()
+
         batch_size = len(data)
         input_dim = batch[0].numel()
 
         # enable gradients
         with torch.inference_mode(False):
             if self.wrt == "param":
-                H: Tensor = hessian(lambda: self.criterion(self.model(data), targets))
+                H: Tensor = hessian(
+                    lambda p: self.criterion(self.model(data), targets)
+                )(torch.nn.utils.parameters_to_vector(self.model.parameters()))
             elif self.wrt == "input":
                 data = data.clone().detach().requires_grad_(True)
                 H: Tensor = hessian(lambda x: self.criterion(self.model(x), targets))(
@@ -138,6 +155,7 @@ class HessianSigVals:
             "param",
             "input",
         ] = "param",
+        use_half: Optional[bool] = False,
     ) -> Tensor:
         """
         Runs the Hessian singular value computation for the given model and dataset.
@@ -147,12 +165,13 @@ class HessianSigVals:
         - `dataset` (Dataset): The dataset to compute the Hessian matrix on.
         - `criterion` (str, optional): The loss function to use when computing the Hessian. Defaults to `"CrossEntropyLoss"`.
         - `wrt` (Literal["param", "input"], optional): Specifies whether to compute the Hessian with respect to model parameters (`"param"`) or input data (`"input"`). Defaults to `"param"`.
+        - `use_half` (Optional[bool]): Whether to use half-precision (float16) for the model and input data. Defaults to `False`.
 
         ### Returns
         - `Tensor`: The computed singular values of the Hessian matrix for the dataset.
         """
         res_dict = {}
-        model = Wrapper(model, res_dict, criterion, wrt)
+        model = Wrapper(model, res_dict, criterion, wrt, use_half)
         dataloader = to_dataloader(
             dataset=dataset,
             train=False,
