@@ -1,7 +1,7 @@
 import torch
 
+from ....module import get_module_name, get_module_params
 from ....typing import Any, Dict, List, Module, Optional, Tuple, Union
-from ....utils.module import get_module_name, get_module_params
 
 __all__ = [
     "replace_keys_in_kwargs",
@@ -78,19 +78,23 @@ class ReplaceModule:
         self,
         module: Module,
         use_cuda: bool = False,
+        **kwargs,
     ) -> Module:
         assert get_module_name(module) in self.target_module_name
 
-        args, kwargs = get_module_params(module)
+        _args, _kwargs = get_module_params(module)
+
+        for k, v in kwargs.items():
+            _kwargs[k] = v
 
         if self._replacement_module is None:
-            return module, args, kwargs
+            return module, _args, _kwargs
 
         else:
             if self.keymaps is not None:
-                kwargs = replace_keys_in_kwargs(kwargs, self.keymaps)
+                _kwargs = replace_keys_in_kwargs(_kwargs, self.keymaps)
 
             if use_cuda is not None:
-                kwargs["device"] = "cuda" if use_cuda else "cpu"
+                _kwargs["device"] = "cuda" if use_cuda else "cpu"
 
-            return self._replacement_module(*args, **kwargs)
+            return self._replacement_module(*_args, **_kwargs)

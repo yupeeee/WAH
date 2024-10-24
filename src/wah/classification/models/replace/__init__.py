@@ -1,5 +1,5 @@
+from ....module import _getattr, get_attrs
 from ....typing import Module, Optional, Tensor
-from ....utils.module import _getattr, get_attrs
 from .utils import replace_module
 
 __all__ = [
@@ -17,6 +17,7 @@ class Replacer:
         - "relu" (ReLU) <-> "gelu" (GELU)
         - "attn" (Self-Attention) -> "pattn" (Conv1x1 + Self-Attention)
         - "bn" (BatchNorm) <-> "ln" (LayerNorm)
+        - "ln" (LayerNorm) -> "bnx" (BatchNorm wo/ tracking running stats)
 
     ### Methods
     - `__call__(model) -> Module`: Replaces specified layers in the model and optionally tests the replacement.
@@ -33,6 +34,7 @@ class Replacer:
         "norm": [
             ("bn", "ln"),
             ("ln", "bn"),
+            ("ln", "bnx"),
         ],
     }
 
@@ -54,6 +56,7 @@ class Replacer:
         - "relu" (ReLU) <-> "gelu" (GELU)
         - "attn" (Self-Attention) -> "pattn" (Conv1x1 + Self-Attention)
         - "bn" (BatchNorm) <-> "ln" (LayerNorm)
+        - "ln" (LayerNorm) -> "bnx" (BatchNorm wo/ tracking running stats)
 
         ### Raises
         - `AssertionError`: If the target and replacement types are not supported.

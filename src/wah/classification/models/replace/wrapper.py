@@ -13,17 +13,19 @@ class PermuteWrapper(Module):
         self,
         module: Module,
         dims: Sequence[int],
+        unsqueeze_dim: Optional[int] = None,
     ) -> None:
         super().__init__()
 
         self.module = module
         self.dims = dims
+        self.unsqueeze_dim = unsqueeze_dim
 
-        if hasattr(module, "weight"):
-            self.weight = self.module.weight
+        # if hasattr(module, "weight"):
+        #     self.weight = self.module.weight
 
-        if hasattr(module, "bias"):
-            self.bias = self.module.bias
+        # if hasattr(module, "bias"):
+        #     self.bias = self.module.bias
 
     def forward(
         self,
@@ -31,18 +33,19 @@ class PermuteWrapper(Module):
         *args,
         **kwargs,
     ) -> Tensor:
-        squeeze = False
+        unsqueeze_flag = False
+        if len(x.shape) == 3:
+            unsqueeze_flag = True
 
-        if x.dim() == 3:
-            x = x.unsqueeze(dim=0)
-            squeeze = True
+        if self.unsqueeze_dim is not None and unsqueeze_flag:
+            x = x.unsqueeze(dim=self.unsqueeze_dim)
 
         x = x.permute(*self.dims)
         x = self.module(x, *args, **kwargs)
         x = x.permute(*self.original_dims())
 
-        if squeeze:
-            x = x[0]
+        if self.unsqueeze_dim is not None and unsqueeze_flag:
+            x = x.squeeze(dim=self.unsqueeze_dim)
 
         return x
 

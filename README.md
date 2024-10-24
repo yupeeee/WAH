@@ -93,6 +93,14 @@ webdriver_manager
     `Wrapper`,
     `load_trainer`
 
+### `module`
+`_getattr`,
+`get_attrs`,
+`get_module_name`,
+`get_module_params`,
+`get_named_modules`,
+`get_valid_attr`
+
 ### `np`
 
 ### `path`
@@ -163,13 +171,6 @@ webdriver_manager
 `load_txt_to_list`,
 `save_list_to_txt`,
 `sort_str_list`
-- module:
-`_getattr`,
-`get_attrs`,
-`get_module_name`,
-`get_module_params`,
-`get_named_modules`,
-`get_valid_attr`
 - random:
 `seed`,
 `unseed`

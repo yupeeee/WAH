@@ -1,14 +1,11 @@
 from torch import nn
 
+from ....module import get_module_name
 from ....typing import Module
-from ....utils.module import get_module_name
 from .utils import ReplaceModule
 from .wrapper import PermuteWrapper
 
-__all__ = [
-    "bn2ln",
-    "ln2bn",
-]
+__all__ = ["bn2ln", "ln2bn", "ln2bnx"]
 
 kws = {
     "bn": [
@@ -50,15 +47,25 @@ class LN2BN(ReplaceModule):
     keymaps = [k for k in zip(kws["ln"], kws["bn"])]
     _replacement_module = nn.BatchNorm2d
 
-    def __init__(self) -> None:
+    def __init__(self, track_running_stats=True) -> None:
         super().__init__()
+
+        self.track_running_stats = track_running_stats
 
     def __call__(self, module: Module, use_cuda: bool = False):
         module_name = get_module_name(module)
-        bn = self.replacement_module(module, use_cuda)
+        bn = self.replacement_module(
+            module,
+            use_cuda,
+            track_running_stats=self.track_running_stats,
+        )
 
         if module_name == "LayerNorm":
-            return PermuteWrapper(bn, (0, 3, 1, 2))
+            return PermuteWrapper(
+                module=bn,
+                dims=(0, 3, 1, 2),
+                unsqueeze_dim=1,
+            )
 
         elif module_name == "LayerNorm2d":
             return bn
@@ -68,4 +75,5 @@ class LN2BN(ReplaceModule):
 
 
 bn2ln = BN2LN()
-ln2bn = LN2BN()
+ln2bn = LN2BN(track_running_stats=True)
+ln2bnx = LN2BN(track_running_stats=False)

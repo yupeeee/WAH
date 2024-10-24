@@ -21,14 +21,6 @@ from .lst import (
     save_list_to_txt,
     sort_str_list,
 )
-from .module import (
-    _getattr,
-    get_attrs,
-    get_module_name,
-    get_module_params,
-    get_named_modules,
-    get_valid_attr,
-)
 from .random import (
     seed,
     unseed,
@@ -59,13 +51,6 @@ __all__ = [
     "load_txt_to_list",
     "save_list_to_txt",
     "sort_str_list",
-    # module
-    "_getattr",
-    "get_attrs",
-    "get_module_name",
-    "get_module_params",
-    "get_named_modules",
-    "get_valid_attr",
     # random
     "seed",
     "unseed",

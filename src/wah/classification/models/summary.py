@@ -1,7 +1,7 @@
 import torch
 
 from ...typing import List, Module, Optional, RemovableHandle, Sequence, Tuple
-from ...utils.module import _getattr, get_attrs, get_module_name
+from ...module import _getattr, get_attrs, get_module_name
 
 __all__ = [
     "summary",

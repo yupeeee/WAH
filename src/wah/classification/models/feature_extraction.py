@@ -3,9 +3,9 @@ import torch
 #     create_feature_extractor,
 # )  # get_graph_node_names,
 
+from ...module import _getattr, get_attrs
 # from ...tensor import flatten_batch
 from ...typing import Dict, List, Module, RemovableHandle, Tensor, Union
-from ...utils.module import _getattr, get_attrs
 
 __all__ = [
     "FeatureExtractor",

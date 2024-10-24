@@ -1,5 +1,5 @@
+from ....module import get_module_name
 from ....typing import Module
-from ....utils.module import get_module_name
 from .utils import ReplaceModule
 from .wrapper import Conv1x1Wrapper
 
