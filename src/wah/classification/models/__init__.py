@@ -9,6 +9,9 @@ from .load import (
 from .replace import (
     Replacer,
 )
+from .summary import (
+    summary,
+)
 
 __all__ = [
     # feature_extraction
@@ -19,4 +22,6 @@ __all__ = [
     "load_state_dict",
     # replace
     "Replacer",
+    # summary
+    "summary",
 ]
