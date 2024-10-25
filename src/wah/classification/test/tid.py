@@ -40,11 +40,13 @@ class Wrapper(L.LightningModule):
         self,
         model: Module,
         res_dict: Dict[str, List],
+        eps: Optional[float] = 1e-8,
     ) -> None:
         super().__init__()
 
         self.model = model
         self.res_dict = res_dict
+        self.eps = eps
 
         self.attrs = get_attrs(model, specify="BatchNorm2d")
         assert len(self.attrs) > 0, f"Model does not have BatchNorm2d."
@@ -115,7 +117,7 @@ class Wrapper(L.LightningModule):
             mean_tid = torch.cat(mean_tid, dim=-1).flatten().mean()
             var_tid = torch.cat(var_tid, dim=-1).flatten().mean()
 
-            running_var_l2 = torch.norm(self.running_stats[f"{attr}.running_var"]).cpu()
+            running_var_l2 = torch.norm(self.running_stats[f"{attr}.running_var"]).cpu() + self.eps
             mean_tid = mean_tid / running_var_l2
             var_tid = var_tid / running_var_l2
 
@@ -163,10 +165,11 @@ class TIDTest:
         self,
         model: Module,
         dataset: Dataset,
+        eps: Optional[float] = 1e-8,
     ) -> Dict[str, float]:
         res_dict = {}
         dataset.set_return_data_only()
-        model = Wrapper(model, res_dict)
+        model = Wrapper(model, res_dict, eps)
         dataloader = to_dataloader(
             dataset=dataset,
             train=False,
