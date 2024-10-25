@@ -8,11 +8,10 @@ https://arxiv.org/abs/2210.05153
 
 import lightning as L
 import torch
-from torch.nn import CrossEntropyLoss, Softmax
 
 from ... import utils
-from ...module import _getattr, get_attrs, get_module_name
-from ...typing import Config, Dataset, Devices, Dict, List, Module, Optional, Tensor
+from ...module import _getattr, get_attrs
+from ...typing import Dataset, Devices, Dict, List, Module, Optional, Tensor
 from ..datasets import to_dataloader
 from ..models.feature_extraction import FeatureExtractor
 from ..train.utils import load_accelerator_and_devices
@@ -20,6 +19,20 @@ from ..train.utils import load_accelerator_and_devices
 __all__ = [
     "TIDTest",
 ]
+
+
+def get_running_stats(
+    model: Module,
+    attrs: List[str],
+) -> Dict[str, Tensor]:
+    running_stats: Dict[str, Tensor] = {}
+
+    for attr in attrs:
+        module = _getattr(model, attr)
+        running_stats[f"{attr}.running_mean"] = module.running_mean
+        running_stats[f"{attr}.running_var"] = module.running_var
+
+    return running_stats
 
 
 class Wrapper(L.LightningModule):
@@ -35,6 +48,18 @@ class Wrapper(L.LightningModule):
 
         self.attrs = get_attrs(model, specify="BatchNorm2d")
         assert len(self.attrs) > 0, f"Model does not have BatchNorm2d."
+
+        # check if weight contains running_mean and running_var
+        weight_attrs = [
+            attr for attr in model.state_dict().keys() if ".running_" in attr
+        ]
+        assert len(self.attrs) * 2 == len(  # mean, var per attr
+            weight_attrs
+        ), f"There seems to be an issue with your model. Please verify if the BatchNorm2d layers have track_running_stats set to False."
+        # weight_attrs = [attr.replace(".running_mean", "") for attr in weight_attrs[::2]]
+
+        # store running stats
+        self.running_stats = get_running_stats(model, self.attrs)
 
         self.input_extractor = FeatureExtractor(
             model=model,
@@ -55,37 +80,47 @@ class Wrapper(L.LightningModule):
 
         for attr in self.attrs:
             attr_input = inputs[attr]
+            if isinstance(attr_input, tuple):
+                if len(attr_input) == 1:
+                    attr_input = attr_input[0]
+                else:
+                    attr_input = torch.cat(list(attr_input), dim=0)
+
             mean = torch.mean(attr_input, dim=(0, 2, 3))
             var = torch.var(attr_input, dim=(0, 2, 3), unbiased=False)
 
-            getattr(self, f"{attr}_mean").append(mean.cpu())
-            getattr(self, f"{attr}_var").append(var.cpu())
+            getattr(self, f"{attr}_mean").append(
+                torch.norm(
+                    mean.to(self.device)
+                    - self.running_stats[f"{attr}.running_mean"].to(self.device)
+                ).cpu()
+            )
+            getattr(self, f"{attr}_var").append(
+                torch.norm(
+                    var.to(self.device)
+                    - self.running_stats[f"{attr}.running_var"].to(self.device)
+                ).cpu()
+            )
 
     def on_test_epoch_end(self) -> None:
         for attr in self.attrs:
-            means: List[Tensor] = self.all_gather(getattr(self, f"{attr}_mean"))
-            vars: List[Tensor] = self.all_gather(getattr(self, f"{attr}_var"))
+            mean_tid: List[Tensor] = self.all_gather(getattr(self, f"{attr}_mean"))
+            var_tid: List[Tensor] = self.all_gather(getattr(self, f"{attr}_var"))
 
-        idx: List[Tensor] = self.all_gather(self.idx)
-        gt: List[Tensor] = self.all_gather(self.gt)
-        pred: List[Tensor] = self.all_gather(self.pred)
-        loss: List[Tensor] = self.all_gather(self.loss)
-        conf: List[Tensor] = self.all_gather(self.conf)
-        gt_conf: List[Tensor] = self.all_gather(self.gt_conf)
+            if mean_tid[0].dim() == 0:
+                mean_tid = [t.unsqueeze(0) for t in mean_tid]
+            if var_tid[0].dim() == 0:
+                var_tid = [t.unsqueeze(0) for t in var_tid]
 
-        idx = torch.cat(idx, dim=1).permute(1, 0).flatten()
-        gt = torch.cat(gt, dim=1).permute(1, 0).flatten()
-        pred = torch.cat(pred, dim=1).permute(1, 0).flatten()
-        loss = torch.cat(loss, dim=1).permute(1, 0).flatten()
-        conf = torch.cat(conf, dim=1).permute(1, 0).flatten()
-        gt_conf = torch.cat(gt_conf, dim=1).permute(1, 0).flatten()
+            mean_tid = torch.cat(mean_tid, dim=-1).flatten().mean()
+            var_tid = torch.cat(var_tid, dim=-1).flatten().mean()
 
-        self.res_dict["idx"] = [int(i) for i in idx]
-        self.res_dict["gt"] = [int(g) for g in gt]
-        self.res_dict["pred"] = [int(p) for p in pred]
-        self.res_dict["loss"] = [float(l) for l in loss]
-        self.res_dict["conf"] = [float(c) for c in conf]
-        self.res_dict["gt_conf"] = [float(gc) for gc in gt_conf]
+            running_var_l2 = torch.norm(self.running_stats[f"{attr}.running_var"]).cpu()
+            mean_tid = mean_tid / running_var_l2
+            var_tid = var_tid / running_var_l2
+
+            self.res_dict[f"{attr}_mean"] = float(mean_tid)
+            self.res_dict[f"{attr}_var"] = float(var_tid)
 
 
 class TIDTest:
@@ -128,10 +163,10 @@ class TIDTest:
         self,
         model: Module,
         dataset: Dataset,
-    ) -> Dict[str, List[float]]:
+    ) -> Dict[str, float]:
         res_dict = {}
         dataset.set_return_data_only()
-        model = Wrapper(model, self.config, res_dict)
+        model = Wrapper(model, res_dict)
         dataloader = to_dataloader(
             dataset=dataset,
             train=False,

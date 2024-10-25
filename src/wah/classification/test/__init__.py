@@ -13,6 +13,9 @@ from .loss import (
 from .pred import (
     PredTest,
 )
+from .tid import (
+    TIDTest,
+)
 from .travel import (
     methods as travel_methods,
     generate_travel_directions,
@@ -29,6 +32,8 @@ __all__ = [
     "LossTest",
     # pred
     "PredTest",
+    # tid
+    "TIDTest",
     # travel
     "travel_methods",
     "generate_travel_directions",

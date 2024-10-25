@@ -89,12 +89,6 @@ class FeatureExtractor(Module):
 
         return features
 
-    def train(self) -> None:
-        self.model.train()
-
-    def eval(self) -> None:
-        self.model.eval()
-
 
 # class FeatureExtractor(Module):
 #     """

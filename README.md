@@ -85,6 +85,8 @@ webdriver_manager
     `LossTest`
     - pred:
     `PredTest`
+    - tid:
+    `TIDTest`
 - `train`
     - plot:
     `proj_train_path_to_2d`,
