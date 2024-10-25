@@ -1,4 +1,5 @@
 import lightning as L
+
 # import torch
 from torchmetrics import MeanMetric
 
@@ -366,6 +367,11 @@ def load_trainer(
         ],
         max_epochs=config["epochs"],
         log_every_n_steps=None,
+        gradient_clip_val=(
+            config["gradient_clip_val"]
+            if "gradient_clip_val" in config.keys()
+            else None
+        ),
         deterministic="warn" if config["seed"] is not None else False,
     )
     setattr(trainer, "tensorboard_log_dir", tensorboard_log_dir)
