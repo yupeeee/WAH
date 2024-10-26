@@ -1,10 +1,10 @@
 import lightning as L
-import torch
 
 from ... import utils
 from ...typing import Config, Dataset, Devices, Dict, List, Module, Optional, Tensor
 from ..datasets import to_dataloader
 from ..train.utils import load_accelerator_and_devices
+from .utils import process_gathered_data
 
 __all__ = [
     "AccuracyTest",
@@ -40,9 +40,13 @@ class Wrapper(L.LightningModule):
 
     def on_test_epoch_end(self) -> None:
         corrects: List[Tensor] = self.all_gather(self.corrects)
-        if corrects[0].dim() == 0:
-            corrects = [c.unsqueeze(0) for c in corrects]
-        corrects = torch.cat(corrects, dim=-1).flatten().sum()
+
+        corrects = process_gathered_data(
+            data=corrects,
+            unsqueeze_until=1,
+            cat_along=-1,
+            permute_dims=None,
+        ).sum()
 
         self.res_dict["corrects"] = float(corrects)
 

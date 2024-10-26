@@ -6,6 +6,7 @@ from ... import utils
 from ...typing import Config, Dataset, Devices, Dict, List, Module, Optional, Tensor
 from ..datasets import to_dataloader
 from ..train.utils import load_accelerator_and_devices
+from .utils import process_gathered_data
 
 __all__ = [
     "EvalTest",
@@ -72,12 +73,12 @@ class Wrapper(L.LightningModule):
         conf: List[Tensor] = self.all_gather(self.conf)
         gt_conf: List[Tensor] = self.all_gather(self.gt_conf)
 
-        idx = torch.cat(idx, dim=1).permute(1, 0).flatten()
-        gt = torch.cat(gt, dim=1).permute(1, 0).flatten()
-        pred = torch.cat(pred, dim=1).permute(1, 0).flatten()
-        loss = torch.cat(loss, dim=1).permute(1, 0).flatten()
-        conf = torch.cat(conf, dim=1).permute(1, 0).flatten()
-        gt_conf = torch.cat(gt_conf, dim=1).permute(1, 0).flatten()
+        idx = process_gathered_data(idx, 2, 1, (1, 0))
+        gt = process_gathered_data(gt, 2, 1, (1, 0))
+        pred = process_gathered_data(pred, 2, 1, (1, 0))
+        loss = process_gathered_data(loss, 2, 1, (1, 0))
+        conf = process_gathered_data(conf, 2, 1, (1, 0))
+        gt_conf = process_gathered_data(gt_conf, 2, 1, (1, 0))
 
         self.res_dict["idx"] = [int(i) for i in idx]
         self.res_dict["gt"] = [int(g) for g in gt]

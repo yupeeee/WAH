@@ -6,6 +6,7 @@ from ... import utils
 from ...classification.datasets import to_dataloader
 from ...classification.train.utils import load_accelerator_and_devices
 from ...typing import Config, Dataset, Devices, Dict, List, Module, Optional, Tensor
+from .utils import process_gathered_data
 
 __all__ = [
     "HessianMaxEigValSpectrum",
@@ -166,9 +167,7 @@ class Wrapper(L.LightningModule):
 
     def on_test_epoch_end(self) -> None:
         max_eigvals: List[Tensor] = self.all_gather(self.max_eigvals)
-        if max_eigvals[0].dim() == 0:
-            max_eigvals = [e.unsqueeze(0) for e in max_eigvals]
-        max_eigvals = torch.cat(max_eigvals, dim=-1).flatten()
+        max_eigvals = process_gathered_data(max_eigvals, 1, -1, None)
 
         self.res_dict["max_eigvals"] = [float(e) for e in max_eigvals]
 

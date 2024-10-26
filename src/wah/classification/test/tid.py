@@ -15,6 +15,7 @@ from ...typing import Dataset, Devices, Dict, List, Module, Optional, Tensor
 from ..datasets import to_dataloader
 from ..models.feature_extraction import FeatureExtractor
 from ..train.utils import load_accelerator_and_devices
+from .utils import process_gathered_data
 
 __all__ = [
     "TIDTest",
@@ -109,13 +110,8 @@ class Wrapper(L.LightningModule):
             mean_tid: List[Tensor] = self.all_gather(getattr(self, f"{attr}_mean"))
             var_tid: List[Tensor] = self.all_gather(getattr(self, f"{attr}_var"))
 
-            if mean_tid[0].dim() == 0:
-                mean_tid = [t.unsqueeze(0) for t in mean_tid]
-            if var_tid[0].dim() == 0:
-                var_tid = [t.unsqueeze(0) for t in var_tid]
-
-            mean_tid = torch.cat(mean_tid, dim=-1).flatten().mean()
-            var_tid = torch.cat(var_tid, dim=-1).flatten().mean()
+            mean_tid = process_gathered_data(mean_tid, 1, -1, None).mean()
+            var_tid = process_gathered_data(var_tid, 1, -1, None).mean()
 
             running_var_l2 = torch.norm(self.running_stats[f"{attr}.running_var"]).cpu() + self.eps
             mean_tid = mean_tid / running_var_l2

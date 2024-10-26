@@ -1,11 +1,11 @@
 import lightning as L
-import torch
 from torch.nn import CrossEntropyLoss, Softmax
 
 from ... import utils
 from ...typing import Config, Dataset, Devices, Dict, List, Module, Optional, Tensor
 from ..datasets import to_dataloader
 from ..train.utils import load_accelerator_and_devices
+from .utils import process_gathered_data
 
 __all__ = [
     "LossTest",
@@ -46,9 +46,7 @@ class Wrapper(L.LightningModule):
 
     def on_test_epoch_end(self) -> None:
         loss: List[Tensor] = self.all_gather(self.loss)
-        if loss[0].dim() == 0:
-            loss = [l.unsqueeze(0) for l in loss]
-        loss = torch.cat(loss, dim=-1).flatten().mean()
+        loss = process_gathered_data(loss, 1, -1, None)
 
         self.res_dict["loss"] = float(loss)
 

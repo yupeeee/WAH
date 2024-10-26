@@ -6,6 +6,7 @@ from ... import utils
 from ...typing import Dataset, Devices, Dict, List, Module, Optional, Tensor
 from ..datasets import to_dataloader
 from ..train.utils import load_accelerator_and_devices
+from .utils import process_gathered_data
 
 __all__ = [
     "PredTest",
@@ -41,8 +42,7 @@ class Wrapper(L.LightningModule):
 
     def on_test_epoch_end(self) -> None:
         pred: List[Tensor] = self.all_gather(self.pred)
-
-        pred = torch.cat(pred, dim=1).permute(1, 0).flatten()
+        pred = process_gathered_data(pred, 2, 1, (1, 0))
 
         self.res_dict["pred"] = [int(p) for p in pred]
 
