@@ -5,7 +5,7 @@ import tqdm
 from ... import utils
 from ...classification.datasets import to_dataloader
 from ...classification.train.utils import load_accelerator_and_devices
-from ...typing import Dataset, Devices, Dict, List, Module, Optional, Tensor
+from ...typing import Config, Dataset, Devices, Dict, List, Module, Optional, Tensor
 
 __all__ = [
     "HessianMaxEigValSpectrum",
@@ -127,6 +127,7 @@ class Wrapper(L.LightningModule):
     def __init__(
         self,
         model: Module,
+        config: Config,
         res_dict: Dict[str, List],
         criterion: str = "CrossEntropyLoss",
         max_iter: int = 1000,
@@ -135,8 +136,11 @@ class Wrapper(L.LightningModule):
         super().__init__()
 
         self.model = model
+        self.config = config
         self.res_dict = res_dict
-        self.criterion = getattr(torch.nn, criterion)()
+        self.criterion = getattr(torch.nn, criterion)(
+            label_smoothing=self.config["label_smoothing"]
+        )
         self.max_iter = max_iter
         self.tol = tol
 
@@ -176,6 +180,9 @@ class HessianMaxEigValSpectrum:
     ### Attributes
     - `batch_size` (int): The batch size for the test.
     - `num_workers` (int): The number of workers for the DataLoader.
+    - `mixup_alpha` (Optional[float]): Alpha value for Mixup data augmentation. Defaults to `0.0`.
+    - `cutmix_alpha` (Optional[float]): Alpha value for CutMix data augmentation. Defaults to `0.0`.
+    - `label_smoothing` (Optional[float]): The amount of label smoothing to apply to the loss. Defaults to `0.0`.
     - `seed` (Optional[int]): Random seed for deterministic behavior. Defaults to `None`.
     - `devices` (Optional[Devices]): The devices to run the test on. Defaults to `"auto"`.
     - `verbose` (Optional[bool]): Whether to show progress bar and model summary during testing. Defaults to `True`.
@@ -189,6 +196,9 @@ class HessianMaxEigValSpectrum:
         self,
         batch_size: int,
         num_workers: int,
+        mixup_alpha: Optional[float] = 0.0,
+        cutmix_alpha: Optional[float] = 0.0,
+        label_smoothing: Optional[float] = 0.0,
         seed: Optional[int] = None,
         devices: Optional[Devices] = "auto",
         verbose: Optional[bool] = True,
@@ -196,12 +206,18 @@ class HessianMaxEigValSpectrum:
         """
         - `batch_size` (int): The batch size for the test.
         - `num_workers` (int): The number of workers for the DataLoader.
+        - `mixup_alpha` (Optional[float], optional): Alpha value for Mixup data augmentation. Defaults to `0.0`.
+        - `cutmix_alpha` (Optional[float], optional): Alpha value for CutMix data augmentation. Defaults to `0.0`.
+        - `label_smoothing` (Optional[float], optional): The amount of label smoothing to apply to the loss. Defaults to `0.0`.
         - `seed` (Optional[int]): Random seed for deterministic behavior. Defaults to `None`.
         - `devices` (Optional[Devices]): The devices to run the test on. Defaults to `"auto"`.
         - `verbose` (Optional[bool], optional): Whether to show progress bar and model summary during testing. Defaults to `True`.
         """
         self.batch_size = batch_size
         self.num_workers = num_workers
+        self.mixup_alpha = mixup_alpha
+        self.cutmix_alpha = cutmix_alpha
+        self.label_smoothing = label_smoothing
         self.seed = seed
         self.devices = devices
         self.verbose = verbose
@@ -222,6 +238,9 @@ class HessianMaxEigValSpectrum:
         self.config = {
             "batch_size": self.batch_size,
             "num_workers": self.num_workers,
+            "mixup_alpha": self.mixup_alpha,
+            "cutmix_alpha": self.cutmix_alpha,
+            "label_smoothing": self.label_smoothing,
         }
 
     def __call__(
@@ -246,7 +265,7 @@ class HessianMaxEigValSpectrum:
         - `List[float]`: The computed maximum eigenvalues of the Hessian matrix for the dataset.
         """
         res_dict = {}
-        model = Wrapper(model, res_dict, criterion, max_iter, tol)
+        model = Wrapper(model, self.config, res_dict, criterion, max_iter, tol)
         dataloader = to_dataloader(
             dataset=dataset,
             train=False,
