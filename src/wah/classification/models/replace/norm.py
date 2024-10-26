@@ -36,7 +36,11 @@ class BN2LN(ReplaceModule):
     def __call__(self, module: Module, use_cuda: bool = False):
         ln = self.replacement_module(module, use_cuda)
 
-        return PermuteWrapper(ln, (0, 2, 3, 1))
+        return PermuteWrapper(
+            module=ln,
+            dims=(0, 2, 3, 1),
+            unsqueeze_dim=None,
+        )
 
 
 class LN2BN(ReplaceModule):

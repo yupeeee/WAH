@@ -40,9 +40,9 @@ class PermuteWrapper(Module):
         if self.unsqueeze_dim is not None and unsqueeze_flag:
             x = x.unsqueeze(dim=self.unsqueeze_dim)
 
-        x = x.permute(*self.dims)
+        x = x.permute(*self.dims).contiguous()
         x = self.module(x, *args, **kwargs)
-        x = x.permute(*self.original_dims())
+        x = x.permute(*self.original_dims()).contiguous()
 
         if self.unsqueeze_dim is not None and unsqueeze_flag:
             x = x.squeeze(dim=self.unsqueeze_dim)
