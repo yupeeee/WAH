@@ -234,6 +234,9 @@ def load_state_dict(
     if "state_dict" in state_dict.keys():
         state_dict = state_dict["state_dict"]
 
+        for key in list(state_dict.keys()):
+            state_dict[key.replace("model.", "")] = state_dict.pop(key)
+
     # state_dict check: remove redundancy in keys
     for key in list(state_dict.keys()):
         if "feature_extractor." in key:
