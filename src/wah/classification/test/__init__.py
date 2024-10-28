@@ -1,9 +1,9 @@
 from .accuracy import (
     AccuracyTest,
 )
-# from .attack import (
-#     RobustnessTest,
-# )
+from .ece import (
+    compute_ece,
+)
 from .eval import (
     EvalTest,
 )
@@ -27,8 +27,8 @@ from .travel import (
 __all__ = [
     # accuracy
     "AccuracyTest",
-    # # attack
-    # "RobustnessTest",
+    # ece
+    "compute_ece",
     # eval
     "EvalTest",
     # hessian_max_eigval_spectrum

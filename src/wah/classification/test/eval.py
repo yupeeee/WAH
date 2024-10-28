@@ -101,6 +101,7 @@ class EvalTest:
     - `label_smoothing` (Optional[float]): The amount of label smoothing to apply to the loss. Defaults to `0.0`.
     - `seed` (Optional[int]): Random seed for deterministic behavior. Defaults to `None`.
     - `devices` (Optional[Devices]): The devices to run the test on. Defaults to `"auto"`.
+    - `amp` (Optional[bool]): Whether to use automatic mixed precision (AMP) for model evaluation. Defaults to `False`.
     - `verbose` (Optional[bool], optional): Whether to show progress bar and model summary during testing. Defaults to `True`.
 
     ### Methods
@@ -128,6 +129,7 @@ class EvalTest:
         label_smoothing: Optional[float] = 0.0,
         seed: Optional[int] = None,
         devices: Optional[Devices] = "auto",
+        amp: Optional[bool] = False,
         verbose: Optional[bool] = True,
     ) -> None:
         """
@@ -138,6 +140,7 @@ class EvalTest:
         - `label_smoothing` (Optional[float], optional): The amount of label smoothing to apply to the loss. Defaults to `0.0`.
         - `seed` (Optional[int], optional): Random seed for deterministic behavior. Defaults to `None`.
         - `devices` (Optional[Devices], optional): The devices to run the test on. Defaults to `"auto"`.
+        - `amp` (Optional[bool]): Whether to use automatic mixed precision (AMP) for model evaluation. Defaults to `False`.
         - `verbose` (Optional[bool], optional): Whether to show progress bar and model summary during testing. Defaults to `True`.
         """
         self.batch_size = batch_size
@@ -147,6 +150,7 @@ class EvalTest:
         self.label_smoothing = label_smoothing
         self.seed = seed
         self.devices = devices
+        self.amp = amp
         self.verbose = verbose
 
         utils.seed(self.seed)
@@ -158,6 +162,7 @@ class EvalTest:
         self.runner = L.Trainer(
             accelerator=accelerator,
             devices=devices,
+            precision=16 if self.amp else 32,
             logger=False,
             max_epochs=1,
             log_every_n_steps=None,

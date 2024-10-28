@@ -128,6 +128,7 @@ class TIDTest:
         num_workers: int,
         seed: Optional[int] = None,
         devices: Optional[Devices] = "auto",
+        amp: Optional[bool] = False,
         verbose: Optional[bool] = True,
     ) -> None:
         self.batch_size = batch_size

@@ -228,7 +228,11 @@ class Wrapper(L.LightningModule):
             track.state_dict.save(
                 model=self.model,
                 epoch=current_epoch,
-                every_n_epochs=1,
+                every_n_epochs=(
+                    self.config["save_per_epoch"]
+                    if "save_per_epoch" in self.config.keys()
+                    else 1
+                ),
                 tensorboard_log_dir=tensorboard_log_dir,
             )
 
@@ -359,6 +363,7 @@ def load_trainer(
     trainer = L.Trainer(
         accelerator=accelerator,
         devices=devices,
+        precision=16 if config["amp"] is True else 32,
         logger=[
             tensorboard_logger,
         ],

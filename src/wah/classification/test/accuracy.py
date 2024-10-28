@@ -63,6 +63,7 @@ class AccuracyTest:
     - `cutmix_alpha` (Optional[float]): Alpha value for CutMix data augmentation. Defaults to `0.0`.
     - `seed` (Optional[int]): Random seed for deterministic behavior. Defaults to `None`.
     - `devices` (Optional[Devices]): The devices to run the test on. Defaults to `"auto"`.
+    - `amp` (Optional[bool]): Whether to use automatic mixed precision (AMP) for model evaluation. Defaults to `False`.
     - `verbose` (Optional[bool], optional): Whether to show progress bar and model summary during testing. Defaults to `True`.
 
     ### Methods
@@ -78,6 +79,7 @@ class AccuracyTest:
         cutmix_alpha: Optional[float] = 0.0,
         seed: Optional[int] = None,
         devices: Optional[Devices] = "auto",
+        amp: Optional[bool] = False,
         verbose: Optional[bool] = True,
     ) -> None:
         """
@@ -88,6 +90,7 @@ class AccuracyTest:
         - `cutmix_alpha` (Optional[float], optional): Alpha value for CutMix data augmentation. Defaults to `0.0`.
         - `seed` (Optional[int], optional): Random seed for deterministic behavior. Defaults to `None`.
         - `devices` (Optional[Devices], optional): The devices to run the test on. Defaults to `"auto"`.
+        - `amp` (Optional[bool]): Whether to use automatic mixed precision (AMP) for model evaluation. Defaults to `False`.
         - `verbose` (Optional[bool], optional): Whether to show progress bar and model summary during testing. Defaults to `True`.
         """
         self.batch_size = batch_size
@@ -97,6 +100,7 @@ class AccuracyTest:
         self.cutmix_alpha = cutmix_alpha
         self.seed = seed
         self.devices = devices
+        self.amp = amp
         self.verbose = verbose
 
         utils.seed(self.seed)
@@ -108,6 +112,7 @@ class AccuracyTest:
         self.runner = L.Trainer(
             accelerator=accelerator,
             devices=devices,
+            precision=16 if self.amp else 32,
             logger=False,
             max_epochs=1,
             log_every_n_steps=None,

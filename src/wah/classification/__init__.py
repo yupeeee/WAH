@@ -1,4 +1,5 @@
 from . import (
+    attacks,
     datasets,
     models,
     test,
@@ -6,6 +7,7 @@ from . import (
 )
 
 __all__ = [
+    "attacks",
     "datasets",
     "models",
     "test",

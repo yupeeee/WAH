@@ -41,12 +41,13 @@ class IFGSM:
         - `alpha` (float, optional): The step size for each iteration. If not provided, defaults to `epsilon / iteration`.
         - `device` (Device, optional): The device to use for computation. Defaults to `"cpu"`.
         """
-        self.model = model.eval()
+        self.model = model
         self.epsilon = epsilon
         self.iteration = iteration
         self.alpha = epsilon / iteration if alpha is None else alpha
         self.device = torch.device(device)
 
+        self.model.eval().to(self.device)
         self.criterion = nn.CrossEntropyLoss()
 
     def __call__(
