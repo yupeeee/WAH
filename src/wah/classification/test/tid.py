@@ -135,6 +135,7 @@ class TIDTest:
         self.num_workers = num_workers
         self.seed = seed
         self.devices = devices
+        self.amp = amp
         self.verbose = verbose
 
         utils.seed(self.seed)
@@ -146,6 +147,7 @@ class TIDTest:
         self.runner = L.Trainer(
             accelerator=accelerator,
             devices=devices,
+            precision="16-mixed" if self.amp else "32-true",
             logger=False,
             max_epochs=1,
             log_every_n_steps=None,

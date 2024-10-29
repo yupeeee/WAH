@@ -112,7 +112,7 @@ class LossTest:
         self.runner = L.Trainer(
             accelerator=accelerator,
             devices=devices,
-            precision=16 if self.amp else 32,
+            precision="16-mixed" if self.amp else "32-true",
             logger=False,
             max_epochs=1,
             log_every_n_steps=None,
