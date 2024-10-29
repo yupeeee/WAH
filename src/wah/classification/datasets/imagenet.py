@@ -1,14 +1,17 @@
+import shutil
+
 import torchvision.transforms as T
 import tqdm
 from PIL import Image
 
 from ... import path as _path
 from ...typing import Callable, Literal, Optional, Path, Union
-from ...utils.download import download_url, md5_check
-from ...utils.lst import load_txt_to_list
+# from ...utils.download import download_url, md5_check
+# from ...utils.lst import load_txt_to_list
 from ...utils.zip import extract
 from .base import ClassificationDataset
 from .labels import imagenet1k as labels
+from .meta.ILSVRC2012_validation_meta import meta as wnids
 from .utils import Normalize
 
 __all__ = [
@@ -247,13 +250,13 @@ class ImageNetVal(ClassificationDataset):
 
     URLS = [
         "https://www.image-net.org/data/ILSVRC/2012/ILSVRC2012_img_val.tar",
-        "https://raw.githubusercontent.com/yupeeee/WAH/main/src/wah/datasets/targets/ILSVRC2012_validation_ground_truth.txt",
+        # "https://raw.githubusercontent.com/yupeeee/WAH/main/src/wah/datasets/meta/ILSVRC2012_validation_ground_truth.txt",
     ]
     ROOT = _path.clean("./datasets/imagenet")
 
     ZIP_LIST = [
         ("ILSVRC2012_img_val.tar", "29b22e2961454d5413ddabcf34fc5622"),
-        ("ILSVRC2012_validation_ground_truth.txt", "f31656d784908741c59ccb6823cf0bea"),
+        # ("ILSVRC2012_validation_ground_truth.txt", "f31656d784908741c59ccb6823cf0bea"),
     ]
 
     MEAN = [0.485, 0.456, 0.406]
@@ -344,11 +347,33 @@ class ImageNetVal(ClassificationDataset):
                 checklist=self.checklist[:1],
                 ext_dir_name="val",
             )
-            # download ground truth targets
-            fpath = download_url(self.URLS[1], self.root)
-            md5_check(fpath, self.checklist[1][1])
+            # # download ground truth targets
+            # fpath = download_url(self.URLS[1], self.root)
+            # md5_check(fpath, self.checklist[1][1])
+
+            # parse
+            self._parse_val_archive()
 
         self._initialize()
+
+    def _parse_val_archive(
+        self,
+    ) -> None:
+        image_paths = _path.ls(
+            path=_path.join(self.root, "val"),
+            fext=".JPEG",
+            sort=True,
+            absolute=True,
+        )
+
+        for wnid in set(wnids):
+            _path.mkdir(_path.join(self.root, "val", wnid))
+
+        for wnid, image_path in zip(wnids, image_paths):
+            shutil.move(
+                image_path,
+                _path.join(self.root, "val", wnid, _path.basename(image_path)),
+            )
 
     def _initialize(
         self,
@@ -359,24 +384,61 @@ class ImageNetVal(ClassificationDataset):
         ### Returns
         - `None`
         """
-        # load data (list of path to images)
+        # # load data (list of path to images)
+        # data_root = _path.join(self.root, "val")
+        # fnames = _path.ls(
+        #     path=data_root,
+        #     fext="JPEG",
+        #     sort=True,
+        # )
+        # self.data = []
+        # for fname in fnames:
+        #     fpath = _path.join(data_root, fname)
+        #     self.data.append(fpath)
+
+        # # load targets
+        # targets_path = _path.join(
+        #     self.root,
+        #     "ILSVRC2012_validation_ground_truth.txt",
+        # )
+        # self.targets = load_txt_to_list(targets_path, dtype=int)
+
+        # # load labels
+        # self.labels = labels
+
+        # load class folders
         data_root = _path.join(self.root, "val")
-        fnames = _path.ls(
+        classes = _path.ls(
             path=data_root,
-            fext="JPEG",
+            fext="dir",
             sort=True,
         )
-        self.data = []
-        for fname in fnames:
-            fpath = _path.join(data_root, fname)
-            self.data.append(fpath)
 
-        # load targets
-        targets_path = _path.join(
-            self.root,
-            "ILSVRC2012_validation_ground_truth.txt",
-        )
-        self.targets = load_txt_to_list(targets_path, dtype=int)
+        if len(classes) != 1000:
+            self._parse_val_archive()
+            classes = _path.ls(
+                path=data_root,
+                fext="dir",
+                sort=True,
+            )
+
+        # load data (list of path to images) & targets
+        self.data = []
+        self.targets = []
+
+        for class_idx, c in enumerate(
+            tqdm.tqdm(
+                classes,
+                desc="Initializing ImageNet val dataset...",
+            )
+        ):
+            class_dir = _path.join(data_root, c)
+            fpaths = _path.ls(path=class_dir, fext=".JPEG", sort=True)
+
+            path_to_images = [_path.join(data_root, c, fpath) for fpath in fpaths]
+
+            self.data += path_to_images
+            self.targets += [class_idx] * len(fpaths)
 
         # load labels
         self.labels = labels
