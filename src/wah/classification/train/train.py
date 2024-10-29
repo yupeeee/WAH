@@ -363,7 +363,7 @@ def load_trainer(
     trainer = L.Trainer(
         accelerator=accelerator,
         devices=devices,
-        precision=16 if config["amp"] is True else 32,
+        precision="16-mixed" if config["amp"] is True else "32-true",
         logger=[
             tensorboard_logger,
         ],

@@ -15,7 +15,7 @@ def save(
     every_n_epochs: int,
     tensorboard_log_dir: Path,
 ) -> None:
-    if epoch % every_n_epochs == 0:
+    if (epoch + 1) % every_n_epochs == 0:
         ckpt_dir = os.path.join(tensorboard_log_dir, "checkpoints")
         os.makedirs(ckpt_dir, exist_ok=True)
 
