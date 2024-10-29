@@ -11,7 +11,7 @@ from ...typing import Callable, Literal, Optional, Path, Union
 from ...utils.zip import extract
 from .base import ClassificationDataset
 from .labels import imagenet1k as labels
-from .meta.ILSVRC2012_validation_meta import meta as wnids
+from .ILSVRC2012_validation_meta import _ilsvrc2012_val_meta
 from .utils import Normalize
 
 __all__ = [
@@ -250,13 +250,11 @@ class ImageNetVal(ClassificationDataset):
 
     URLS = [
         "https://www.image-net.org/data/ILSVRC/2012/ILSVRC2012_img_val.tar",
-        # "https://raw.githubusercontent.com/yupeeee/WAH/main/src/wah/datasets/meta/ILSVRC2012_validation_ground_truth.txt",
     ]
     ROOT = _path.clean("./datasets/imagenet")
 
     ZIP_LIST = [
         ("ILSVRC2012_img_val.tar", "29b22e2961454d5413ddabcf34fc5622"),
-        # ("ILSVRC2012_validation_ground_truth.txt", "f31656d784908741c59ccb6823cf0bea"),
     ]
 
     MEAN = [0.485, 0.456, 0.406]
@@ -365,6 +363,8 @@ class ImageNetVal(ClassificationDataset):
             sort=True,
             absolute=True,
         )
+
+        wnids = _ilsvrc2012_val_meta
 
         for wnid in set(wnids):
             _path.mkdir(_path.join(self.root, "val", wnid))
