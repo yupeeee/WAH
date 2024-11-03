@@ -110,6 +110,10 @@ def save_dict_to_csv(
     - `save_name` (str): Name to give to the saved CSV file (without extension).
     - `index_col` (Any, optional): Column to set as the index. Defaults to `None`.
     """
+    for k, v in dictionary.items():
+        if not isinstance(v, list):
+            dictionary[k] = [v]
+
     df = dict_to_df(dictionary, index_col)
 
     _path.mkdir(save_dir)

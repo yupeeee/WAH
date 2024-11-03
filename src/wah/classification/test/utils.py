@@ -27,4 +27,4 @@ def process_gathered_data(
 
     data = data.flatten()
 
-    return data
+    return data.cpu()

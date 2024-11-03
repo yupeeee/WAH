@@ -46,7 +46,8 @@ class Wrapper(L.LightningModule):
 
     def on_test_epoch_end(self) -> None:
         loss: List[Tensor] = self.all_gather(self.loss)
-        loss = process_gathered_data(loss, 1, -1, None)
+        loss: Tensor = process_gathered_data(loss, 1, -1, None)
+        loss = loss.sum() / len(loss)
 
         self.res_dict["loss"] = float(loss)
 
