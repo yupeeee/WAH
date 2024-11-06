@@ -36,11 +36,11 @@ def load_weights(
 ) -> Tensor:
     weights: List[Tensor] = []
 
-    with torch.no_grad():
-        init_weights_vec = torch.nn.utils.parameters_to_vector(
-            model.parameters()
-        ).detach()
-        weights.append(init_weights_vec.unsqueeze(dim=0))
+    # with torch.no_grad():
+    #     init_weights_vec = torch.nn.utils.parameters_to_vector(
+    #         model.parameters()
+    #     ).detach()
+    #     weights.append(init_weights_vec.unsqueeze(dim=0))
 
     # locate weights to load
     state_dict_paths = [
