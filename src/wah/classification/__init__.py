@@ -1,15 +1,9 @@
-from . import (
-    attacks,
-    datasets,
-    models,
-    test,
-    train,
-)
+from . import datasets, models
+from .train import Trainer
 
 __all__ = [
-    "attacks",
     "datasets",
     "models",
-    "test",
-    "train",
+    # train
+    "Trainer",
 ]

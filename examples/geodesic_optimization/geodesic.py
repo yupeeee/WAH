@@ -75,7 +75,7 @@ if __name__ == "__main__":
     data_id = f"{args.strategy}_{args.model}_step_{args.step}_lr_{args.lr}_iteration_{args.iteration}"
     wah.path.mkdir(wah.path.join(save_dir, "data"))
 
-    geodesic_plot = wah.plot.ImShow(
+    geodesic_plot = wah._plot.ImShow(
         height=2,
         width=args.step,
         scale=1,
@@ -97,7 +97,7 @@ if __name__ == "__main__":
         ),
     )
 
-    losses_plot = wah.plot.DistPlot2D(
+    losses_plot = wah._plot.DistPlot2D(
         figsize=(3, 3),
         fontsize=15,
         xlabel="step",

@@ -81,10 +81,9 @@ class ClassificationDataset(Dataset):
 
         ### Notes
         - If `return_data_only` is set to True, only the data is returned.
-        - If `return_w_index` is set to True, returns index along with (data, target).
+        - If `return_w_index` is set to True, returns index along with (data, target) (or data if `return_data_only` is set to True).
         """
         data, target = self.data[index], self.targets[index]
-
         data = self._preprocess_data(data)
 
         if self.transform is not None:
@@ -130,9 +129,6 @@ class ClassificationDataset(Dataset):
 
         ### Returns
         - `bool`: True if the dataset is valid, False otherwise.
-
-        ### Notes
-        - This method verifies the existence and integrity of the dataset files.
         """
         # skip check
         if checklist is None:
@@ -164,9 +160,6 @@ class ClassificationDataset(Dataset):
 
         ### Returns
         - `None`
-
-        ### Notes
-        - This method downloads the dataset files, verifies their integrity, and extracts them to the specified directory.
         """
         dataset_root = _path.join(self.root, ext_dir_name)
 
@@ -248,9 +241,6 @@ class ClassificationDataset(Dataset):
     ) -> None:
         """
         Sets the flag to return only data without targets.
-
-        ### Returns
-        - `None`
         """
         self.return_data_only = True
 
@@ -259,9 +249,6 @@ class ClassificationDataset(Dataset):
     ) -> None:
         """
         Unsets the flag to return only data without targets.
-
-        ### Returns
-        - `None`
         """
         self.return_data_only = False
 
@@ -270,9 +257,6 @@ class ClassificationDataset(Dataset):
     ) -> None:
         """
         Sets the flag to return data with index.
-
-        ### Returns
-        - `None`
         """
         self.return_w_index = True
 
@@ -281,8 +265,5 @@ class ClassificationDataset(Dataset):
     ) -> None:
         """
         Unsets the flag to return data with index.
-
-        ### Returns
-        - `None`
         """
         self.return_w_index = False

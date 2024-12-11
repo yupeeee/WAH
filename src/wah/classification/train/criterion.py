@@ -1,6 +1,6 @@
 from torch import nn
 
-from ...typing import Config, Module, Optional
+from ...typing import Module
 
 __all__ = [
     "load_criterion",
@@ -8,27 +8,16 @@ __all__ = [
 
 
 def load_criterion(
-    config: Config,
-    train: Optional[bool] = True,
+    train: bool,
+    **kwargs,
 ) -> Module:
-    """
-    Loads a criterion (loss function) based on the given YAML configuration.
-    See https://pytorch.org/docs/stable/nn.html#loss-functions for supported criterions.
+    assert "criterion" in kwargs.keys()
 
-    ### Parameters
-    - `config (Config)`: YAML configuration for training.
-
-    ### Returns
-    - `Module`: Criterion (loss function) for training.
-    """
-    criterion: Module = getattr(nn, config["criterion"])
+    criterion: Module = getattr(nn, kwargs["criterion"])
 
     criterion_cfg = {}
-    if "criterion_cfg" in config.keys():
-        criterion_cfg = config["criterion_cfg"]
-
-        if train is False and "label_smoothing" in criterion_cfg.keys():
-            criterion_cfg["label_smoothing"] = 0.0
+    if train and "label_smoothing" in kwargs.keys():
+        criterion_cfg["label_smoothing"] = kwargs["label_smoothing"]
 
     criterion = criterion(**criterion_cfg)
 

@@ -1,32 +1,16 @@
+import os
+
 import lightning as L
+import torch
+from torchmetrics import Accuracy, MeanMetric
 
-# import torch
-from torchmetrics import MeanMetric
-
-from ... import utils
-from ...typing import (
-    Config,
-    Dict,
-    List,
-    Metric,
-    Module,
-    Optional,
-    Path,
-    SummaryWriter,
-    Tensor,
-    Trainer,
-    Tuple,
-)
-from . import track
+from ...typing import Module, Optional, Path, Tensor, Trainer
 from .criterion import load_criterion
-from .metric import as_attr, load_metrics
 from .optimizer import load_optimizer
 from .scheduler import load_scheduler
 from .utils import (
     check_config,
     get_lr,
-    get_tag,
-    init_seed,
     load_accelerator_and_devices,
     load_checkpoint_callback,
     load_tensorboard_logger,
@@ -42,64 +26,49 @@ class Wrapper(L.LightningModule):
     def __init__(
         self,
         model: Module,
-        config: Config,
+        **kwargs,
     ) -> None:
-        """
-        Wrapper that employs PyTorch Lightning for model training.
-
-        ### Parameters
-        - `model (Module)`: Model to train.
-        - `config (Config)`: YAML configuration for training.
-        """
         super().__init__()
 
-        check_config(config)
+        check_config(**kwargs)
 
         self.model = model
-        self.config = config
-        self.save_hyperparameters(config)
+        self.config = kwargs
+        self.save_hyperparameters(self.config)
 
-        utils.seed(init_seed(config))
+        seed = self.config.get("seed", -1)
+        if seed is None:
+            seed = -1
+        if seed >= 0:
+            L.seed_everything(seed)
 
         self.sync_dist: bool = False
         if (
-            "gpu" in config["devices"]
-            and len(config["devices"].split("gpu:")[-1].split(",")) > 1
+            "gpu" in self.config["devices"]
+            and len(self.config["devices"].split("gpu:")[-1].split(",")) > 1
         ):
             self.sync_dist = True
 
-        self.train_criterion = load_criterion(config, train=True)
-        self.val_criterion = load_criterion(config, train=False)
+        self.train_criterion = load_criterion(train=True, **self.config)
+        self.val_criterion = load_criterion(train=False, **self.config)
 
-        # metrics (default)
+        # metrics
         self.lr = MeanMetric()
         self.train_loss = MeanMetric()
         self.val_loss = MeanMetric()
-
-        # metrics (config)
-        train_metrics = load_metrics(config)
-        val_metrics = load_metrics(config)
-        self.train_metrics_dict = self.init_metrics(train_metrics, header="train")
-        self.val_metrics_dict = self.init_metrics(val_metrics, header="val")
-
-        # track
-        self._track = track.load_track(config)
-        if self._track.FEATURE_RMS:
-            self.feature_extractor, self.train_rms, self.val_rms = (
-                track.feature_rms.init(model)
-            )
-        if self._track.FEATURE_SIGN:
-            self.feature_extractor, self.train_sign, self.val_sign = (
-                track.feature_sign.init(model)
-            )
-        if self._track.GRAD_L2:
-            self.grad_l2_dict = track.grad_l2.init(model)
-        if self._track.PARAM_SVDVAL_MAX:
-            self.param_svdval_max_dict = track.param_svdval_max.init(model)
+        self.train_acc = Accuracy(
+            task="multiclass",
+            num_classes=self.config["num_classes"],
+        )
+        self.val_acc = Accuracy(
+            task="multiclass",
+            num_classes=self.config["num_classes"],
+        )
 
     def configure_optimizers(self):
-        optimizer = load_optimizer(self.config, self)
-        lr_scheduler = load_scheduler(self.config, optimizer)
+        optimizer = load_optimizer(self.model, **self.config)
+        scheduler_config = {k: v for k, v in self.config.items() if k != "optimizer"}
+        lr_scheduler = load_scheduler(optimizer, **scheduler_config)
 
         return {
             "optimizer": optimizer,
@@ -107,23 +76,6 @@ class Wrapper(L.LightningModule):
                 "scheduler": lr_scheduler,
             },
         }
-
-    def init_metrics(
-        self,
-        metrics: List[Tuple[str, Metric]],
-        header: Optional[str] = "",
-    ) -> Dict[str, Metric]:
-        metrics_dict: Dict[str, Metric] = {}
-
-        for metric_name, metric in metrics:
-            metric_attr = as_attr(
-                "_".join([header, metric_name]) if len(header) else metric_name
-            )
-
-            setattr(self, metric_attr, metric)
-            metrics_dict[f"{header}/{metric_name}"] = getattr(self, metric_attr)
-
-        return metrics_dict
 
     def training_step(self, batch, batch_idx):
         data: Tensor
@@ -136,37 +88,14 @@ class Wrapper(L.LightningModule):
 
         self.train_loss(loss / data.size(0))
 
-        # metrics
-        for _, metric in self.train_metrics_dict.items():
-            # targets reshape for mixup/cutmix
-            if len(targets.shape) == 2:
-                targets = targets.argmax(dim=1)
-
-            metric(outputs, targets)
-
-        # track
-        if self._track.FEATURE_RMS:
-            track.feature_rms.compute(
-                data=data,
-                feature_extractor=self.feature_extractor,
-                feature_rms_dict=self.train_rms,
-            )
-        if self._track.FEATURE_SIGN:
-            track.feature_sign.compute(
-                data=data,
-                feature_extractor=self.feature_extractor,
-                feature_sign_dict=self.train_sign,
-            )
+        if targets.dim() == 2:
+            targets = targets.argmax(dim=1)
+        self.train_acc(outputs, targets)
 
         return loss
 
-    def on_after_backward(self) -> None:
-        # track: grad_l2
-        if self._track.GRAD_L2:
-            track.grad_l2.compute(self.model, self.grad_l2_dict)
-
     def on_train_epoch_end(self) -> None:
-        current_epoch = self.current_epoch  # + 1
+        current_epoch = self.current_epoch + 1
 
         # epoch as global_step
         self.log("step", current_epoch, sync_dist=self.sync_dist)
@@ -175,66 +104,19 @@ class Wrapper(L.LightningModule):
         self.lr(get_lr(self.trainer))
         self.log(f"lr-{self.config['optimizer']}", self.lr, sync_dist=self.sync_dist)
 
-        # log: loss
+        # log: loss, acc@1
         self.log("train/avg_loss", self.train_loss, sync_dist=self.sync_dist)
+        self.log("train/acc@1", self.train_acc, sync_dist=self.sync_dist)
 
-        # log: metrics
-        for label, metric in self.train_metrics_dict.items():
-            self.log(label, metric, sync_dist=self.sync_dist)
-
-        # log: track
-        tensorboard: SummaryWriter = self.logger.experiment
-        tag = get_tag(self.trainer)
-
-        if self._track.FEATURE_RMS:
-            track.feature_rms.track(
-                epoch=current_epoch,
-                tensorboard=tensorboard,
-                feature_rms_dict=self.train_rms,
-                header=f"feature_rms/{tag}/train",
-            )
-            track.feature_rms.reset(self.train_rms)
-        if self._track.FEATURE_SIGN:
-            track.feature_sign.track(
-                epoch=current_epoch,
-                tensorboard=tensorboard,
-                feature_sign_dict=self.train_sign,
-                header=f"feature_sign/{tag}/train",
-            )
-            track.feature_sign.reset(self.train_sign)
-        if self._track.GRAD_L2:
-            track.grad_l2.track(
-                epoch=current_epoch,
-                tensorboard=tensorboard,
-                grad_l2_dict=self.grad_l2_dict,
-                header=f"grad_l2/{tag}",
-            )
-            track.grad_l2.reset(self.grad_l2_dict)
-        if self._track.PARAM_SVDVAL_MAX:
-            track.param_svdval_max.compute(
-                model=self.model,
-                param_svdval_max_dict=self.param_svdval_max_dict,
-            )
-            track.param_svdval_max.track(
-                epoch=current_epoch,
-                tensorboard=tensorboard,
-                param_svdval_max_dict=self.param_svdval_max_dict,
-                header=f"param_svdval_max/{tag}",
-            )
-            track.param_svdval_max.reset(self.param_svdval_max_dict)
-        if self._track.STATE_DICT:
-            tensorboard_log_dir = self.trainer.tensorboard_log_dir
-
-            track.state_dict.save(
-                model=self.model,
-                epoch=current_epoch,
-                every_n_epochs=(
-                    self.config["save_per_epoch"]
-                    if "save_per_epoch" in self.config.keys()
-                    else 1
-                ),
-                tensorboard_log_dir=tensorboard_log_dir,
-            )
+        # save checkpoint
+        if "save_per_epoch" in self.config.keys():
+            if (current_epoch + 1) % self.config["save_per_epoch"] == 0:
+                ckpt_dir = os.path.join(self.trainer._log_dir, "checkpoints")
+                os.makedirs(ckpt_dir, exist_ok=True)
+                torch.save(
+                    self.model.state_dict(),
+                    os.path.join(ckpt_dir, f"epoch={current_epoch}.ckpt"),
+                )
 
     def validation_step(self, batch, batch_idx):
         data: Tensor
@@ -245,120 +127,43 @@ class Wrapper(L.LightningModule):
         outputs: Tensor = self.model(data)
         loss: Tensor = self.val_criterion(outputs, targets)
 
-        # metrics
         self.val_loss(loss / data.size(0))
 
-        for _, metric in self.val_metrics_dict.items():
-            # targets reshape for mixup/cutmix
-            if len(targets.shape) == 2:
-                targets = targets.argmax(dim=1)
-
-            metric(outputs, targets)
-
-        # # track; if not checked_layers, check
-        # if self._track.FEATURE_RMS or self._track.FEATURE_SIGN:
-        #     with torch.no_grad():
-        #         if self.feature_extractor.checked_layers is False:
-        #             _ = self.feature_extractor(data)
-
-        #             if self._track.FEATURE_RMS:
-        #                 self.train_rms = dict(
-        #                     (i_layer, [])
-        #                     for i_layer in self.feature_extractor.feature_layers.values()
-        #                 )
-        #                 self.val_rms = dict(
-        #                     (i_layer, [])
-        #                     for i_layer in self.feature_extractor.feature_layers.values()
-        #                 )
-        #             if self._track.FEATURE_SIGN:
-        #                 self.train_sign = dict(
-        #                     (i_layer, [])
-        #                     for i_layer in self.feature_extractor.feature_layers.values()
-        #                 )
-        #                 self.val_sign = dict(
-        #                     (i_layer, [])
-        #                     for i_layer in self.feature_extractor.feature_layers.values()
-        #                 )
-
-        # track
-        if self._track.FEATURE_RMS:
-            track.feature_rms.compute(
-                data=data,
-                feature_extractor=self.feature_extractor,
-                feature_rms_dict=self.val_rms,
-            )
-        if self._track.FEATURE_SIGN:
-            track.feature_sign.compute(
-                data=data,
-                feature_extractor=self.feature_extractor,
-                feature_sign_dict=self.val_sign,
-            )
-
-        return loss
+        if targets.dim() == 2:
+            targets = targets.argmax(dim=1)
+        self.val_acc(outputs, targets)
 
     def on_validation_epoch_end(self) -> None:
-        current_epoch = self.current_epoch  # + 1
+        current_epoch = self.current_epoch + 1
 
         # epoch as global_step
         self.log("step", current_epoch, sync_dist=self.sync_dist)
 
-        # log: loss
+        # log: loss, acc@1
         self.log("val/avg_loss", self.val_loss, sync_dist=self.sync_dist)
-
-        # log: metrics
-        for label, metric in self.val_metrics_dict.items():
-            self.log(label, metric, sync_dist=self.sync_dist)
-
-        # log: track
-        tensorboard: SummaryWriter = self.logger.experiment
-        tag = get_tag(self.trainer)
-
-        if self._track.FEATURE_RMS:
-            track.feature_rms.track(
-                epoch=current_epoch,
-                tensorboard=tensorboard,
-                feature_rms_dict=self.val_rms,
-                header=f"feature_rms/{tag}/val",
-            )
-            track.feature_rms.reset(self.val_rms)
-        if self._track.FEATURE_SIGN:
-            track.feature_sign.track(
-                epoch=current_epoch,
-                tensorboard=tensorboard,
-                feature_sign_dict=self.val_sign,
-                header=f"feature_sign/{tag}/val",
-            )
-            track.feature_sign.reset(self.val_sign)
+        self.log("val/acc@1", self.val_acc, sync_dist=self.sync_dist)
 
 
 def load_trainer(
-    config: Config,
     save_dir: Path,
     name: str,
     version: Optional[str] = None,
+    **kwargs,
 ) -> Trainer:
-    """
-    Loads the PyTorch Lightning trainer based on the configuration.
+    config = kwargs
 
-    ### Parameters
-    - `config (Config)`: YAML configuration for training.
-    - `save_dir (Path)`: Directory to save the logs and checkpoints.
-    - `name (str)`: Name of the training experiment.
-    - `version (Optional[str])`: Version of the training experiment. If `None`, uses the current timestamp.
-
-    ### Returns
-    - `L.Trainer`: The PyTorch Lightning trainer.
-    """
     accelerator, devices = load_accelerator_and_devices(config["devices"])
 
     tensorboard_logger = load_tensorboard_logger(
-        config=config,
         save_dir=save_dir,
         name=name,
         version=version,
     )
-    tensorboard_log_dir = tensorboard_logger.log_dir
+    _log_dir = tensorboard_logger.log_dir
     checkpoint_callback = load_checkpoint_callback()
+
+    if config["amp"] is True:
+        torch.set_float32_matmul_precision("medium")
 
     trainer = L.Trainer(
         accelerator=accelerator,
@@ -379,6 +184,6 @@ def load_trainer(
         ),
         deterministic="warn" if config["seed"] is not None else False,
     )
-    setattr(trainer, "tensorboard_log_dir", tensorboard_log_dir)
+    setattr(trainer, "_log_dir", _log_dir)
 
     return trainer

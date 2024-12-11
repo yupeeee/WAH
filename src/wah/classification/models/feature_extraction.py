@@ -1,18 +1,22 @@
 import torch
+from torch import nn
+
+from ...module import _getattr, get_attrs
+
+# from ...tensor import flatten_batch
+from ...typing import Dict, List, Module, RemovableHandle, Tensor, Union
+
 # from torchvision.models.feature_extraction import (
 #     create_feature_extractor,
 # )  # get_graph_node_names,
 
-from ...module import _getattr, get_attrs
-# from ...tensor import flatten_batch
-from ...typing import Dict, List, Module, RemovableHandle, Tensor, Union
 
 __all__ = [
     "FeatureExtractor",
 ]
 
 
-class FeatureExtractor(Module):
+class FeatureExtractor(nn.Module):
     """
     A class to extract features from specified layers of a given model.
 

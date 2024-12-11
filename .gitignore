@@ -161,5 +161,6 @@ cython_debug/
 cfgs/
 logs/
 settings/
+temp/
 temp*
 *.ckpt

@@ -1,18 +1,16 @@
 import shutil
 
-import torchvision.transforms as T
 import tqdm
 from PIL import Image
+from torchvision.transforms import Normalize
 
 from ... import path as _path
 from ...typing import Callable, Literal, Optional, Path, Union
-# from ...utils.download import download_url, md5_check
-# from ...utils.lst import load_txt_to_list
 from ...utils.zip import extract
 from .base import ClassificationDataset
+from .ILSVRC2012_meta import _ilsvrc2012_meta
 from .labels import imagenet1k as labels
-from .ILSVRC2012_validation_meta import _ilsvrc2012_val_meta
-from .utils import Normalize
+from .transforms import ClassificationPresetEval, ClassificationPresetTrain, DeNormalize
 
 __all__ = [
     "ImageNet",
@@ -33,6 +31,7 @@ class ImageNetTrain(ClassificationDataset):
     - `MEAN` (list): Mean of dataset; [0.485, 0.456, 0.406].
     - `STD` (list): Standard deviation of dataset; [0.229, 0.224, 0.225].
     - `NORMALIZE` (callable): Transform for dataset normalization.
+    - `DENORMALIZE` (callable): Transform for dataset denormalization.
 
     ### Methods
     - `__getitem__(index) -> Tuple[Any, Any]`: Returns (data, target) of dataset using the specified index.
@@ -55,36 +54,7 @@ class ImageNetTrain(ClassificationDataset):
     MEAN = [0.485, 0.456, 0.406]
     STD = [0.229, 0.224, 0.225]
     NORMALIZE = Normalize(MEAN, STD)
-
-    TRANSFORM = {
-        "train": T.Compose(
-            [
-                T.RandomResizedCrop(224),
-                T.RandomHorizontalFlip(),
-                T.ToTensor(),
-                NORMALIZE,
-            ]
-        ),
-        "val": T.Compose(
-            [
-                T.Resize(256),
-                T.CenterCrop(224),
-                T.ToTensor(),
-                NORMALIZE,
-            ]
-        ),
-        "tt": T.Compose(
-            [
-                T.Resize(256),
-                T.CenterCrop(224),
-                T.ToTensor(),
-            ]
-        ),
-    }
-    TARGET_TRANSFORM = {
-        "train": None,
-        "val": None,
-    }
+    DENORMALIZE = DeNormalize(MEAN, STD)
 
     def __init__(
         self,
@@ -102,6 +72,7 @@ class ImageNetTrain(ClassificationDataset):
         return_data_only: Optional[bool] = False,
         return_w_index: Optional[bool] = False,
         download: bool = False,
+        **kwargs,
     ) -> None:
         """
         Initialize the ImageNet train dataset.
@@ -134,15 +105,19 @@ class ImageNetTrain(ClassificationDataset):
 
         self.checklist = self.ZIP_LIST
 
-        if self.transform == "auto":
-            self.transform = self.TRANSFORM["train"]
-        elif self.transform is not None:
-            self.transform = self.TRANSFORM[self.transform]
+        if self.transform == "auto" or self.transform == "train":
+            kwargs.update({"mean": self.MEAN, "std": self.STD})
+            self.transform = ClassificationPresetTrain(**kwargs)
+        elif self.transform == "val":
+            kwargs.update({"mean": self.MEAN, "std": self.STD})
+            self.transform = ClassificationPresetEval(**kwargs)
+        elif self.transform == "tt":
+            self.transform = ClassificationPresetEval(**kwargs)
         else:
             pass
 
         if self.target_transform == "auto":
-            self.target_transform = self.TARGET_TRANSFORM["val"]
+            self.target_transform = None
         else:
             pass
 
@@ -261,27 +236,6 @@ class ImageNetVal(ClassificationDataset):
     STD = [0.229, 0.224, 0.225]
     NORMALIZE = Normalize(MEAN, STD)
 
-    TRANSFORM = {
-        "val": T.Compose(
-            [
-                T.Resize(256),
-                T.CenterCrop(224),
-                T.ToTensor(),
-                NORMALIZE,
-            ]
-        ),
-        "tt": T.Compose(
-            [
-                T.Resize(256),
-                T.CenterCrop(224),
-                T.ToTensor(),
-            ]
-        ),
-    }
-    TARGET_TRANSFORM = {
-        "val": None,
-    }
-
     def __init__(
         self,
         root: Path = ROOT,
@@ -296,6 +250,7 @@ class ImageNetVal(ClassificationDataset):
         return_data_only: Optional[bool] = False,
         return_w_index: Optional[bool] = False,
         download: bool = False,
+        **kwargs,
     ) -> None:
         """
         Initialize the ImageNet validation dataset.
@@ -327,14 +282,19 @@ class ImageNetVal(ClassificationDataset):
         self.checklist = self.ZIP_LIST
 
         if self.transform == "auto":
-            self.transform = self.TRANSFORM["val"]
-        elif self.transform is not None:
-            self.transform = self.TRANSFORM[self.transform]
+            kwargs.update({"mean": self.MEAN, "std": self.STD})
+            self.transform = ClassificationPresetEval(**kwargs)
+        elif self.transform == "tt":
+            self.transform = ClassificationPresetEval(**kwargs)
+        elif self.transform == "train":
+            raise ValueError(
+                "Train transformations cannot be applied to the validation dataset."
+            )
         else:
             pass
 
         if self.target_transform == "auto":
-            self.target_transform = self.TARGET_TRANSFORM["val"]
+            self.target_transform = None
         else:
             pass
 
@@ -345,10 +305,6 @@ class ImageNetVal(ClassificationDataset):
                 checklist=self.checklist[:1],
                 ext_dir_name="val",
             )
-            # # download ground truth targets
-            # fpath = download_url(self.URLS[1], self.root)
-            # md5_check(fpath, self.checklist[1][1])
-
             # parse
             self._parse_val_archive()
 
@@ -364,7 +320,7 @@ class ImageNetVal(ClassificationDataset):
             absolute=True,
         )
 
-        wnids = _ilsvrc2012_val_meta
+        wnids = _ilsvrc2012_meta
 
         for wnid in set(wnids):
             _path.mkdir(_path.join(self.root, "val", wnid))
@@ -384,28 +340,6 @@ class ImageNetVal(ClassificationDataset):
         ### Returns
         - `None`
         """
-        # # load data (list of path to images)
-        # data_root = _path.join(self.root, "val")
-        # fnames = _path.ls(
-        #     path=data_root,
-        #     fext="JPEG",
-        #     sort=True,
-        # )
-        # self.data = []
-        # for fname in fnames:
-        #     fpath = _path.join(data_root, fname)
-        #     self.data.append(fpath)
-
-        # # load targets
-        # targets_path = _path.join(
-        #     self.root,
-        #     "ILSVRC2012_validation_ground_truth.txt",
-        # )
-        # self.targets = load_txt_to_list(targets_path, dtype=int)
-
-        # # load labels
-        # self.labels = labels
-
         # load class folders
         data_root = _path.join(self.root, "val")
         classes = _path.ls(
@@ -478,6 +412,7 @@ def ImageNet(
     return_data_only: Optional[bool] = False,
     return_w_index: Optional[bool] = False,
     download: bool = False,
+    **kwargs,
 ) -> Union[ImageNetTrain, ImageNetVal]:
     """
     [ImageNet](https://www.image-net.org/challenges/LSVRC/2012/index.php) dataset.
@@ -521,16 +456,18 @@ def ImageNet(
             return_data_only=return_data_only,
             return_w_index=return_w_index,
             download=download,
+            **kwargs,
         )
 
     elif split == "val":
         return ImageNetVal(
             root=root,
-            transform=transform,
+            transform="auto" if transform == "val" else transform,
             target_transform=target_transform,
             return_data_only=return_data_only,
             return_w_index=return_w_index,
             download=download,
+            **kwargs,
         )
 
     else:

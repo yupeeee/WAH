@@ -143,7 +143,6 @@ def load_model(
     num_channels: int = 3,
     load_from: Literal["timm", "torchvision"] = "timm",
     map_location: Optional[Device] = "cpu",
-    make_feature_2d: Optional[bool] = False,
     **kwargs,
 ) -> Module:
     """
@@ -157,7 +156,6 @@ def load_model(
     - `num_channels` (int, optional): The number of input channels. Defaults to `3`.
     - `load_from` (Literal["timm", "torchvision"], optional): Whether to load the model from timm or torchvision. Defaults to `"timm"`.
     - `map_location` (Optional[Device], optional): The device to load the model on. Defaults to `"cpu"`.
-    - `make_feature_2d` (Optional[bool], optional): If `True`, the model's output will be converted to a 2D feature map.
     - `**kwargs`: Additional keyword arguments passed to the model.
 
     ### Returns
@@ -165,13 +163,12 @@ def load_model(
     """
     weights_path: Path = weights if weights is not None else None
     pretrained = True if weights == "auto" else False
-    output_size = 2 if make_feature_2d else num_classes
 
     if load_from == "timm":
         model = load_timm_model(
             name=name,
             pretrained=pretrained,
-            num_classes=output_size,
+            num_classes=num_classes,
             image_size=image_size,
             num_channels=num_channels,
             **kwargs,
@@ -181,23 +178,13 @@ def load_model(
         model = load_torchvision_model(
             name=name,
             weights=weights,
-            num_classes=output_size,
+            num_classes=num_classes,
             image_size=image_size,
             **kwargs,
         )
 
     else:
         raise ValueError(f"Unsupported library: {load_from}")
-
-    if make_feature_2d:
-        model = torch.nn.Sequential(
-            OrderedDict(
-                {
-                    "model": model,
-                    "classifier": torch.nn.Linear(2, num_classes),
-                }
-            )
-        )
 
     if weights_path is not None:
         load_state_dict(
@@ -213,7 +200,7 @@ def load_state_dict(
     model: Module,
     state_dict_path: Path,
     map_location: Optional[Device] = "cpu",
-) -> None:
+) -> Module:
     """
     Loads a state dictionary into the model.
 
@@ -242,10 +229,6 @@ def load_state_dict(
         if "feature_extractor." in key:
             del state_dict[key]
 
-        # # make_feature_2d = True
-        # elif "model.model." in key:
-        #     state_dict[key.replace("model.model", "model")] = state_dict.pop(key)
-
         # elif "model." in key:
         #     state_dict[key.replace("model.", "")] = state_dict.pop(key)
 
@@ -259,3 +242,5 @@ def load_state_dict(
             del state_dict[key]
 
     model.load_state_dict(state_dict)
+
+    return model

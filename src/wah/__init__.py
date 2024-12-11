@@ -2,24 +2,15 @@ import numpy as np
 import torch
 import tqdm
 
-from . import (
-    classification,
-    module,
-    path,
-    plot,
-    riemann,
-    tensor,
-    tqdm,
-    utils,
-)
+from . import classification, module, path, tensor, tqdm, utils
+from .plot import Plot
 
 __all__ = [
     "classification",
     "module",
     "np",
     "path",
-    "plot",
-    "riemann",
+    "Plot",
     "tensor",
     "torch",
     "tqdm",

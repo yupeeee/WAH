@@ -1,15 +1,12 @@
 import random
 
-import numpy as np
 import torch
 from torch.utils.data import Subset
 
-from ...typing import Dataset, List, Literal, Optional, Sequence, Tensor, Tuple
+from ...typing import Dataset, List, Literal, Optional, Tensor, Tuple
 
 __all__ = [
     "compute_mean_and_std",
-    "DeNormalize",
-    "Normalize",
     "portion_dataset",
     "tensor_to_dataset",
 ]
@@ -79,53 +76,6 @@ def compute_mean_and_std(
     std = data.std(dim=dim_to_reduce)
 
     return mean, std
-
-
-class DeNormalize(torch.nn.Module):
-    def __init__(
-        self,
-        mean: Sequence[float],
-        std: Sequence[float],
-    ) -> None:
-        super().__init__()
-
-        self.register_buffer("mean", torch.tensor(mean).view(-1, 1, 1))
-        self.register_buffer("std", torch.tensor(std).view(-1, 1, 1))
-
-    def forward(
-        self,
-        x: Tensor,
-    ) -> Tensor:
-        # Ensure no gradients are tracked
-        with torch.no_grad():
-            return (x * self.std) + self.mean
-
-    def __repr__(self) -> str:
-        return f"DeNormalize(mean={tuple(np.array(self.mean.squeeze()))}, std={tuple(np.array(self.std.squeeze()))})"
-
-
-
-class Normalize(torch.nn.Module):
-    def __init__(
-        self,
-        mean: Sequence[float],
-        std: Sequence[float],
-    ) -> None:
-        super().__init__()
-
-        self.register_buffer("mean", torch.tensor(mean).view(-1, 1, 1))
-        self.register_buffer("std", torch.tensor(std).view(-1, 1, 1))
-
-    def forward(
-        self,
-        x: Tensor,
-    ) -> Tensor:
-        # Ensure no gradients are tracked
-        with torch.no_grad():
-            return (x - self.mean) / self.std
-
-    def __repr__(self) -> str:
-        return f"Normalize(mean={tuple(np.array(self.mean.squeeze()))}, std={tuple(np.array(self.std.squeeze()))})"
 
 
 def portion_dataset(

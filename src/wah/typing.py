@@ -12,7 +12,10 @@ from typing import (
     Union,
 )
 
-from lightning import Trainer
+from lightning import LightningModule, Trainer
+from matplotlib.collections import PathCollection
+from matplotlib.colors import Colormap
+from matplotlib.colors import Normalize as Colornorm
 from matplotlib.figure import Figure
 from matplotlib.pyplot import Axes
 from numpy import ndarray as NDArray
@@ -37,7 +40,11 @@ from torchvision.transforms.v2 import Transform
 __all__ = [
     "Any",
     "Axes",
+    "AxIndex",
     "Callable",
+    "Color",
+    "Colormap",
+    "Colornorm",
     "Config",
     "DataFrame",
     "DataLoader",
@@ -47,6 +54,7 @@ __all__ = [
     "Dict",
     "Figure",
     "Iterable",
+    "LightningModule",
     "List",
     "Literal",
     "LRScheduler",
@@ -56,6 +64,7 @@ __all__ = [
     "Optimizer",
     "Optional",
     "Path",
+    "PathCollection",
     "RemovableHandle",
     "Sequence",
     "SummaryWriter",
@@ -66,6 +75,8 @@ __all__ = [
     "Union",
 ]
 
+AxIndex = Union[int, Tuple[int, int]]
 Config = Dict[str, Any]
+Color = Union[Tuple[float, float, float], str]
 Devices = Union[int, str, List[Union[int, str]]]
 Path = Union[str, bytes, os.PathLike]

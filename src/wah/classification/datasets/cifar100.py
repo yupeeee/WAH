@@ -1,12 +1,12 @@
 import pickle
 
 import numpy as np
-import torchvision.transforms as T
+from torchvision.transforms import Normalize
 
 from ... import path as _path
 from ...typing import Callable, Literal, Optional, Path, Union
 from .cifar10 import CIFAR10
-from .utils import Normalize
+from .transforms import DeNormalize
 
 __all__ = [
     "CIFAR100",
@@ -27,6 +27,7 @@ class CIFAR100(CIFAR10):
     - `MEAN` (list): Mean of dataset; [0.5071, 0.4866, 0.4409].
     - `STD` (list): Standard deviation of dataset; [0.2673, 0.2564, 0.2762].
     - `NORMALIZE` (callable): Transform for dataset normalization.
+    - `DENORMALIZE` (callable): Transform for dataset denormalization.
 
     ### Methods
     - `__getitem__(index) -> Tuple[Any, Any]`: Returns (data, target) of dataset using the specified index.
@@ -67,27 +68,7 @@ class CIFAR100(CIFAR10):
     MEAN = [0.5071, 0.4866, 0.4409]
     STD = [0.2673, 0.2564, 0.2762]
     NORMALIZE = Normalize(MEAN, STD)
-
-    TRANSFORM = {
-        "train": T.Compose(
-            [
-                T.RandomHorizontalFlip(),
-                T.RandomCrop(32, 4),
-                T.ToTensor(),
-                NORMALIZE,
-            ]
-        ),
-        "test": T.Compose(
-            [
-                T.ToTensor(),
-                NORMALIZE,
-            ]
-        ),
-    }
-    TARGET_TRANSFORM = {
-        "train": None,
-        "test": None,
-    }
+    DENORMALIZE = DeNormalize(MEAN, STD)
 
     def __init__(
         self,
@@ -109,6 +90,7 @@ class CIFAR100(CIFAR10):
         return_data_only: Optional[bool] = False,
         return_w_index: Optional[bool] = False,
         download: bool = False,
+        **kwargs,
     ) -> None:
         """
         Initialize the CIFAR-100 dataset.
@@ -140,6 +122,7 @@ class CIFAR100(CIFAR10):
             return_data_only,
             return_w_index,
             download,
+            **kwargs,
         )
 
     def _initialize(

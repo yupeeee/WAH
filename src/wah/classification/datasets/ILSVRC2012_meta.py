@@ -1,8 +1,8 @@
 __all__ = [
-    "_ilsvrc2012_val_meta",
+    "_ilsvrc2012_meta",
 ]
 
-_ilsvrc2012_val_meta = [
+_ilsvrc2012_meta = [
     "n01751748",
     "n09193705",
     "n02105855",

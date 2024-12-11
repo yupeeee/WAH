@@ -1,11 +1,11 @@
 import numpy as np
-import torchvision.transforms as T
 from PIL import Image
+from torchvision.transforms import Normalize
 
 from ... import path as _path
 from ...typing import Callable, Literal, Optional, Path, Union
 from .base import ClassificationDataset
-from .utils import Normalize
+from .transforms import ClassificationPresetEval, ClassificationPresetTrain, DeNormalize
 
 __all__ = [
     "STL10",
@@ -26,6 +26,7 @@ class STL10(ClassificationDataset):
     - `MEAN` (list): Mean of dataset; [0.4467, 0.4398, 0.4066].
     - `STD` (list): Standard deviation of dataset; [0.2603, 0.2566, 0.2713].
     - `NORMALIZE` (callable): Transform for dataset normalization.
+    - `DENORMALIZE` (callable): Transform for dataset denormalization.
 
     ### Methods
     - `__getitem__(index) -> Tuple[Any, Any]`: Returns (data, target) of dataset using the specified index.
@@ -68,27 +69,7 @@ class STL10(ClassificationDataset):
     MEAN = [0.4467, 0.4398, 0.4066]
     STD = [0.2603, 0.2566, 0.2713]
     NORMALIZE = Normalize(MEAN, STD)
-
-    TRANSFORM = {
-        "train": T.Compose(
-            [
-                T.RandomResizedCrop(96),
-                T.RandomHorizontalFlip(),
-                T.ToTensor(),
-                NORMALIZE,
-            ]
-        ),
-        "test": T.Compose(
-            [
-                T.ToTensor(),
-                NORMALIZE,
-            ]
-        ),
-    }
-    TARGET_TRANSFORM = {
-        "train": None,
-        "test": None,
-    }
+    DENORMALIZE = DeNormalize(MEAN, STD)
 
     def __init__(
         self,
@@ -110,6 +91,7 @@ class STL10(ClassificationDataset):
         return_data_only: Optional[bool] = False,
         return_w_index: Optional[bool] = False,
         download: bool = False,
+        **kwargs,
     ) -> None:
         """
         Initialize the STL-10 dataset.
@@ -150,19 +132,19 @@ class STL10(ClassificationDataset):
         else:
             raise ValueError(f"split must be one of ['train', 'test'], got {split}")
 
-        if self.transform == "auto":
-            self.transform = self.TRANSFORM[split]
+        if self.transform == "auto" and split == "train" or self.transform == "train":
+            kwargs.update({"mean": self.MEAN, "std": self.STD})
+            self.transform = ClassificationPresetTrain(**kwargs)
+        elif self.transform == "auto" and split == "test" or self.transform == "test":
+            kwargs.update({"mean": self.MEAN, "std": self.STD})
+            self.transform = ClassificationPresetEval(**kwargs)
         elif self.transform == "tt":
-            self.transform = T.ToTensor()
-        elif self.transform == "train":
-            self.transform = self.TRANSFORM["train"]
-        elif self.transform == "test":
-            self.transform = self.TRANSFORM["test"]
+            self.transform = ClassificationPresetEval(**kwargs)
         else:
             pass
 
         if self.target_transform == "auto":
-            self.target_transform = self.TARGET_TRANSFORM[split]
+            self.target_transform = None
         else:
             pass
 
