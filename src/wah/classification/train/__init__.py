@@ -28,7 +28,7 @@ class Trainer:
         self.log_dir = self.trainer._log_dir
         self.config: Config = kwargs
 
-    def train(
+    def run(
         self,
         train_dataset: Dataset,
         val_dataset: Dataset,

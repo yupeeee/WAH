@@ -124,12 +124,12 @@ class ClassificationPresetTrain:
 
 class ClassificationPresetEval:
     def __init__(self, **kwargs):
-        crop_size = kwargs.get("crop_size", 224)
-        resize_size = kwargs.get("resize_size", 256)
-        mean = kwargs.get("mean", None)
-        std = kwargs.get("std", None)
-        interpolation = kwargs.get("interpolation", InterpolationMode.BILINEAR)
-        backend = kwargs.get("backend", "pil")
+        crop_size: int = kwargs.get("crop_size", 224)
+        resize_size: int = kwargs.get("resize_size", 256)
+        mean: Sequence[float] = kwargs.get("mean", None)
+        std: Sequence[float] = kwargs.get("std", None)
+        interpolation: str = kwargs.get("interpolation", "bilinear")
+        backend: str = kwargs.get("backend", "pil")
 
         interpolation = getattr(InterpolationMode, interpolation.upper())
 
