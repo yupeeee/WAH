@@ -25,6 +25,9 @@ from .random import (
     seed,
     unseed,
 )
+from .tensorboard import (
+    extract_tensorboard_logs,
+)
 from .time import (
     time,
 )
@@ -54,6 +57,8 @@ __all__ = [
     # random
     "seed",
     "unseed",
+    # tensorboard
+    "extract_tensorboard_logs",
     # time
     "time",
     # zip
