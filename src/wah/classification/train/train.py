@@ -4,7 +4,7 @@ import lightning as L
 import torch
 from torchmetrics import Accuracy, MeanMetric
 
-from ...typing import Module, Optional, Path, Tensor, Trainer
+from ...typing import Dict, List, Module, Optional, Path, SummaryWriter, Tensor, Trainer
 from .criterion import load_criterion
 from .optimizer import load_optimizer
 from .scheduler import load_scheduler
@@ -65,6 +65,11 @@ class Wrapper(L.LightningModule):
             num_classes=self.config["num_classes"],
         )
 
+        # grad_l2
+        self.grad_l2_dict: Dict[str, List[Tensor]]
+        for i, (layer, _) in enumerate(self.model.named_parameters()):
+            self.grad_l2_dict[f"{i}_{layer}"] = []
+
     def configure_optimizers(self):
         optimizer = load_optimizer(self.model, **self.config)
         scheduler_config = {k: v for k, v in self.config.items() if k != "optimizer"}
@@ -94,6 +99,12 @@ class Wrapper(L.LightningModule):
 
         return loss
 
+    def on_after_backward(self):
+        # track: grad_l2
+        for i, (layer, param) in enumerate(self.model.named_parameters()):
+            grad_l2 = torch.norm(param.grad.flatten(), p=2)
+            self.grad_l2_dict[f"{i}_{layer}"].append(grad_l2.view(1))
+
     def on_train_epoch_end(self) -> None:
         current_epoch = self.current_epoch + 1
 
@@ -107,6 +118,26 @@ class Wrapper(L.LightningModule):
         # log: loss, acc@1
         self.log("train/avg_loss", self.train_loss, sync_dist=self.sync_dist)
         self.log("train/acc@1", self.train_acc, sync_dist=self.sync_dist)
+
+        # log: grad_l2
+        tensorboard: SummaryWriter = self.logger.experiment
+        tag = self.trainer.logger.name
+        for layer, grad_l2 in self.grad_l2_dict.items():
+            grad_l2 = torch.cat(grad_l2)
+            tensorboard.add_histogram(
+                tag=f"grad_l2/{tag}/{layer}",
+                values=grad_l2,
+                global_step=current_epoch,
+            )
+            self.grad_l2_dict[layer].clear()  # reset
+
+        # log: params
+        for i, (layer, param) in enumerate(self.model.named_parameters()):
+            tensorboard.add_histogram(
+                tag=f"params/{tag}/{i}_{layer}",
+                values=param.flatten(),
+                global_step=current_epoch,
+            )
 
         # save checkpoint
         if "save_per_epoch" in self.config.keys():
