@@ -1,5 +1,7 @@
+from timm.layers import LayerNorm2d
 from torch import nn
 
+from ....module import get_module_name
 from ....typing import Module, Optional, Sequence, Tensor
 
 __all__ = [
@@ -47,12 +49,18 @@ def replace_bn_with_ln(model: Module) -> Module:
             eps = module.eps
             affine = module.affine
 
-            layer_norm = nn.LayerNorm(
-                normalized_shape=(num_features,),
+            # layer_norm = nn.LayerNorm(
+            #     normalized_shape=(num_features,),
+            #     eps=eps,
+            #     elementwise_affine=affine,
+            # )
+            # setattr(model, name, PermuteWrapper(layer_norm, (0, 2, 3, 1), None))
+            layer_norm = LayerNorm2d(
+                num_channels=num_features,
                 eps=eps,
-                elementwise_affine=affine,
+                affine=affine,
             )
-            setattr(model, name, PermuteWrapper(layer_norm, (0, 2, 3, 1), None))
+            setattr(model, name, layer_norm)
         else:
             replace_bn_with_ln(module)
 
@@ -72,7 +80,10 @@ def replace_ln_with_bn(model: Module) -> Module:
                 eps=eps,
                 affine=elementwise_affine,
             )
-            setattr(model, name, PermuteWrapper(batch_norm, (0, 3, 1, 2), 1))
+            if get_module_name(module) == "LayerNorm2d":
+                setattr(model, name, batch_norm)
+            else:
+                setattr(model, name, PermuteWrapper(batch_norm, (0, 3, 1, 2), 1))
         else:
             replace_ln_with_bn(module)
 
