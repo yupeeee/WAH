@@ -66,7 +66,7 @@ class Wrapper(L.LightningModule):
         )
 
         # grad_l2
-        self.grad_l2_dict: Dict[str, List[Tensor]]
+        self.grad_l2_dict: Dict[str, List[Tensor]] = {}
         for i, (layer, _) in enumerate(self.model.named_parameters()):
             self.grad_l2_dict[f"{i}_{layer}"] = []
 
