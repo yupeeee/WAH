@@ -1,10 +1,20 @@
-import os
-
 import lightning as L
 import torch
 from torchmetrics import Accuracy, MeanMetric
 
-from ...typing import Dict, List, Module, Optional, Path, SummaryWriter, Tensor, Trainer
+from ... import path as _path
+from ...typing import (
+    Dict,
+    List,
+    Module,
+    Optional,
+    Path,
+    SummaryWriter,
+    Tensor,
+    Trainer,
+    Union,
+)
+from ...utils import save_dict_to_csv
 from .criterion import load_criterion
 from .optimizer import load_optimizer
 from .scheduler import load_scheduler
@@ -65,6 +75,27 @@ class Wrapper(L.LightningModule):
             num_classes=self.config["num_classes"],
         )
 
+        # loss/confidence
+        self.softmax = torch.nn.Softmax(dim=-1)
+        self.train_eval_dict: Dict[str, List[Union[int, float]]] = {
+            "idx": [],
+            "gt": [],
+            "pred": [],
+            "loss": [],
+            "conf": [],
+            "gt_conf": [],
+        }
+        self.val_eval_dict: Dict[str, List[Union[int, float]]] = {
+            "idx": [],
+            "gt": [],
+            "pred": [],
+            "loss": [],
+            "conf": [],
+            "gt_conf": [],
+        }
+        _path.mkdir(_path.join(self.trainer._log_dir, "eval/train"))
+        _path.mkdir(_path.join(self.trainer._log_dir, "eval/val"))
+
         # grad_l2
         self.grad_l2_dict: Dict[str, List[Tensor]] = {}
         for i, (layer, _) in enumerate(self.model.named_parameters()):
@@ -83,18 +114,35 @@ class Wrapper(L.LightningModule):
         }
 
     def training_step(self, batch, batch_idx):
+        idxs: Tensor
         data: Tensor
         targets: Tensor
 
-        data, targets = batch
+        idxs, (data, targets) = batch
 
         outputs: Tensor = self.model(data)
-        loss: Tensor = self.train_criterion(outputs, targets)
+        losses: Tensor = self.train_criterion(outputs, targets)
 
-        self.train_loss(loss / data.size(0))
-
+        confs: Tensor = self.softmax(outputs)
+        preds: Tensor = torch.argmax(confs, dim=-1)
         if targets.dim() == 2:
             targets = targets.argmax(dim=1)
+
+        results: Tensor = torch.eq(preds, targets)
+        signs: Tensor = (results.int() - 0.5).sign()
+        signed_confs: Tensor = confs[:, preds].diag() * signs
+        signed_gt_confs: Tensor = confs[:, targets].diag() * signs
+
+        self.train_eval_dict["idx"].append(idxs.cpu())
+        self.train_eval_dict["gt"].append(targets.cpu())
+        self.train_eval_dict["pred"].append(preds.cpu())
+        self.train_eval_dict["loss"].append(losses.cpu())
+        self.train_eval_dict["conf"].append(signed_confs.cpu())
+        self.train_eval_dict["gt_conf"].append(signed_gt_confs.cpu())
+
+        loss = losses.mean()
+
+        self.train_loss(loss)
         self.train_acc(outputs, targets)
 
         return loss
@@ -119,6 +167,14 @@ class Wrapper(L.LightningModule):
         self.log("train/avg_loss", self.train_loss, sync_dist=self.sync_dist)
         self.log("train/acc@1", self.train_acc, sync_dist=self.sync_dist)
 
+        # log: eval
+        save_dict_to_csv(
+            self.train_eval_dict,
+            save_dir=_path.join(self.trainer._log_dir, "eval/train"),
+            save_name=f"epoch={current_epoch}",
+            index_col="idx",
+        )
+
         # log: grad_l2
         tensorboard: SummaryWriter = self.logger.experiment
         tag = self.trainer.logger.name
@@ -142,26 +198,43 @@ class Wrapper(L.LightningModule):
         # save checkpoint
         if "save_per_epoch" in self.config.keys():
             if (current_epoch + 1) % self.config["save_per_epoch"] == 0:
-                ckpt_dir = os.path.join(self.trainer._log_dir, "checkpoints")
-                os.makedirs(ckpt_dir, exist_ok=True)
+                ckpt_dir = _path.join(self.trainer._log_dir, "checkpoints")
+                _path.mkdir(ckpt_dir)
                 torch.save(
                     self.model.state_dict(),
-                    os.path.join(ckpt_dir, f"epoch={current_epoch}.ckpt"),
+                    _path.join(ckpt_dir, f"epoch={current_epoch}.ckpt"),
                 )
 
     def validation_step(self, batch, batch_idx):
+        idxs: Tensor
         data: Tensor
         targets: Tensor
 
-        data, targets = batch
+        idxs, (data, targets) = batch
 
         outputs: Tensor = self.model(data)
-        loss: Tensor = self.val_criterion(outputs, targets)
+        losses: Tensor = self.val_criterion(outputs, targets)
 
-        self.val_loss(loss / data.size(0))
-
+        confs: Tensor = self.softmax(outputs)
+        preds: Tensor = torch.argmax(confs, dim=-1)
         if targets.dim() == 2:
             targets = targets.argmax(dim=1)
+
+        results: Tensor = torch.eq(preds, targets)
+        signs: Tensor = (results.int() - 0.5).sign()
+        signed_confs: Tensor = confs[:, preds].diag() * signs
+        signed_gt_confs: Tensor = confs[:, targets].diag() * signs
+
+        self.val_eval_dict["idx"].append(idxs.cpu())
+        self.val_eval_dict["gt"].append(targets.cpu())
+        self.val_eval_dict["pred"].append(preds.cpu())
+        self.val_eval_dict["loss"].append(losses.cpu())
+        self.val_eval_dict["conf"].append(signed_confs.cpu())
+        self.val_eval_dict["gt_conf"].append(signed_gt_confs.cpu())
+
+        loss = losses.mean()
+
+        self.val_loss(loss)
         self.val_acc(outputs, targets)
 
     def on_validation_epoch_end(self) -> None:
@@ -173,6 +246,14 @@ class Wrapper(L.LightningModule):
         # log: loss, acc@1
         self.log("val/avg_loss", self.val_loss, sync_dist=self.sync_dist)
         self.log("val/acc@1", self.val_acc, sync_dist=self.sync_dist)
+
+        # log: eval
+        save_dict_to_csv(
+            self.val_eval_dict,
+            save_dir=_path.join(self.trainer._log_dir, "eval/val"),
+            save_name=f"epoch={current_epoch}",
+            index_col="idx",
+        )
 
 
 def load_trainer(

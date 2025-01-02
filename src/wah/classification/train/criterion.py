@@ -15,7 +15,10 @@ def load_criterion(
 
     criterion: Module = getattr(nn, kwargs["criterion"])
 
-    criterion_cfg = {}
+    criterion_cfg = {
+        "reduce": False,
+        "reduction": "none",
+    }
     if train and "label_smoothing" in kwargs.keys():
         criterion_cfg["label_smoothing"] = kwargs["label_smoothing"]
 
