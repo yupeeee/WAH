@@ -93,8 +93,6 @@ class Wrapper(L.LightningModule):
             "conf": [],
             "gt_conf": [],
         }
-        _path.mkdir(_path.join(self.trainer._log_dir, "eval/train"))
-        _path.mkdir(_path.join(self.trainer._log_dir, "eval/val"))
 
         # grad_l2
         self.grad_l2_dict: Dict[str, List[Tensor]] = {}
