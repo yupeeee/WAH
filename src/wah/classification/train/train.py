@@ -95,7 +95,8 @@ class Wrapper(L.LightningModule):
         if self.trainer.is_global_zero:
             save_dict_to_csv(
                 dictionary={
-                    key: [] for key in ["idx", "gt", "pred", "loss", "conf", "gt_conf"]
+                    key: []
+                    for key in ["idx", "gt", "pred", "loss", "conf", "gt_conf", "l2"]
                 },
                 save_dir=_path.join(self.trainer._log_dir, "eval/train"),
                 save_name=f"epoch={self.current_epoch + 1}",
@@ -127,6 +128,7 @@ class Wrapper(L.LightningModule):
         signs: Tensor = (results.int() - 0.5).sign()
         signed_confs: Tensor = confs[:, preds].diag() * signs
         signed_gt_confs: Tensor = confs[:, targets].diag() * signs
+        l2_norms: Tensor = outputs.norm(p=2, dim=-1)
 
         res_dict = {
             "idx": [int(i) for i in idxs],
@@ -135,6 +137,7 @@ class Wrapper(L.LightningModule):
             "loss": [float(l) for l in losses],
             "conf": [float(c) for c in signed_confs],
             "gt_conf": [float(gc) for gc in signed_gt_confs],
+            "l2": [float(l2) for l2 in l2_norms],
         }
         save_dict_to_csv(
             dictionary=res_dict,
@@ -236,6 +239,7 @@ class Wrapper(L.LightningModule):
         signs: Tensor = (results.int() - 0.5).sign()
         signed_confs: Tensor = confs[:, preds].diag() * signs
         signed_gt_confs: Tensor = confs[:, targets].diag() * signs
+        l2_norms: Tensor = outputs.norm(p=2, dim=-1)
 
         res_dict = {
             "idx": [int(i) for i in idxs],
@@ -244,6 +248,7 @@ class Wrapper(L.LightningModule):
             "loss": [float(l) for l in losses],
             "conf": [float(c) for c in signed_confs],
             "gt_conf": [float(gc) for gc in signed_gt_confs],
+            "l2": [float(l2) for l2 in l2_norms],
         }
         save_dict_to_csv(
             dictionary=res_dict,
