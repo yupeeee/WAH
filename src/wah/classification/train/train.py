@@ -69,19 +69,19 @@ class Wrapper(L.LightningModule):
         # loss/confidence
         self.softmax = torch.nn.Softmax(dim=-1)
         # train
-        self.train_idx: List[int] = []
-        self.train_gt: List[int] = []
-        self.train_pred: List[int] = []
-        self.train_loss: List[float] = []
-        self.train_conf: List[float] = []
-        self.train_gt_conf: List[float] = []
+        self._train_idx: List[int] = []
+        self._train_gt: List[int] = []
+        self._train_pred: List[int] = []
+        self._train_loss: List[float] = []
+        self._train_conf: List[float] = []
+        self._train_gt_conf: List[float] = []
         # val
-        self.val_idx: List[int] = []
-        self.val_gt: List[int] = []
-        self.val_pred: List[int] = []
-        self.val_loss: List[float] = []
-        self.val_conf: List[float] = []
-        self.val_gt_conf: List[float] = []
+        self._val_idx: List[int] = []
+        self._val_gt: List[int] = []
+        self._val_pred: List[int] = []
+        self._val_loss: List[float] = []
+        self._val_conf: List[float] = []
+        self._val_gt_conf: List[float] = []
 
         # grad_l2
         self.grad_l2_dict: Dict[str, List[Tensor]] = {}
@@ -120,12 +120,12 @@ class Wrapper(L.LightningModule):
         signed_confs: Tensor = confs[:, preds].diag() * signs
         signed_gt_confs: Tensor = confs[:, targets].diag() * signs
 
-        self.train_idx.append(idxs.cpu())
-        self.train_gt.append(targets.cpu())
-        self.train_pred.append(preds.cpu())
-        self.train_loss.append(losses.cpu())
-        self.train_conf.append(signed_confs.cpu())
-        self.train_gt_conf.append(signed_gt_confs.cpu())
+        self._train_idx.append(idxs.cpu())
+        self._train_gt.append(targets.cpu())
+        self._train_pred.append(preds.cpu())
+        self._train_loss.append(losses.cpu())
+        self._train_conf.append(signed_confs.cpu())
+        self._train_gt_conf.append(signed_gt_confs.cpu())
 
         loss = losses.mean()
 
@@ -155,11 +155,11 @@ class Wrapper(L.LightningModule):
         self.log("train/acc@1", self.train_acc, sync_dist=self.sync_dist)
 
         # log: eval
-        idx = process_gathered_data(self.all_gather(self.train_idx), 2, 1, (1, 0))
-        gt = process_gathered_data(self.all_gather(self.train_gt), 2, 1, (1, 0))
-        pred = process_gathered_data(self.all_gather(self.train_pred), 2, 1, (1, 0))
-        loss = process_gathered_data(self.all_gather(self.train_loss), 2, 1, (1, 0))
-        conf = process_gathered_data(self.all_gather(self.train_conf), 2, 1, (1, 0))
+        idx = process_gathered_data(self.all_gather(self._train_idx), 2, 1, (1, 0))
+        gt = process_gathered_data(self.all_gather(self._train_gt), 2, 1, (1, 0))
+        pred = process_gathered_data(self.all_gather(self._train_pred), 2, 1, (1, 0))
+        loss = process_gathered_data(self.all_gather(self._train_loss), 2, 1, (1, 0))
+        conf = process_gathered_data(self.all_gather(self._train_conf), 2, 1, (1, 0))
         gt_conf = process_gathered_data(
             self.all_gather(self.train_gt_conf), 2, 1, (1, 0)
         )
@@ -176,12 +176,12 @@ class Wrapper(L.LightningModule):
             save_name=f"epoch={current_epoch}",
             index_col="idx",
         )
-        self.train_idx.clear()
-        self.train_gt.clear()
-        self.train_pred.clear()
-        self.train_loss.clear()
-        self.train_conf.clear()
-        self.train_gt_conf.clear()
+        self._train_idx.clear()
+        self._train_gt.clear()
+        self._train_pred.clear()
+        self._train_loss.clear()
+        self._train_conf.clear()
+        self._train_gt_conf.clear()
 
         # log: grad_l2
         tensorboard: SummaryWriter = self.logger.experiment
@@ -233,12 +233,12 @@ class Wrapper(L.LightningModule):
         signed_confs: Tensor = confs[:, preds].diag() * signs
         signed_gt_confs: Tensor = confs[:, targets].diag() * signs
 
-        self.val_idx.append(idxs.cpu())
-        self.val_gt.append(targets.cpu())
-        self.val_pred.append(preds.cpu())
-        self.val_loss.append(losses.cpu())
-        self.val_conf.append(signed_confs.cpu())
-        self.val_gt_conf.append(signed_gt_confs.cpu())
+        self._val_idx.append(idxs.cpu())
+        self._val_gt.append(targets.cpu())
+        self._val_pred.append(preds.cpu())
+        self._val_loss.append(losses.cpu())
+        self._val_conf.append(signed_confs.cpu())
+        self._val_gt_conf.append(signed_gt_confs.cpu())
 
         loss = losses.mean()
 
@@ -256,12 +256,14 @@ class Wrapper(L.LightningModule):
         self.log("val/acc@1", self.val_acc, sync_dist=self.sync_dist)
 
         # log: eval
-        idx = process_gathered_data(self.all_gather(self.val_idx), 2, 1, (1, 0))
-        gt = process_gathered_data(self.all_gather(self.val_gt), 2, 1, (1, 0))
-        pred = process_gathered_data(self.all_gather(self.val_pred), 2, 1, (1, 0))
-        loss = process_gathered_data(self.all_gather(self.val_loss), 2, 1, (1, 0))
-        conf = process_gathered_data(self.all_gather(self.val_conf), 2, 1, (1, 0))
-        gt_conf = process_gathered_data(self.all_gather(self.val_gt_conf), 2, 1, (1, 0))
+        idx = process_gathered_data(self.all_gather(self._val_idx), 2, 1, (1, 0))
+        gt = process_gathered_data(self.all_gather(self._val_gt), 2, 1, (1, 0))
+        pred = process_gathered_data(self.all_gather(self._val_pred), 2, 1, (1, 0))
+        loss = process_gathered_data(self.all_gather(self._val_loss), 2, 1, (1, 0))
+        conf = process_gathered_data(self.all_gather(self._val_conf), 2, 1, (1, 0))
+        gt_conf = process_gathered_data(
+            self.all_gather(self._val_gt_conf), 2, 1, (1, 0)
+        )
         save_dict_to_csv(
             dictionary={
                 "idx": [int(i) for i in idx],
@@ -275,12 +277,12 @@ class Wrapper(L.LightningModule):
             save_name=f"epoch={current_epoch}",
             index_col="idx",
         )
-        self.val_idx.clear()
-        self.val_gt.clear()
-        self.val_pred.clear()
-        self.val_loss.clear()
-        self.val_conf.clear()
-        self.val_gt_conf.clear()
+        self._val_idx.clear()
+        self._val_gt.clear()
+        self._val_pred.clear()
+        self._val_loss.clear()
+        self._val_conf.clear()
+        self._val_gt_conf.clear()
 
 
 def load_trainer(
