@@ -3,17 +3,7 @@ import torch
 from torchmetrics import Accuracy, MeanMetric
 
 from ... import path as _path
-from ...typing import (
-    Dict,
-    List,
-    Module,
-    Optional,
-    Path,
-    SummaryWriter,
-    Tensor,
-    Trainer,
-    Union,
-)
+from ...typing import Dict, List, Module, Optional, Path, SummaryWriter, Tensor, Trainer
 from ...utils import save_dict_to_csv
 from .criterion import load_criterion
 from .optimizer import load_optimizer
@@ -24,6 +14,7 @@ from .utils import (
     load_accelerator_and_devices,
     load_checkpoint_callback,
     load_tensorboard_logger,
+    process_gathered_data,
 )
 
 __all__ = [
@@ -77,22 +68,20 @@ class Wrapper(L.LightningModule):
 
         # loss/confidence
         self.softmax = torch.nn.Softmax(dim=-1)
-        self.train_eval_dict: Dict[str, List[Union[int, float]]] = {
-            "idx": [],
-            "gt": [],
-            "pred": [],
-            "loss": [],
-            "conf": [],
-            "gt_conf": [],
-        }
-        self.val_eval_dict: Dict[str, List[Union[int, float]]] = {
-            "idx": [],
-            "gt": [],
-            "pred": [],
-            "loss": [],
-            "conf": [],
-            "gt_conf": [],
-        }
+        # train
+        self.train_idx: List[int] = []
+        self.train_gt: List[int] = []
+        self.train_pred: List[int] = []
+        self.train_loss: List[float] = []
+        self.train_conf: List[float] = []
+        self.train_gt_conf: List[float] = []
+        # val
+        self.val_idx: List[int] = []
+        self.val_gt: List[int] = []
+        self.val_pred: List[int] = []
+        self.val_loss: List[float] = []
+        self.val_conf: List[float] = []
+        self.val_gt_conf: List[float] = []
 
         # grad_l2
         self.grad_l2_dict: Dict[str, List[Tensor]] = {}
@@ -131,12 +120,12 @@ class Wrapper(L.LightningModule):
         signed_confs: Tensor = confs[:, preds].diag() * signs
         signed_gt_confs: Tensor = confs[:, targets].diag() * signs
 
-        self.train_eval_dict["idx"].append(idxs.cpu())
-        self.train_eval_dict["gt"].append(targets.cpu())
-        self.train_eval_dict["pred"].append(preds.cpu())
-        self.train_eval_dict["loss"].append(losses.cpu())
-        self.train_eval_dict["conf"].append(signed_confs.cpu())
-        self.train_eval_dict["gt_conf"].append(signed_gt_confs.cpu())
+        self.train_idx.append(idxs.cpu())
+        self.train_gt.append(targets.cpu())
+        self.train_pred.append(preds.cpu())
+        self.train_loss.append(losses.cpu())
+        self.train_conf.append(signed_confs.cpu())
+        self.train_gt_conf.append(signed_gt_confs.cpu())
 
         loss = losses.mean()
 
@@ -166,12 +155,33 @@ class Wrapper(L.LightningModule):
         self.log("train/acc@1", self.train_acc, sync_dist=self.sync_dist)
 
         # log: eval
+        idx = process_gathered_data(self.all_gather(self.train_idx), 2, 1, (1, 0))
+        gt = process_gathered_data(self.all_gather(self.train_gt), 2, 1, (1, 0))
+        pred = process_gathered_data(self.all_gather(self.train_pred), 2, 1, (1, 0))
+        loss = process_gathered_data(self.all_gather(self.train_loss), 2, 1, (1, 0))
+        conf = process_gathered_data(self.all_gather(self.train_conf), 2, 1, (1, 0))
+        gt_conf = process_gathered_data(
+            self.all_gather(self.train_gt_conf), 2, 1, (1, 0)
+        )
         save_dict_to_csv(
-            self.train_eval_dict,
+            dictionary={
+                "idx": [int(i) for i in idx],
+                "gt": [int(g) for g in gt],
+                "pred": [int(p) for p in pred],
+                "loss": [float(l) for l in loss],
+                "conf": [float(c) for c in conf],
+                "gt_conf": [float(gc) for gc in gt_conf],
+            },
             save_dir=_path.join(self.trainer._log_dir, "eval/train"),
             save_name=f"epoch={current_epoch}",
             index_col="idx",
         )
+        self.train_idx.clear()
+        self.train_gt.clear()
+        self.train_pred.clear()
+        self.train_loss.clear()
+        self.train_conf.clear()
+        self.train_gt_conf.clear()
 
         # log: grad_l2
         tensorboard: SummaryWriter = self.logger.experiment
@@ -223,12 +233,12 @@ class Wrapper(L.LightningModule):
         signed_confs: Tensor = confs[:, preds].diag() * signs
         signed_gt_confs: Tensor = confs[:, targets].diag() * signs
 
-        self.val_eval_dict["idx"].append(idxs.cpu())
-        self.val_eval_dict["gt"].append(targets.cpu())
-        self.val_eval_dict["pred"].append(preds.cpu())
-        self.val_eval_dict["loss"].append(losses.cpu())
-        self.val_eval_dict["conf"].append(signed_confs.cpu())
-        self.val_eval_dict["gt_conf"].append(signed_gt_confs.cpu())
+        self.val_idx.append(idxs.cpu())
+        self.val_gt.append(targets.cpu())
+        self.val_pred.append(preds.cpu())
+        self.val_loss.append(losses.cpu())
+        self.val_conf.append(signed_confs.cpu())
+        self.val_gt_conf.append(signed_gt_confs.cpu())
 
         loss = losses.mean()
 
@@ -246,12 +256,31 @@ class Wrapper(L.LightningModule):
         self.log("val/acc@1", self.val_acc, sync_dist=self.sync_dist)
 
         # log: eval
+        idx = process_gathered_data(self.all_gather(self.val_idx), 2, 1, (1, 0))
+        gt = process_gathered_data(self.all_gather(self.val_gt), 2, 1, (1, 0))
+        pred = process_gathered_data(self.all_gather(self.val_pred), 2, 1, (1, 0))
+        loss = process_gathered_data(self.all_gather(self.val_loss), 2, 1, (1, 0))
+        conf = process_gathered_data(self.all_gather(self.val_conf), 2, 1, (1, 0))
+        gt_conf = process_gathered_data(self.all_gather(self.val_gt_conf), 2, 1, (1, 0))
         save_dict_to_csv(
-            self.val_eval_dict,
-            save_dir=_path.join(self.trainer._log_dir, "eval/val"),
+            dictionary={
+                "idx": [int(i) for i in idx],
+                "gt": [int(g) for g in gt],
+                "pred": [int(p) for p in pred],
+                "loss": [float(l) for l in loss],
+                "conf": [float(c) for c in conf],
+                "gt_conf": [float(gc) for gc in gt_conf],
+            },
+            save_dir=_path.join(self.trainer._log_dir, "eval/train"),
             save_name=f"epoch={current_epoch}",
             index_col="idx",
         )
+        self.val_idx.clear()
+        self.val_gt.clear()
+        self.val_pred.clear()
+        self.val_loss.clear()
+        self.val_conf.clear()
+        self.val_gt_conf.clear()
 
 
 def load_trainer(
