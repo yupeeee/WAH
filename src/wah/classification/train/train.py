@@ -101,6 +101,20 @@ class Wrapper(L.LightningModule):
         }
 
     def training_step(self, batch, batch_idx):
+        if batch_idx == 0:
+            self._train_idx.clear()
+            self._train_gt.clear()
+            self._train_pred.clear()
+            self._train_loss.clear()
+            self._train_conf.clear()
+            self._train_gt_conf.clear()
+            self._val_idx.clear()
+            self._val_gt.clear()
+            self._val_pred.clear()
+            self._val_loss.clear()
+            self._val_conf.clear()
+            self._val_gt_conf.clear()
+
         idxs: Tensor
         data: Tensor
         targets: Tensor
@@ -176,12 +190,6 @@ class Wrapper(L.LightningModule):
             save_name=f"epoch={current_epoch}",
             index_col="idx",
         )
-        self._train_idx.clear()
-        self._train_gt.clear()
-        self._train_pred.clear()
-        self._train_loss.clear()
-        self._train_conf.clear()
-        self._train_gt_conf.clear()
 
         # log: grad_l2
         tensorboard: SummaryWriter = self.logger.experiment
@@ -273,16 +281,10 @@ class Wrapper(L.LightningModule):
                 "conf": [float(c) for c in conf],
                 "gt_conf": [float(gc) for gc in gt_conf],
             },
-            save_dir=_path.join(self.trainer._log_dir, "eval/train"),
+            save_dir=_path.join(self.trainer._log_dir, "eval/val"),
             save_name=f"epoch={current_epoch}",
             index_col="idx",
         )
-        self._val_idx.clear()
-        self._val_gt.clear()
-        self._val_pred.clear()
-        self._val_loss.clear()
-        self._val_conf.clear()
-        self._val_gt_conf.clear()
 
 
 def load_trainer(
