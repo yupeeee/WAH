@@ -1,6 +1,7 @@
 import pandas as pd
 import torch
 import yaml
+from filelock import FileLock
 
 from .. import path as _path
 from ..typing import Any, DataFrame, Dict, List, Path, Tensor
@@ -100,6 +101,9 @@ def save_dict_to_csv(
     save_dir: Path,
     save_name: str,
     index_col: Any = None,
+    mode: str = "w",
+    write_header: bool = None,
+    filelock: bool = False,
 ) -> None:
     """
     Saves a dictionary as a CSV file.
@@ -109,6 +113,9 @@ def save_dict_to_csv(
     - `save_dir` (Path): Directory to save the CSV file in.
     - `save_name` (str): Name to give to the saved CSV file (without extension).
     - `index_col` (Any, optional): Column to set as the index. Defaults to `None`.
+    - `mode` (str, optional): Mode for saving the file. Defaults to `"w"`.
+    - `write_header` (bool, optional): Whether to write the header row (column names) to the file. Defaults to `None` (automatically determined).
+    - `filelock` (bool, optional): Whether to use filelock to ensure that only one process writes to the file at a time. Defaults to `False`.
     """
     for k, v in dictionary.items():
         if not isinstance(v, list):
@@ -118,9 +125,17 @@ def save_dict_to_csv(
 
     _path.mkdir(save_dir)
     save_path = _path.join(save_dir, f"{save_name}.csv")
+    # Check if we should write the header
+    write_header = (
+        not (_path.exists(save_path) and mode == "a")
+        if write_header is None
+        else write_header
+    )
 
-    if index_col is not None:
-        df.to_csv(save_path, mode="w", index=False)
-
+    if filelock:
+        # File lock to ensure single access
+        lock_path = str(save_path) + ".lock"
+        with FileLock(lock_path):
+            df.to_csv(save_path, mode=mode, index=False, header=write_header)
     else:
-        df.to_csv(save_path, mode="w")
+        df.to_csv(save_path, mode=mode, index=False, header=write_header)

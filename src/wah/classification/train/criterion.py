@@ -1,6 +1,6 @@
 from torch import nn
 
-from ...typing import Module
+from ...typing import Literal, Module
 
 __all__ = [
     "load_criterion",
@@ -9,6 +9,7 @@ __all__ = [
 
 def load_criterion(
     train: bool,
+    reduction: Literal["none", "mean", "sum"] = "mean",
     **kwargs,
 ) -> Module:
     assert "criterion" in kwargs.keys()
@@ -16,8 +17,7 @@ def load_criterion(
     criterion: Module = getattr(nn, kwargs["criterion"])
 
     criterion_cfg = {
-        "reduce": False,
-        "reduction": "none",
+        "reduction": reduction,
     }
     if train and "label_smoothing" in kwargs.keys():
         criterion_cfg["label_smoothing"] = kwargs["label_smoothing"]

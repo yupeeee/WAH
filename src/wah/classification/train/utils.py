@@ -1,18 +1,7 @@
-import torch
 from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.loggers import TensorBoardLogger
 
-from ...typing import (
-    Devices,
-    List,
-    LRScheduler,
-    Optional,
-    Path,
-    Sequence,
-    Tensor,
-    Trainer,
-    Tuple,
-)
+from ...typing import Devices, List, LRScheduler, Optional, Path, Trainer, Tuple
 
 __all__ = [
     "check_config",
@@ -20,7 +9,6 @@ __all__ = [
     "load_accelerator_and_devices",
     "load_checkpoint_callback",
     "load_tensorboard_logger",
-    "process_gathered_data",
 ]
 
 config_requirements: List[str] = [
@@ -93,26 +81,3 @@ def load_tensorboard_logger(
         name=name,
         version=version,
     )
-
-
-def process_gathered_data(
-    data: List[Tensor],
-    unsqueeze_until: int = 1,
-    cat_along: int = -1,
-    permute_dims: Optional[Sequence[int]] = None,
-) -> Tensor:
-    assert (
-        data[0].dim() <= unsqueeze_until
-    ), f"x.dim() in data must be smaller than or equal to unsqueeze_until, got {data[0].dim()}"
-
-    while data[0].dim() != unsqueeze_until:
-        data: List[Tensor] = [x.unsqueeze(0) for x in data]
-
-    data: Tensor = torch.cat(data, dim=cat_along)
-
-    if permute_dims is not None:
-        data = data.permute(*permute_dims)
-
-    data = data.flatten()
-
-    return data.cpu()
