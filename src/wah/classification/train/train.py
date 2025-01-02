@@ -101,20 +101,6 @@ class Wrapper(L.LightningModule):
         }
 
     def training_step(self, batch, batch_idx):
-        if batch_idx == 0:
-            self._train_idx.clear()
-            self._train_gt.clear()
-            self._train_pred.clear()
-            self._train_loss.clear()
-            self._train_conf.clear()
-            self._train_gt_conf.clear()
-            self._val_idx.clear()
-            self._val_gt.clear()
-            self._val_pred.clear()
-            self._val_loss.clear()
-            self._val_conf.clear()
-            self._val_gt_conf.clear()
-
         idxs: Tensor
         data: Tensor
         targets: Tensor
@@ -177,19 +163,26 @@ class Wrapper(L.LightningModule):
         gt_conf = process_gathered_data(
             self.all_gather(self._train_gt_conf), 2, 1, (1, 0)
         )
-        save_dict_to_csv(
-            dictionary={
-                "idx": [int(i) for i in idx],
-                "gt": [int(g) for g in gt],
-                "pred": [int(p) for p in pred],
-                "loss": [float(l) for l in loss],
-                "conf": [float(c) for c in conf],
-                "gt_conf": [float(gc) for gc in gt_conf],
-            },
-            save_dir=_path.join(self.trainer._log_dir, "eval/train"),
-            save_name=f"epoch={current_epoch}",
-            index_col="idx",
-        )
+        if self.trainer.is_global_zero:
+            save_dict_to_csv(
+                dictionary={
+                    "idx": [int(i) for i in idx],
+                    "gt": [int(g) for g in gt],
+                    "pred": [int(p) for p in pred],
+                    "loss": [float(l) for l in loss],
+                    "conf": [float(c) for c in conf],
+                    "gt_conf": [float(gc) for gc in gt_conf],
+                },
+                save_dir=_path.join(self.trainer._log_dir, "eval/train"),
+                save_name=f"epoch={current_epoch}",
+                index_col="idx",
+            )
+            self._train_idx = []
+            self._train_gt = []
+            self._train_pred = []
+            self._train_loss = []
+            self._train_conf = []
+            self._train_gt_conf = []
 
         # log: grad_l2
         tensorboard: SummaryWriter = self.logger.experiment
@@ -201,7 +194,7 @@ class Wrapper(L.LightningModule):
                 values=grad_l2,
                 global_step=current_epoch,
             )
-            self.grad_l2_dict[layer].clear()  # reset
+            self.grad_l2_dict[layer] = []  # reset
 
         # log: params
         for i, (layer, param) in enumerate(self.model.named_parameters()):
@@ -272,19 +265,26 @@ class Wrapper(L.LightningModule):
         gt_conf = process_gathered_data(
             self.all_gather(self._val_gt_conf), 2, 1, (1, 0)
         )
-        save_dict_to_csv(
-            dictionary={
-                "idx": [int(i) for i in idx],
-                "gt": [int(g) for g in gt],
-                "pred": [int(p) for p in pred],
-                "loss": [float(l) for l in loss],
-                "conf": [float(c) for c in conf],
-                "gt_conf": [float(gc) for gc in gt_conf],
-            },
-            save_dir=_path.join(self.trainer._log_dir, "eval/val"),
-            save_name=f"epoch={current_epoch}",
-            index_col="idx",
-        )
+        if self.trainer.is_global_zero:
+            save_dict_to_csv(
+                dictionary={
+                    "idx": [int(i) for i in idx],
+                    "gt": [int(g) for g in gt],
+                    "pred": [int(p) for p in pred],
+                    "loss": [float(l) for l in loss],
+                    "conf": [float(c) for c in conf],
+                    "gt_conf": [float(gc) for gc in gt_conf],
+                },
+                save_dir=_path.join(self.trainer._log_dir, "eval/val"),
+                save_name=f"epoch={current_epoch}",
+                index_col="idx",
+            )
+            self._val_idx = []
+            self._val_gt = []
+            self._val_pred = []
+            self._val_loss = []
+            self._val_conf = []
+            self._val_gt_conf = []
 
 
 def load_trainer(
