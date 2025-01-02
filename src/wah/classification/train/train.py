@@ -161,7 +161,7 @@ class Wrapper(L.LightningModule):
         loss = process_gathered_data(self.all_gather(self._train_loss), 2, 1, (1, 0))
         conf = process_gathered_data(self.all_gather(self._train_conf), 2, 1, (1, 0))
         gt_conf = process_gathered_data(
-            self.all_gather(self.train_gt_conf), 2, 1, (1, 0)
+            self.all_gather(self._train_gt_conf), 2, 1, (1, 0)
         )
         save_dict_to_csv(
             dictionary={
