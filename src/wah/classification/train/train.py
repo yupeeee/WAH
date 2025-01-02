@@ -116,10 +116,9 @@ class Wrapper(L.LightningModule):
         outputs: Tensor = self.model(data)
         losses: Tensor = self.train_criterion(outputs, targets)
 
-        loss = losses.mean()
         if targets.dim() == 2:
             targets = targets.argmax(dim=1)
-        self.train_loss(loss)
+        self.train_loss(losses)
         self.train_acc(outputs, targets)
 
         confs: Tensor = self.softmax(outputs)
@@ -149,7 +148,7 @@ class Wrapper(L.LightningModule):
             filelock=False,
         )
 
-        return loss
+        return losses.mean()
 
     def on_after_backward(self):
         # track: grad_l2
@@ -207,7 +206,8 @@ class Wrapper(L.LightningModule):
         if self.trainer.is_global_zero:
             save_dict_to_csv(
                 dictionary={
-                    key: [] for key in ["idx", "gt", "pred", "loss", "conf", "gt_conf"]
+                    key: []
+                    for key in ["idx", "gt", "pred", "loss", "conf", "gt_conf", "l2"]
                 },
                 save_dir=_path.join(self.trainer._log_dir, "eval/val"),
                 save_name=f"epoch={self.current_epoch + 1}",
@@ -227,10 +227,9 @@ class Wrapper(L.LightningModule):
         outputs: Tensor = self.model(data)
         losses: Tensor = self.val_criterion(outputs, targets)
 
-        loss = losses.mean()
         if targets.dim() == 2:
             targets = targets.argmax(dim=1)
-        self.val_loss(loss)
+        self.val_loss(losses)
         self.val_acc(outputs, targets)
 
         confs: Tensor = self.softmax(outputs)
@@ -260,7 +259,7 @@ class Wrapper(L.LightningModule):
             filelock=False,
         )
 
-        return loss
+        return losses.mean()
 
     def on_validation_epoch_end(self) -> None:
         current_epoch = self.current_epoch + 1
