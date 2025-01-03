@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 
+from .. import path as _path
 from ..typing import (
     Axes,
     AxIndex,
@@ -72,6 +73,7 @@ class Plot:
             kwargs["bbox_inches"] = "tight"
             kwargs["pad_inches"] = 0.05
 
+        _path.mkdir(_path.dirname(path))
         plt.savefig(path, **kwargs)
 
     def show(self) -> None:
