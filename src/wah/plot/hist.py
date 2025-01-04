@@ -1,19 +1,11 @@
 import numpy as np
+from matplotlib import cm
 
-from ..typing import (
-    Axes,
-    Figure,
-    List,
-    NDArray,
-    Optional,
-    PathCollection,
-    Sequence,
-    Tuple,
-)
+from ..typing import Axes, Figure, NDArray, Optional, PathCollection, Sequence, Tuple
 
 __all__ = [
     "_hist2d",
-    "_hist3d",
+    "_ridge",
 ]
 
 
@@ -40,7 +32,7 @@ def _hist2d(
     fig: Figure,
     ax: Axes,
     x: Sequence[float],
-    num_bins: float,
+    num_bins: int,
     xmin: Optional[float] = None,
     xmax: Optional[float] = None,
     *args,
@@ -52,31 +44,42 @@ def _hist2d(
     return plot
 
 
-def _hist3d(
+def _ridge(
     fig: Figure,
     ax: Axes,
     xs: Sequence[Sequence[float]],
-    num_bins: float,
-    xmin: Optional[float] = None,
-    xmax: Optional[float] = None,
-    t: Optional[Sequence[float]] = None,
+    num_bins: int,
+    stride: Optional[int] = 1,
+    overlap: Optional[float] = 0.01,
+    alpha: Optional[float] = 0.8,
+    cmap: Optional[str] = "viridis",
     *args,
     **kwargs,
 ) -> PathCollection:
-    if t is None:
-        t = np.arange(len(xs))
-    else:
-        assert len(t) == len(
-            xs
-        ), f"Length of timestep (len(t)) must match the number of trials for x (len(xs)), got len(t)={len(t)} and len(xs)={len(xs)}."
+    T = len(xs)
+    colors = getattr(cm, cmap)(np.linspace(0, 1, T))
+    ts = np.insert(np.arange(stride, T + stride, stride) - 1, 0, 0)
 
-    bins_per_t: List[NDArray] = []
-    hists: List[NDArray] = []
-    for i in range(len(t)):
-        bins, hist = _hist(xs[i], num_bins, xmin, xmax)
-        bins_per_t.append(bins)
-        hists.append(hist)
+    for i, t in enumerate(reversed(ts)):
+        # Get this timestep's data
+        x = xs[t]
 
-    for i, (bins, hist) in enumerate(zip(bins_per_t, hists)):
-        ax.plot(bins[:-1], hist + i, *args, **kwargs)
-        ax.fill_between(bins[:-1], i, hist + i, *args, **kwargs)
+        # Compute histogram
+        counts, bin_edges = np.histogram(x, bins=num_bins, density=True)
+        bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
+
+        # Offset for the ridgeline
+        # The bottom is "i * overlap" for all points
+        y_offset = i * overlap
+
+        # Plot
+        ax.fill_between(
+            bin_centers,
+            y_offset,
+            counts + y_offset,
+            color=colors[t],
+            alpha=alpha,
+            zorder=t,
+            *args,
+            **kwargs,
+        )

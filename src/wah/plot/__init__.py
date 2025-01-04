@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import numpy as np
 
 from .. import path as _path
 from ..typing import (
@@ -17,7 +18,7 @@ from ..typing import (
     Union,
 )
 from .errorbar import _errorbar2d
-from .hist import _hist2d, _hist3d
+from .hist import _hist2d, _ridge
 from .image import _image
 from .plot import _plot2d
 from .scatter import _scatter2d
@@ -187,31 +188,6 @@ class Plot:
         plot = _hist2d(self.fig, ax, x, num_bins, xmin, xmax, *args, **kwargs)
         self.plots[index] = plot
 
-    def hist3d(
-        self,
-        index: AxIndex = 0,
-        xs: Sequence[Sequence[float]] = ...,
-        num_bins: float = ...,
-        xmin: Optional[float] = None,
-        xmax: Optional[float] = None,
-        t: Optional[Sequence[float]] = None,
-        c: Optional[Union[str, float, Sequence[float]]] = None,
-        cmap: Optional[str] = "viridis",
-        cmin: Optional[float] = None,
-        cmax: Optional[float] = None,
-        *args,
-        **kwargs,
-    ) -> None:
-        ax = _get_ax(self.axes, index)
-
-        if c is not None and not isinstance(c, str):
-            c, colormap, colornorm = _init_colors(c, cmap, cmin, cmax)
-            self.colors[index] = (colormap, colornorm)
-            kwargs["c"] = c
-
-        plot = _hist3d(self.fig, ax, xs, num_bins, xmin, xmax, t, *args, **kwargs)
-        self.plots[index] = plot
-
     def image(
         self,
         index: AxIndex = 0,
@@ -299,6 +275,33 @@ class Plot:
 
         plot = _plot2d(self.fig, ax, x, y, *args, **kwargs)
         self.plots[index] = plot
+
+    def ridge(
+        self,
+        index: AxIndex = 0,
+        xs: Sequence[Sequence[float]] = ...,
+        ts: Sequence[float] = ...,
+        tlabels: Sequence[str] = None,
+        num_bins: int = ...,
+        stride: Optional[int] = 1,
+        overlap: Optional[float] = 0.01,
+        alpha: Optional[float] = 0.8,
+        cmap: Optional[str] = "viridis",
+        *args,
+        **kwargs,
+    ) -> None:
+        ax = _get_ax(self.axes, index)
+
+        plot = _ridge(
+            self.fig, ax, xs, num_bins, stride, overlap, alpha, cmap, *args, **kwargs
+        )
+        self.plots[index] = plot
+
+        yticks = np.arange(len(xs) // stride + 1) * overlap
+        indices = np.insert(np.arange(stride, len(xs) + stride, stride) - 1, 0, 0)[::-1]
+        yticks = [float(yticks[np.where(indices == t)]) for t in ts]
+        ax.set_yticks(yticks)
+        ax.set_yticklabels(tlabels if tlabels is not None else [str(t) for t in ts])
 
     def scatter2d(
         self,
