@@ -129,24 +129,50 @@ class Wrapper(L.LightningModule):
         signed_gt_confs: Tensor = confs[:, targets].diag() * signs
         l2_norms: Tensor = outputs.norm(p=2, dim=-1)
 
-        res_dict = {
-            "idx": [int(i) for i in idxs],
-            "gt": [int(g) for g in targets],
-            "pred": [int(p) for p in preds],
-            "loss": [float(l) for l in losses],
-            "conf": [float(c) for c in signed_confs],
-            "gt_conf": [float(gc) for gc in signed_gt_confs],
-            "l2": [float(l2) for l2 in l2_norms],
-        }
-        save_dict_to_csv(
-            dictionary=res_dict,
-            save_dir=_path.join(self.trainer._log_dir, "eval/train"),
-            save_name=f"epoch={self.current_epoch + 1}",
-            index_col="idx",
-            mode="a",
-            write_header=False,
-            filelock=False,
-        )
+        if self.sync_dist:
+            idxs_g = self.all_gather(idxs)
+            losses_g = self.all_gather(losses)
+            preds_g = self.all_gather(preds)
+            targets_g = self.all_gather(targets)
+            signed_confs_g = self.all_gather(signed_confs)
+            signed_gt_confs_g = self.all_gather(signed_gt_confs)
+            l2_norms_g = self.all_gather(l2_norms)
+        else:
+            idxs_g = idxs
+            losses_g = losses
+            preds_g = preds
+            targets_g = targets
+            signed_confs_g = signed_confs
+            signed_gt_confs_g = signed_gt_confs
+            l2_norms_g = l2_norms
+
+        if self.trainer.is_global_zero:
+            idxs_g = idxs_g.view(-1)
+            losses_g = losses_g.view(-1)
+            preds_g = preds_g.view(-1)
+            targets_g = targets_g.view(-1)
+            signed_confs_g = signed_confs_g.view(-1)
+            signed_gt_confs_g = signed_gt_confs_g.view(-1)
+            l2_norms_g = l2_norms_g.view(-1)
+
+            res_dict = {
+                "idx": [int(x) for x in idxs_g],
+                "gt": [int(x) for x in targets_g],
+                "pred": [int(x) for x in preds_g],
+                "loss": [float(x) for x in losses_g],
+                "conf": [float(x) for x in signed_confs_g],
+                "gt_conf": [float(x) for x in signed_gt_confs_g],
+                "l2": [float(x) for x in l2_norms_g],
+            }
+            save_dict_to_csv(
+                dictionary=res_dict,
+                save_dir=_path.join(self.trainer._log_dir, "eval/train"),
+                save_name=f"epoch={self.current_epoch + 1}",
+                index_col="idx",
+                mode="a",
+                write_header=False,
+                filelock=False,
+            )
 
         return losses.mean()
 
@@ -240,24 +266,50 @@ class Wrapper(L.LightningModule):
         signed_gt_confs: Tensor = confs[:, targets].diag() * signs
         l2_norms: Tensor = outputs.norm(p=2, dim=-1)
 
-        res_dict = {
-            "idx": [int(i) for i in idxs],
-            "gt": [int(g) for g in targets],
-            "pred": [int(p) for p in preds],
-            "loss": [float(l) for l in losses],
-            "conf": [float(c) for c in signed_confs],
-            "gt_conf": [float(gc) for gc in signed_gt_confs],
-            "l2": [float(l2) for l2 in l2_norms],
-        }
-        save_dict_to_csv(
-            dictionary=res_dict,
-            save_dir=_path.join(self.trainer._log_dir, "eval/val"),
-            save_name=f"epoch={self.current_epoch + 1}",
-            index_col="idx",
-            mode="a",
-            write_header=False,
-            filelock=False,
-        )
+        if self.sync_dist:
+            idxs_g = self.all_gather(idxs)
+            losses_g = self.all_gather(losses)
+            preds_g = self.all_gather(preds)
+            targets_g = self.all_gather(targets)
+            signed_confs_g = self.all_gather(signed_confs)
+            signed_gt_confs_g = self.all_gather(signed_gt_confs)
+            l2_norms_g = self.all_gather(l2_norms)
+        else:
+            idxs_g = idxs
+            losses_g = losses
+            preds_g = preds
+            targets_g = targets
+            signed_confs_g = signed_confs
+            signed_gt_confs_g = signed_gt_confs
+            l2_norms_g = l2_norms
+
+        if self.trainer.is_global_zero:
+            idxs_g = idxs_g.view(-1)
+            losses_g = losses_g.view(-1)
+            preds_g = preds_g.view(-1)
+            targets_g = targets_g.view(-1)
+            signed_confs_g = signed_confs_g.view(-1)
+            signed_gt_confs_g = signed_gt_confs_g.view(-1)
+            l2_norms_g = l2_norms_g.view(-1)
+
+            res_dict = {
+                "idx": [int(x) for x in idxs_g],
+                "gt": [int(x) for x in targets_g],
+                "pred": [int(x) for x in preds_g],
+                "loss": [float(x) for x in losses_g],
+                "conf": [float(x) for x in signed_confs_g],
+                "gt_conf": [float(x) for x in signed_gt_confs_g],
+                "l2": [float(x) for x in l2_norms_g],
+            }
+            save_dict_to_csv(
+                dictionary=res_dict,
+                save_dir=_path.join(self.trainer._log_dir, "eval/val"),
+                save_name=f"epoch={self.current_epoch + 1}",
+                index_col="idx",
+                mode="a",
+                write_header=False,
+                filelock=False,
+            )
 
         return losses.mean()
 
