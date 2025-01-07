@@ -35,8 +35,8 @@ class Trainer:
         model: Module,
         resume: bool = False,
     ) -> None:
-        train_dataset.set_return_w_index()
-        val_dataset.set_return_w_index()
+        # train_dataset.set_return_w_index()
+        # val_dataset.set_return_w_index()
         train_dataloader: DataLoader = load_dataloader(
             train_dataset, train=True, **self.config
         )

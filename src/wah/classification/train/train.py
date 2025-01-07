@@ -3,7 +3,7 @@ import torch
 from torchmetrics import Accuracy, MeanMetric
 
 from ... import path as _path
-from ...typing import Dict, List, Module, Optional, Path, SummaryWriter, Tensor, Trainer
+from ...typing import Dict, List, Module, Optional, Path, Tensor, Trainer, Union
 from ...utils.dictionary import save_dict_to_csv
 from .criterion import load_criterion
 from .optimizer import load_optimizer
@@ -74,8 +74,26 @@ class Wrapper(L.LightningModule):
             num_classes=self.config["num_classes"],
         )
 
+        # # eval
+        # self.train_res_dict: Dict[str, Union[int, float]] = {
+        #     "gt": [],
+        #     "pred": [],
+        #     "loss": [],
+        #     "conf": [],
+        #     "gt_conf": [],
+        #     "l2": [],
+        # }
+        # self.val_res_dict: Dict[str, Union[int, float]] = {
+        #     "gt": [],
+        #     "pred": [],
+        #     "loss": [],
+        #     "conf": [],
+        #     "gt_conf": [],
+        #     "l2": [],
+        # }
+
         # grad_l2
-        self.grad_l2_dict: Dict[str, List[Tensor]] = {}
+        self.grad_l2_dict: Dict[str, List[float]] = {}
         for i, (layer, _) in enumerate(self.model.named_parameters()):
             self.grad_l2_dict[f"{i}_{layer}"] = []
 
@@ -93,25 +111,47 @@ class Wrapper(L.LightningModule):
 
     def on_train_epoch_start(self):
         if self.trainer.is_global_zero:
+            # eval
+            # self.train_res_dict: Dict[str, Union[int, float]] = {
+            #     "gt": [],
+            #     "pred": [],
+            #     "loss": [],
+            #     "conf": [],
+            #     "gt_conf": [],
+            #     "l2": [],
+            # }
             save_dict_to_csv(
                 dictionary={
                     key: []
-                    for key in ["idx", "gt", "pred", "loss", "conf", "gt_conf", "l2"]
+                    for key in [
+                        # "idx",
+                        "gt",
+                        "pred",
+                        "loss",
+                        "conf",
+                        "gt_conf",
+                        "l2",
+                    ]
                 },
                 save_dir=_path.join(self.trainer._log_dir, "eval/train"),
                 save_name=f"epoch={self.current_epoch + 1}",
-                index_col="idx",
+                # index_col="idx",
                 mode="w",
                 write_header=True,
                 filelock=False,
             )
 
+            # grad_l2
+            for i, (layer, _) in enumerate(self.model.named_parameters()):
+                self.grad_l2_dict[f"{i}_{layer}"] = []
+
     def training_step(self, batch, batch_idx):
-        idxs: Tensor
+        # idxs: Tensor
         data: Tensor
         targets: Tensor
 
-        idxs, (data, targets) = batch
+        # idxs, (data, targets) = batch
+        data, targets = batch
 
         outputs: Tensor = self.model(data)
         losses: Tensor = self.train_criterion(outputs, targets)
@@ -130,7 +170,7 @@ class Wrapper(L.LightningModule):
         l2_norms: Tensor = outputs.norm(p=2, dim=-1)
 
         if self.sync_dist:
-            idxs_g = self.all_gather(idxs)
+            # idxs_g = self.all_gather(idxs)
             losses_g = self.all_gather(losses)
             preds_g = self.all_gather(preds)
             targets_g = self.all_gather(targets)
@@ -138,7 +178,7 @@ class Wrapper(L.LightningModule):
             signed_gt_confs_g = self.all_gather(signed_gt_confs)
             l2_norms_g = self.all_gather(l2_norms)
         else:
-            idxs_g = idxs
+            # idxs_g = idxs
             losses_g = losses
             preds_g = preds
             targets_g = targets
@@ -147,7 +187,7 @@ class Wrapper(L.LightningModule):
             l2_norms_g = l2_norms
 
         if self.trainer.is_global_zero:
-            idxs_g = idxs_g.view(-1)
+            # idxs_g = idxs_g.view(-1)
             losses_g = losses_g.view(-1)
             preds_g = preds_g.view(-1)
             targets_g = targets_g.view(-1)
@@ -156,7 +196,7 @@ class Wrapper(L.LightningModule):
             l2_norms_g = l2_norms_g.view(-1)
 
             res_dict = {
-                "idx": [int(x) for x in idxs_g],
+                # "idx": [int(x) for x in idxs_g],
                 "gt": [int(x) for x in targets_g],
                 "pred": [int(x) for x in preds_g],
                 "loss": [float(x) for x in losses_g],
@@ -164,11 +204,15 @@ class Wrapper(L.LightningModule):
                 "gt_conf": [float(x) for x in signed_gt_confs_g],
                 "l2": [float(x) for x in l2_norms_g],
             }
+            # self.train_res_dict = {
+            #     key: self.train_res_dict.get(key, []) + res_dict.get(key, [])
+            #     for key in self.train_res_dict.keys() | res_dict.keys()
+            # }
             save_dict_to_csv(
                 dictionary=res_dict,
                 save_dir=_path.join(self.trainer._log_dir, "eval/train"),
                 save_name=f"epoch={self.current_epoch + 1}",
-                index_col="idx",
+                # index_col="idx",
                 mode="a",
                 write_header=False,
                 filelock=False,
@@ -180,7 +224,7 @@ class Wrapper(L.LightningModule):
         # track: grad_l2
         for i, (layer, param) in enumerate(self.model.named_parameters()):
             grad_l2 = torch.norm(param.grad.flatten(), p=2)
-            self.grad_l2_dict[f"{i}_{layer}"].append(grad_l2.view(1))
+            self.grad_l2_dict[f"{i}_{layer}"] += [float(l) for l in grad_l2.view(1)]
 
     def on_train_epoch_end(self) -> None:
         current_epoch = self.current_epoch + 1
@@ -196,59 +240,78 @@ class Wrapper(L.LightningModule):
         self.log("train/avg_loss", self.train_loss, sync_dist=self.sync_dist)
         self.log("train/acc@1", self.train_acc, sync_dist=self.sync_dist)
 
-        # log: histograms
-        tensorboard: SummaryWriter = self.logger.experiment
-        tag = self.trainer.logger.name
+        if self.trainer.is_global_zero:
+            # # log: eval
+            # save_dict_to_csv(
+            #     dictionary=self.train_res_dict,
+            #     save_dir=_path.join(self.trainer._log_dir, "eval/train"),
+            #     save_name=f"epoch={self.current_epoch + 1}",
+            #     # index_col="idx",
+            #     mode="w",
+            #     write_header=True,
+            #     filelock=False,
+            # )
 
-        # log: grad_l2
-        for layer, grad_l2 in self.grad_l2_dict.items():
-            grad_l2 = torch.cat(grad_l2)
-            tensorboard.add_histogram(
-                tag=f"grad_l2/{tag}/{layer}",
-                values=grad_l2,
-                global_step=current_epoch,
+            # log: grad_l2
+            save_dict_to_csv(
+                dictionary=self.grad_l2_dict,
+                save_dir=_path.join(self.trainer._log_dir, "grad_l2"),
+                save_name=f"epoch={self.current_epoch + 1}",
+                mode="w",
+                write_header=True,
+                filelock=False,
             )
-            self.grad_l2_dict[layer].clear()  # reset
+            self.grad_l2_dict = {}
 
-        # log: params
-        for i, (layer, param) in enumerate(self.model.named_parameters()):
-            tensorboard.add_histogram(
-                tag=f"params/{tag}/{i}_{layer}",
-                values=param.flatten(),
-                global_step=current_epoch,
-            )
-
-        # save checkpoint
-        if "save_per_epoch" in self.config.keys():
-            if (current_epoch + 1) % self.config["save_per_epoch"] == 0:
-                ckpt_dir = _path.join(self.trainer._log_dir, "checkpoints")
-                _path.mkdir(ckpt_dir)
-                torch.save(
-                    self.model.state_dict(),
-                    _path.join(ckpt_dir, f"epoch={current_epoch}.ckpt"),
-                )
+            # save checkpoint
+            if "save_per_epoch" in self.config.keys():
+                if (current_epoch + 1) % self.config["save_per_epoch"] == 0:
+                    ckpt_dir = _path.join(self.trainer._log_dir, "checkpoints")
+                    _path.mkdir(ckpt_dir)
+                    torch.save(
+                        self.model.state_dict(),
+                        _path.join(ckpt_dir, f"epoch={current_epoch}.ckpt"),
+                    )
 
     def on_validation_epoch_start(self):
         if self.trainer.is_global_zero:
+            # eval
+            # self.val_res_dict: Dict[str, Union[int, float]] = {
+            #     "gt": [],
+            #     "pred": [],
+            #     "loss": [],
+            #     "conf": [],
+            #     "gt_conf": [],
+            #     "l2": [],
+            # }
             save_dict_to_csv(
                 dictionary={
                     key: []
-                    for key in ["idx", "gt", "pred", "loss", "conf", "gt_conf", "l2"]
+                    for key in [
+                        # "idx",
+                        "gt",
+                        "pred",
+                        "loss",
+                        "conf",
+                        "gt_conf",
+                        "l2",
+                    ]
                 },
                 save_dir=_path.join(self.trainer._log_dir, "eval/val"),
                 save_name=f"epoch={self.current_epoch + 1}",
-                index_col="idx",
+                # index_col="idx",
                 mode="w",
                 write_header=True,
                 filelock=False,
             )
 
     def validation_step(self, batch, batch_idx):
-        idxs: Tensor
+        # idxs: Tensor
         data: Tensor
         targets: Tensor
 
-        idxs, (data, targets) = batch
+        # idxs, (data, targets) = batch
+        data, targets = batch
 
         outputs: Tensor = self.model(data)
         losses: Tensor = self.val_criterion(outputs, targets)
@@ -267,7 +330,7 @@ class Wrapper(L.LightningModule):
         l2_norms: Tensor = outputs.norm(p=2, dim=-1)
 
         if self.sync_dist:
-            idxs_g = self.all_gather(idxs)
+            # idxs_g = self.all_gather(idxs)
             losses_g = self.all_gather(losses)
             preds_g = self.all_gather(preds)
             targets_g = self.all_gather(targets)
@@ -275,7 +338,7 @@ class Wrapper(L.LightningModule):
             signed_gt_confs_g = self.all_gather(signed_gt_confs)
             l2_norms_g = self.all_gather(l2_norms)
         else:
-            idxs_g = idxs
+            # idxs_g = idxs
             losses_g = losses
             preds_g = preds
             targets_g = targets
@@ -284,7 +347,7 @@ class Wrapper(L.LightningModule):
             l2_norms_g = l2_norms
 
         if self.trainer.is_global_zero:
-            idxs_g = idxs_g.view(-1)
+            # idxs_g = idxs_g.view(-1)
             losses_g = losses_g.view(-1)
             preds_g = preds_g.view(-1)
             targets_g = targets_g.view(-1)
@@ -293,7 +356,7 @@ class Wrapper(L.LightningModule):
             l2_norms_g = l2_norms_g.view(-1)
 
             res_dict = {
-                "idx": [int(x) for x in idxs_g],
+                # "idx": [int(x) for x in idxs_g],
                 "gt": [int(x) for x in targets_g],
                 "pred": [int(x) for x in preds_g],
                 "loss": [float(x) for x in losses_g],
@@ -301,17 +364,19 @@ class Wrapper(L.LightningModule):
                 "gt_conf": [float(x) for x in signed_gt_confs_g],
                 "l2": [float(x) for x in l2_norms_g],
             }
+            # self.val_res_dict = {
+            #     key: self.val_res_dict.get(key, []) + res_dict.get(key, [])
+            #     for key in self.val_res_dict.keys() | res_dict.keys()
+            # }
             save_dict_to_csv(
                 dictionary=res_dict,
                 save_dir=_path.join(self.trainer._log_dir, "eval/val"),
                 save_name=f"epoch={self.current_epoch + 1}",
-                index_col="idx",
+                # index_col="idx",
                 mode="a",
                 write_header=False,
                 filelock=False,
             )
-
-        return losses.mean()
 
     def on_validation_epoch_end(self) -> None:
         current_epoch = self.current_epoch + 1
@@ -322,6 +387,18 @@ class Wrapper(L.LightningModule):
         # log: loss, acc@1
         self.log("val/avg_loss", self.val_loss, sync_dist=self.sync_dist)
         self.log("val/acc@1", self.val_acc, sync_dist=self.sync_dist)
+
+        # if self.trainer.is_global_zero:
+        #     # log: eval
+        #     save_dict_to_csv(
+        #         dictionary=self.val_res_dict,
+        #         save_dir=_path.join(self.trainer._log_dir, "eval/val"),
+        #         save_name=f"epoch={self.current_epoch + 1}",
+        #         # index_col="idx",
+        #         mode="w",
+        #         write_header=True,
+        #         filelock=False,
+        #     )
 
 
 def load_trainer(
