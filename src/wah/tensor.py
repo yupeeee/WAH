@@ -4,6 +4,7 @@ from .typing import Sequence, Tensor, Union
 
 __all__ = [
     "broadcasted_elementwise_mul",
+    "clean",
     "create_1d_traj",
     "create_2d_grid",
     "flatten_batch",
@@ -37,6 +38,23 @@ def broadcasted_elementwise_mul(
     vec = vec.view(*mat_shape)
 
     return mat * vec
+
+
+def clean(
+    x: Tensor,
+) -> Tensor:
+    # Replace NaN with 0
+    x[torch.isnan(x)] = 0
+
+    # Replace positive inf with the maximum finite value
+    max_value = torch.finfo(x.dtype).max
+    x[torch.isposinf(x)] = max_value
+
+    # Replace negative inf with the minimum finite value (optional, for symmetry)
+    min_value = torch.finfo(x.dtype).min
+    x[torch.isneginf(x)] = min_value
+
+    return x
 
 
 def create_1d_traj(

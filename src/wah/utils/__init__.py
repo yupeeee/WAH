@@ -13,6 +13,9 @@ from .download import (
     download_url,
     md5_check,
 )
+from .gif import (
+    make_gif,
+)
 from .logs import (
     disable_lightning_logging,
 )
@@ -48,6 +51,8 @@ __all__ = [
     "disable_ssl_verification",
     "download_url",
     "md5_check",
+    # gif
+    "make_gif",
     # logs
     "disable_lightning_logging",
     # lst

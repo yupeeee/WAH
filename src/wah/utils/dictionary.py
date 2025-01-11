@@ -15,6 +15,18 @@ __all__ = [
 ]
 
 
+def format_column(col):
+    if col.dtypes == "float":
+        return col.map("{:.10f}".format)  # Adjust decimals as needed
+    return col  # Leave other types unchanged
+
+
+def clean_df(
+    df: DataFrame,
+) -> DataFrame:
+    return df.apply(format_column)
+
+
 def dict_to_df(
     dictionary: Dict,
     index_col: Any = None,
@@ -30,6 +42,7 @@ def dict_to_df(
     - `DataFrame`: Pandas DataFrame created from the input dictionary.
     """
     df = pd.DataFrame(dictionary)
+    df = clean_df(df)
 
     if index_col is not None:
         df.set_index(index_col)
@@ -59,19 +72,25 @@ def dict_to_tensor(
 
 def load_csv_to_dict(
     csv_path: Path,
-    index_col: Any = 0,
+    index_col: Any = None,
+    **kwargs,
 ) -> Dict[Any, List[Any]]:
     """
     Loads a CSV file and converts it into a dictionary.
 
     ### Parameters
     - `csv_path` (Path): Path to the CSV file to load.
-    - `index_col` (Any, optional): Column to set as the index. Defaults to `0`.
+    - `index_col` (Any, optional): Column to set as the index. Defaults to `None`.
+    - `**kwargs`: Additional keyword arguments passed to `pandas.read_csv`.
 
     ### Returns
     - `Dict[Any, List[Any]]`: Dictionary created from the CSV file where keys are column headers and values are lists of column data.
     """
-    df = pd.read_csv(csv_path, index_col=index_col)
+    df: DataFrame = pd.read_csv(
+        csv_path,
+        index_col=index_col,
+        **kwargs,
+    )
 
     return df.to_dict(orient="list")
 
