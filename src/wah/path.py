@@ -47,7 +47,7 @@ def clean(
     ### Returns
     - `Path`: The cleaned file path.
     """
-    return os.path.normpath(path)
+    return os.path.normpath(os.path.expanduser(path))
 
 
 def dirname(
