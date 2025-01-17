@@ -47,7 +47,15 @@ def clean(
     ### Returns
     - `Path`: The cleaned file path.
     """
-    return os.path.normpath(os.path.expanduser(path))
+    # Check if the path starts with './' and normalize the path
+    is_current_dir = path.startswith("./")
+    normalized_path = os.path.normpath(os.path.expanduser(path))
+
+    # Restore './' if it was initially present
+    if is_current_dir and not normalized_path.startswith("./"):
+        normalized_path = os.path.join(".", normalized_path)
+
+    return normalized_path
 
 
 def dirname(
