@@ -1,7 +1,7 @@
 import torch
 
-from ...typing import List, Module, Optional, RemovableHandle, Sequence, Tuple
 from ...module import _getattr, get_attrs, get_module_name
+from ...typing import Dict, List, Module, Optional, RemovableHandle, Sequence, Tuple
 
 __all__ = [
     "summary",
@@ -24,22 +24,28 @@ def summary(
     )
 
     hooks: List[RemovableHandle] = []
-    module_names: List[str] = []
-    input_shapes: List[Tuple] = []
-    output_shapes: List[Tuple] = []
+    model_summary = Dict[
+        str,
+        Tuple[
+            Tuple[int, int, int, int],
+            Tuple[int, int, int, int],
+        ],
+    ]
 
     def hook_fn(module, input, output):
         # module
-        module_names.append(get_module_name(module))
+        module_name = get_module_name(module)
 
         # input
         if isinstance(input, tuple):
-            input_shapes.append(tuple([tuple(i.shape) for i in input]))
-        else:
-            input_shapes.append(tuple(input.shape))
+            assert len(input) == 1
+            input = input[0]
+        input_shape = tuple(input.shape)
 
         # output
-        output_shapes.append(tuple(output.shape))
+        output_shape = tuple(output.shape)
+
+        model_summary[module_name] = [input_shape, output_shape]
 
     for attr in attrs:
         hook_handle: RemovableHandle = _getattr(model, attr).register_forward_hook(
@@ -52,6 +58,10 @@ def summary(
 
     for hook_handle in hooks:
         hook_handle.remove()
+
+    module_names = list(model_summary.keys())
+    input_shapes = [model_summary[module_name][0] for module_name in module_names]
+    output_shapes = [model_summary[module_name][1] for module_name in module_names]
 
     # width (+3: +2 for brackets, +1 for spacing)
     idx_width = len(str(len(attrs) - 1)) + 3
@@ -78,3 +88,5 @@ def summary(
     # print #params
     num_params = sum(p.numel() for p in model.parameters())
     print(f"#params: {num_params}")
+
+    return model_summary

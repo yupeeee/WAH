@@ -26,7 +26,7 @@ def load_dataloader(
         cutmix_alpha=cutmix_alpha,
         num_classes=num_classes,
     )
-    if mixup_cutmix is not None:
+    if train and mixup_cutmix is not None:
 
         def collate_fn(batch):
             return mixup_cutmix(*default_collate(batch))

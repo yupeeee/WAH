@@ -4,6 +4,7 @@ from .typing import Any, Dict, List, Module, Optional, Tuple
 
 __all__ = [
     "_getattr",
+    "_setattr",
     "get_attrs",
     "get_module_name",
     "get_module_params",
@@ -36,6 +37,34 @@ def _getattr(
             else:
                 module = getattr(module, a)
         return module
+    except AttributeError:
+        raise
+
+
+def _setattr(
+    module: Module,
+    attr: str,
+    new_module: Module,
+) -> None:
+    """
+    Sets a nested attribute in a module.
+
+    ### Parameters
+    - `module` (Module): The module in which to set the attribute.
+    - `attr` (str): The attribute string, which can include nested attributes separated by dots.
+    - `new_module` (Module): The new module to set for the specified attribute.
+
+    ### Raises
+    - `AttributeError`: If the attribute cannot be set.
+    """
+    try:
+        *attrs, final_attr = attr.split(".")
+        for a in attrs:
+            if a.isnumeric():
+                module = module[int(a)]
+            else:
+                module = getattr(module, a)
+        setattr(module, final_attr, new_module)
     except AttributeError:
         raise
 
