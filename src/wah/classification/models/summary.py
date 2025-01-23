@@ -24,13 +24,13 @@ def summary(
     )
 
     hooks: List[RemovableHandle] = []
-    model_summary = Dict[
+    model_summary: Dict[
         str,
         Tuple[
             Tuple[int, int, int, int],
             Tuple[int, int, int, int],
         ],
-    ]
+    ] = {}
 
     def hook_fn(module, input, output):
         # module
