@@ -1,6 +1,6 @@
 from torch import optim
 
-from ...typing import Module, Optimizer
+from ...misc.typing import Module, Optimizer
 
 __all__ = [
     "load_optimizer",
@@ -11,19 +11,19 @@ def load_optimizer(
     model: Module,
     **kwargs,
 ) -> Optimizer:
-    assert "optimizer" in kwargs.keys()
-    assert "init_lr" in kwargs.keys()
-
-    optimizer: Optimizer = getattr(optim, kwargs.get("optimizer"))
-
+    if "optimizer" not in kwargs:
+        raise ValueError("'optimizer' must be specified.")
+    if "init_lr" not in kwargs:
+        raise ValueError("'init_lr' must be specified.")
+    optimizer_name = kwargs["optimizer"]
+    if not hasattr(optim, optimizer_name):
+        raise ValueError(
+            f"Invalid optimizer '{optimizer_name}'. Must be a valid torch.optim optimizer."
+        )
     optimizer_cfg = {
         "params": model.parameters(),
-        "lr": kwargs.get("init_lr"),
+        "lr": kwargs["init_lr"],
     }
-
-    if "optimizer_cfg" in kwargs.keys():
-        optimizer_cfg = {**optimizer_cfg, **kwargs.get("optimizer_cfg")}
-
-    optimizer = optimizer(**optimizer_cfg)
-
-    return optimizer
+    if "optimizer_cfg" in kwargs:
+        optimizer_cfg.update(kwargs["optimizer_cfg"])
+    return getattr(optim, optimizer_name)(**optimizer_cfg)

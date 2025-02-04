@@ -1,6 +1,6 @@
-from .calibration import ece
+from .calibration import brier_score, ece
 
 __all__ = [
-    # calibration
+    "brier_score",
     "ece",
 ]

@@ -4,8 +4,8 @@ import numpy as np
 from PIL import Image
 from torchvision.transforms import Normalize
 
-from ... import path as _path
-from ...typing import Callable, Literal, Optional, Path, Union
+from ...misc import path as _path
+from ...misc.typing import Callable, Literal, Optional, Path, Union
 from .base import ClassificationDataset
 from .transforms import ClassificationPresetEval, ClassificationPresetTrain, DeNormalize
 
@@ -15,36 +15,43 @@ __all__ = [
 
 
 class CIFAR10(ClassificationDataset):
-    """
-    [CIFAR-10](https://www.cs.toronto.edu/~kriz/cifar.html) dataset.
+    """[CIFAR-10](https://www.cs.toronto.edu/~kriz/cifar.html) Dataset.
+
+    ### Args
+        - `root` (Path): Root directory where the dataset exists or will be saved to.
+        - `split` (Literal["train", "test"]): The dataset split; supports "train" (default), and "test".
+        - `transform` (Union[Optional[Callable], Literal["auto", "tt", "train", "test"]]): A function/transform that takes in the data and transforms it.
+          Supports "auto", "tt", "train", "test", and None (default).
+          - "auto": Automatically initializes the transform based on the dataset type and `split`.
+          - "tt": Converts data into a tensor image.
+          - "train": Transform to use in the train stage.
+          - "test": Transform to use in the test stage.
+          - None (default): No transformation is applied.
+        - `target_transform` (Union[Optional[Callable], Literal["auto"]]): A function/transform that takes in the target and transforms it.
+          Supports "auto", and None (default).
+          - "auto": Automatically initializes the transform based on the dataset type and `split`.
+          - None (default): No transformation is applied.
+        - `download` (bool): If True, downloads the dataset from the internet and puts it into the `root` directory.
+          If the dataset is already downloaded, it is not downloaded again.
 
     ### Attributes
-    - `root` (Path): Root directory where the dataset exists or will be saved to.
-    - `transform` (Callable, optional): A function/transform that takes in the data and transforms it. Defaults to None.
-    - `target_transform` (Callable, optional): A function/transform that takes in the target and transforms it. Defaults to None.
-    - `data`: Data of the dataset.
-    - `targets`: Targets of the dataset.
-    - `labels`: Labels of the dataset.
-    - `MEAN` (list): Mean of dataset; [0.4914, 0.4822, 0.4465].
-    - `STD` (list): Standard deviation of dataset; [0.2470, 0.2435, 0.2616].
-    - `NORMALIZE` (callable): Transform for dataset normalization.
-    - `DENORMALIZE` (callable): Transform for dataset denormalization.
-
-    ### Methods
-    - `__getitem__(index) -> Tuple[Any, Any]`: Returns (data, target) of dataset using the specified index.
-    - `__len__() -> int`: Returns the size of the dataset.
-    - `set_return_data_only() -> None`: Sets the flag to return only data without targets.
-    - `unset_return_data_only() -> None`: Unsets the flag to return only data without targets.
-    - `set_return_w_index() -> None`: Sets the flag to return data with index.
-    - `unset_return_w_index() -> None`: Unsets the flag to return data with index.
+        - `root` (Path): Root directory where the dataset exists or will be saved to.
+        - `transform` (Callable, optional): A function/transform that takes in the data and transforms it. Defaults to None.
+        - `target_transform` (Callable, optional): A function/transform that takes in the target and transforms it. Defaults to None.
+        - `data`: Data of the dataset.
+        - `targets`: Targets of the dataset.
+        - `labels`: Labels of the dataset.
+        - `MEAN` (List[float]): Channel-wise mean for normalization
+        - `STD` (List[float]): Channel-wise std for normalization
+        - `NORMALIZE` (Normalize): Normalization transform
+        - `DENORMALIZE` (DeNormalize): De-normalization transform
 
     ### Example
     ```python
-    import wah
-
-    dataset = wah.datasets.CIFAR10(root="path/to/dataset")
-    data, target = dataset[0]
-    num_data = len(dataset)
+    >>> dataset = CIFAR10("path/to/dataset", split="train", transform="auto")
+    >>> len(dataset)  # Get dataset size
+    50000
+    >>> data, target = dataset[0]  # Get first sample and target
     ```
     """
 
@@ -52,7 +59,6 @@ class CIFAR10(ClassificationDataset):
         "https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz",
     ]
     ROOT = _path.clean("./datasets/cifar10")
-
     ZIP_LIST = [
         ("cifar-10-python.tar.gz", "c58f30108f718f92721af3b95e74349a"),
     ]
@@ -69,7 +75,6 @@ class CIFAR10(ClassificationDataset):
     META_LIST = [
         ("cifar-10-batches-py/batches.meta", "5ff9c542aee3614f3951f8cda6e48888"),
     ]
-
     MEAN = [0.4914, 0.4822, 0.4465]
     STD = [0.2470, 0.2435, 0.2616]
     NORMALIZE = Normalize(MEAN, STD)
@@ -95,15 +100,10 @@ class CIFAR10(ClassificationDataset):
             Optional[Callable],
             Literal["auto",],
         ] = None,
-        return_data_only: Optional[bool] = False,
-        return_w_index: Optional[bool] = False,
         download: bool = False,
         **kwargs,
     ) -> None:
         """
-        Initialize the CIFAR-10 dataset.
-
-        ### Parameters
         - `root` (Path): Root directory where the dataset exists or will be saved to.
         - `split` (Literal["train", "test"]): The dataset split; supports "train" (default), and "test".
         - `transform` (Union[Optional[Callable], Literal["auto", "tt", "train", "test"]]): A function/transform that takes in the data and transforms it.
@@ -117,8 +117,6 @@ class CIFAR10(ClassificationDataset):
           Supports "auto", and None (default).
           - "auto": Automatically initializes the transform based on the dataset type and `split`.
           - None (default): No transformation is applied.
-        - `return_data_only` (Optional[bool]): Whether to return only data without targets. Defaults to False.
-        - `return_w_index` (Optional[bool]): Whether to return data with index. Defaults to False.
         - `download` (bool): If True, downloads the dataset from the internet and puts it into the `root` directory.
           If the dataset is already downloaded, it is not downloaded again.
         """
@@ -126,23 +124,19 @@ class CIFAR10(ClassificationDataset):
             root,
             transform,
             target_transform,
-            return_data_only,
-            return_w_index,
         )
 
+        # checklist
         self.checklist = []
-
         self.checklist += self.ZIP_LIST
-
         if split == "train":
             self.checklist += self.TRAIN_LIST
-
         elif split == "test":
             self.checklist += self.TEST_LIST
-
         else:
             raise ValueError(f"split must be one of ['train', 'test'], got {split}")
 
+        # transform
         if self.transform == "auto" and split == "train" or self.transform == "train":
             kwargs.update({"mean": self.MEAN, "std": self.STD})
             self.transform = ClassificationPresetTrain(**kwargs)
@@ -154,16 +148,18 @@ class CIFAR10(ClassificationDataset):
         else:
             pass
 
+        # target_transform
         if self.target_transform == "auto":
             self.target_transform = None
         else:
             pass
 
+        # download
         if download:
             self._download(
                 urls=self.URLS,
                 checklist=self.checklist + self.META_LIST,
-                ext_dir_name=".",
+                extract_dir=".",
             )
 
         self._initialize()
@@ -171,12 +167,6 @@ class CIFAR10(ClassificationDataset):
     def _initialize(
         self,
     ) -> None:
-        """
-        Initializes the CIFAR-10 dataset.
-
-        ### Returns
-        - `None`
-        """
         self.data = []
         self.targets = []
 
@@ -205,13 +195,4 @@ class CIFAR10(ClassificationDataset):
         self,
         data: np.ndarray,
     ) -> Image.Image:
-        """
-        Preprocesses the data.
-
-        ### Parameters
-        - `data` (np.ndarray): The data to preprocess.
-
-        ### Returns
-        - `Image.Image`: The preprocessed data.
-        """
         return Image.fromarray(data)

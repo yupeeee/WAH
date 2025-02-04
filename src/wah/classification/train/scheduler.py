@@ -1,6 +1,6 @@
 from torch.optim import lr_scheduler as _lr_scheduler
 
-from ...typing import LRScheduler, Optimizer
+from ...misc.typing import LRScheduler, Optimizer
 
 __all__ = [
     "load_scheduler",
@@ -11,42 +11,38 @@ def load_scheduler(
     optimizer: Optimizer,
     **kwargs,
 ) -> LRScheduler:
-    assert "epochs" in kwargs.keys()
-
-    if "warmup_lr_scheduler" in kwargs.keys():
-        warmup_epochs = kwargs.get("warmup_lr_scheduler_cfg")["total_iters"]
-        warmup_lr_scheduler = getattr(_lr_scheduler, kwargs.get("warmup_lr_scheduler"))(
-            optimizer=optimizer,
-            **kwargs.get("warmup_lr_scheduler_cfg"),
+    if "epochs" not in kwargs:
+        raise ValueError("'epochs' must be specified.")
+    warmup_scheduler_name = kwargs.get("warmup_lr_scheduler")
+    warmup_scheduler_cfg = kwargs.get("warmup_lr_scheduler_cfg", {})
+    main_scheduler_name = kwargs.get("lr_scheduler")
+    main_scheduler_cfg = kwargs.get("lr_scheduler_cfg", {})
+    # Configure warmup scheduler if specified
+    if warmup_scheduler_name:
+        warmup_epochs = warmup_scheduler_cfg["total_iters"]
+        warmup_scheduler = getattr(_lr_scheduler, warmup_scheduler_name)(
+            optimizer=optimizer, **warmup_scheduler_cfg
         )
     else:
         warmup_epochs = 0
-        warmup_lr_scheduler = None
-
-    if "lr_scheduler" in kwargs.keys():
-        if kwargs.get("lr_scheduler") == "CosineAnnealingLR":
-            kwargs["lr_scheduler_cfg"]["T_max"] = kwargs.get("epochs") - warmup_epochs
-
-        main_lr_scheduler: LRScheduler = getattr(
-            _lr_scheduler, kwargs.get("lr_scheduler")
-        )(
-            optimizer=optimizer,
-            **kwargs.get("lr_scheduler_cfg"),
+        warmup_scheduler = None
+    # Configure main scheduler
+    if main_scheduler_name:
+        if main_scheduler_name == "CosineAnnealingLR":
+            main_scheduler_cfg["T_max"] = kwargs["epochs"] - warmup_epochs
+        main_scheduler = getattr(_lr_scheduler, main_scheduler_name)(
+            optimizer=optimizer, **main_scheduler_cfg
         )
     else:
-        main_lr_scheduler: LRScheduler = _lr_scheduler.StepLR(
-            optimizer=optimizer,
-            step_size=kwargs.get("epochs"),
-            gamma=1.0,
+        # Default to constant learning rate if no scheduler specified
+        main_scheduler = _lr_scheduler.StepLR(
+            optimizer=optimizer, step_size=kwargs["epochs"], gamma=1.0
         )
-
-    if warmup_lr_scheduler is not None:
-        lr_scheduler = _lr_scheduler.SequentialLR(
+    # Combine schedulers if using warmup
+    if warmup_scheduler:
+        return _lr_scheduler.SequentialLR(
             optimizer=optimizer,
-            schedulers=[warmup_lr_scheduler, main_lr_scheduler],
-            milestones=[kwargs.get("warmup_lr_scheduler_cfg")["total_iters"]],
+            schedulers=[warmup_scheduler, main_scheduler],
+            milestones=[warmup_scheduler_cfg["total_iters"]],
         )
-    else:
-        lr_scheduler = main_lr_scheduler
-
-    return lr_scheduler
+    return main_scheduler

@@ -1,12 +1,12 @@
 from timm.layers import LayerNorm2d
 from torch import nn
 
-from ....module import get_module_name
-from ....typing import Module, Optional, Sequence, Tensor
+from ....misc.mods import getname
+from ....misc.typing import Module, Optional, Sequence, Tensor
 
 __all__ = [
-    "replace_bn_with_ln",
-    "replace_ln_with_bn",
+    "bn_with_ln",
+    "ln_with_bn",
 ]
 
 
@@ -42,7 +42,21 @@ class PermuteWrapper(nn.Module):
         return x
 
 
-def replace_bn_with_ln(model: Module) -> Module:
+def bn_with_ln(model: Module) -> Module:
+    """Replace batch normalization with layer normalization in a model.
+
+    ### Args
+        - `model` (Module): Model to replace batch normalization with layer normalization
+
+    ### Returns
+        - `Module`: Model with batch normalization replaced with layer normalization
+
+    ### Example
+    ```python
+    >>> model = torchvision.models.resnet18()
+    >>> model = bn_with_ln(model)
+    ```
+    """
     for name, module in model.named_children():
         if isinstance(module, nn.BatchNorm2d):
             num_features = module.num_features
@@ -62,12 +76,26 @@ def replace_bn_with_ln(model: Module) -> Module:
             )
             setattr(model, name, layer_norm)
         else:
-            replace_bn_with_ln(module)
+            bn_with_ln(module)
 
     return model
 
 
-def replace_ln_with_bn(model: Module) -> Module:
+def ln_with_bn(model: Module) -> Module:
+    """Replace layer normalization with batch normalization in a model.
+
+    ### Args
+        - `model` (Module): Model to replace layer normalization with batch normalization
+
+    ### Returns
+        - `Module`: Model with layer normalization replaced with batch normalization
+
+    ### Example
+    ```python
+    >>> model = torchvision.models.vit_b_16()
+    >>> model = ln_with_bn(model)
+    ```
+    """
     for name, module in model.named_children():
         if isinstance(module, nn.LayerNorm):
             normalized_shape = module.normalized_shape
@@ -80,11 +108,11 @@ def replace_ln_with_bn(model: Module) -> Module:
                 eps=eps,
                 affine=elementwise_affine,
             )
-            if get_module_name(module) == "LayerNorm2d":
+            if getname(module) == "LayerNorm2d":
                 setattr(model, name, batch_norm)
             else:
                 setattr(model, name, PermuteWrapper(batch_norm, (0, 3, 1, 2), 1))
         else:
-            replace_ln_with_bn(module)
+            ln_with_bn(module)
 
     return model

@@ -1,9 +1,8 @@
 from torch.utils.data import Dataset
 
-from ... import path as _path
-from ...typing import Any, Callable, List, Optional, Path, Tuple
-from ...utils.download import download_url, md5_check
-from ...utils.zip import extract
+from ... import utils
+from ...misc import path as _path
+from ...misc.typing import Any, Callable, List, Optional, Path, Tuple
 
 __all__ = [
     "ClassificationDataset",
@@ -11,28 +10,28 @@ __all__ = [
 
 
 class ClassificationDataset(Dataset):
-    """
-    Dataset for classification tasks.
+    """Base class for classification datasets.
+
+    ### Args
+        - `root` (Path): Root directory containing the dataset
+        - `transform` (Optional[Callable]): Optional transform to be applied to the data
+        - `target_transform` (Optional[Callable]): Optional transform to be applied to the targets
 
     ### Attributes
-    - `root` (Path): Root directory where the dataset exists or will be saved to.
-    - `transform` (Callable, optional): A function/transform that takes in the data (PIL image, numpy.ndarray, etc.) and transforms it. Defaults to None.
-    - `target_transform` (Callable, optional): A function/transform that takes in the target (int, etc.) and transforms it. Defaults to None.
-    - `data`: Data of the dataset (numpy.ndarray, torch.Tensor, list of paths to data, etc.). Must be initialized through `self._initialize()`.
-    - `targets`: Targets of the dataset (numpy.ndarray, torch.Tensor, list of ints, etc.). Must be initialized through `self._initialize()`.
-    - `labels`: Labels of the dataset (list of str labels, dict[class_idx -> label], etc.). Must be initialized through `self._initialize()`.
+        - `root` (Path): Root directory containing the dataset
+        - `transform` (Optional[Callable]): Transform applied to the data
+        - `target_transform` (Optional[Callable]): Transform applied to the targets
+        - `data` (Any): Dataset samples, initialized in _initialize()
+        - `targets` (Any): Dataset targets, initialized in _initialize()
+        - `labels` (List[str]): List of class labels, initialized in _initialize()
 
-    ### Methods
-    - `__getitem__(index) -> Tuple[Any, Any]`: Returns (data, target) of dataset using the specified index.
-    - `__len__() -> int`: Returns the size of the dataset.
-    - `_check(checklist, dataset_root) -> bool`: Checks if the dataset exists and is valid.
-    - `_download(urls, checklist, ext_dir_name) -> None`: Downloads and extracts the dataset.
-    - `_initialize() -> None`: Initializes the dataset. Must be implemented by subclasses.
-    - `_preprocess_data(data) -> Any`: Preprocesses the data. Must be implemented by subclasses.
-    - `set_return_data_only() -> None`: Sets the flag to return only data without targets.
-    - `unset_return_data_only() -> None`: Unsets the flag to return only data without targets.
-    - `set_return_w_index() -> None`: Sets the flag to return data with index.
-    - `unset_return_w_index() -> None`: Unsets the flag to return data with index.
+    ### Example
+    ```python
+    >>> dataset = ClassificationDataset("path/to/data")
+    >>> len(dataset)  # Get dataset size
+    1000
+    >>> data, target = dataset[0]  # Get first sample and target
+    ```
     """
 
     def __init__(
@@ -40,230 +39,154 @@ class ClassificationDataset(Dataset):
         root: Path,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
-        return_data_only: Optional[bool] = False,
-        return_w_index: Optional[bool] = False,
     ) -> None:
         """
-        Initialize the dataset.
-
-        ### Parameters
-        - `root` (Path): Root directory where the dataset exists or will be saved to.
-        - `transform` (Callable, optional): A function/transform that takes in the data (PIL image, numpy.ndarray, etc.) and transforms it. Defaults to None.
-        - `target_transform` (Callable, optional): A function/transform that takes in the target (int, etc.) and transforms it. Defaults to None.
-        - `return_data_only` (bool, optional): Whether to return only data without targets. Defaults to False.
-        - `return_w_index` (bool, optional): Whether to return data with index. Defaults to False.
+        - `root` (Path): Root directory containing the dataset
+        - `transform` (Optional[Callable]): Optional transform to be applied to the data
+        - `target_transform` (Optional[Callable]): Optional transform to be applied to the targets
         """
         self.root = root
         self.transform = transform
         self.target_transform = target_transform
-        self.return_data_only = return_data_only
-        self.return_w_index = return_w_index
-
-        # must be initialized through self._initialize()
+        # Must be initialized through self._initialize()
         self.data = ...
         self.targets = ...
         self.labels = ...
 
-        # self._initialize()
+    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+        """Get a sample from the dataset.
 
-    def __getitem__(
-        self,
-        index: int,
-    ) -> Tuple[Any, Any]:
-        """
-        Returns (data, target) of dataset using the specified index.
-
-        ### Parameters
-        - `index` (int): Index of the data item to retrieve.
+        ### Args
+            - `index` (int): Index of the sample to get
 
         ### Returns
-        - `Tuple[Any, Any]`: The data and target at the specified index.
+            - `Tuple[Any, Any]`: Tuple containing (data, target) where:
+                - data: The processed input data
+                - target: The corresponding target label
 
-        ### Notes
-        - If `return_data_only` is set to True, only the data is returned.
-        - If `return_w_index` is set to True, returns index along with (data, target) (or data if `return_data_only` is set to True).
+        ### Example
+        ```python
+        >>> dataset = ClassificationDataset("path/to/data")
+        >>> data, target = dataset[0]  # Get first sample
+        ```
         """
         data, target = self.data[index], self.targets[index]
         data = self._preprocess_data(data)
-
         if self.transform is not None:
             data = self.transform(data)
+        if self.target_transform is not None:
+            target = self.target_transform(target)
+        return data, target
 
-        if not self.return_data_only:
-            if self.target_transform is not None:
-                target = self.target_transform(target)
-
-            if self.return_w_index:
-                return index, (data, target)
-            else:
-                return data, target
-
-        else:
-            if self.return_w_index:
-                return index, data
-            else:
-                return data
-
-    def __len__(
-        self,
-    ) -> int:
-        """
-        Returns the size of the dataset.
+    def __len__(self) -> int:
+        """Return the length of the dataset.
 
         ### Returns
-        - `int`: The number of items in the dataset.
+            - `int`: Number of samples in the dataset
         """
         return len(self.data)
 
-    def _check(
-        self,
-        checklist: List[Tuple[Path, str]],
-        dataset_root: Path,
-    ) -> bool:
-        """
-        Checks if the dataset exists and is valid.
+    def _initialize(self) -> None:
+        """Initialize dataset.
 
-        ### Parameters
-        - `checklist` (List[Tuple[Path, str]]): A list of (file path, checksum) tuples to verify the dataset files.
-        - `dataset_root` (Path): The root directory of the dataset.
+        This method must be implemented by subclasses to initialize the dataset attributes:
+            - `self.data`: List/array of data samples
+            - `self.targets`: List/array of target labels (integers)
+            - `self.labels`: List of label names (strings)
 
         ### Returns
-        - `bool`: True if the dataset is valid, False otherwise.
+            - `None`
         """
-        # skip check
-        if checklist is None:
-            return True
+        raise NotImplementedError
 
-        else:
-            for fpath, checksum in checklist:
-                if not md5_check(
-                    fpath=_path.join(dataset_root, fpath),
-                    checksum=checksum,
-                ):
-                    return False
+    def _preprocess_data(self, data: Any) -> Any:
+        """Preprocess data before applying transforms.
 
-            return True
+        This method must be implemented by subclasses to preprocess the data.
+
+        ### Args
+            - `data` (Any): Data to preprocess
+
+        ### Returns
+            - `Any`: Preprocessed data
+        """
+        raise NotImplementedError
 
     def _download(
         self,
         urls: List[str],
         checklist: List[Tuple[Path, str]],
-        ext_dir_name: Optional[Path] = ".",
+        extract_dir: Optional[Path] = ".",
     ) -> None:
-        """
-        Downloads and extracts the dataset.
+        """Download dataset files from URLs and verify their integrity.
 
-        ### Parameters
-        - `urls` (List[str]): A list of URLs to download the dataset files from.
-        - `checklist` (List[Tuple[Path, str]]): A list of (file path, checksum) tuples to verify the dataset files.
-        - `ext_dir_name` (Path, optional): The directory name for extracted files. Defaults to ".".
+        ### Args
+            - `urls` (List[str]): List of URLs to download files from
+            - `checklist` (List[Tuple[Path, str]]): List of (filepath, checksum) tuples to verify. Should include both downloaded and extracted files.
+            - `extract_dir` (Optional[Path]): Directory to extract downloaded files to, relative to self.root. Defaults to "."
 
         ### Returns
-        - `None`
+            - `None`
+
+        ### Example
+        ```python
+        >>> urls = ['http://example.com/data.zip']
+        >>> checklist = [
+        ...     ('data.zip', 'abc123'),          # Downloaded file
+        ...     ('extracted/data.txt', 'def456')  # Extracted file
+        ... ]
+        >>> _download(urls, checklist, 'extracted')
+        ```
         """
-        dataset_root = _path.join(self.root, ext_dir_name)
-
-        # if dataset folder exists,
-        if _path.exists(dataset_root):
-            # check if dataset exists inside the folder
-            exist = True
-            for fname, _ in checklist[len(urls) :]:
-                if not _path.exists(_path.join(dataset_root, fname)):
-                    exist = False
-                    break
-        # otherwise dataset does not exist
-        else:
-            exist = False
-
-        # return if dataset exists and is verified
-        if exist and self._check(checklist[len(urls) :], dataset_root):
+        dataset_root = _path.join(self.root, extract_dir)
+        # Check if dataset already exists and is valid
+        dataset_exists = _path.exists(dataset_root) and all(
+            _path.exists(_path.join(dataset_root, path))
+            for path, _ in checklist[len(urls) :]
+        )
+        # If so, return
+        if dataset_exists and self._check(checklist[len(urls) :], dataset_root):
             return
-
-        # else, download dataset
-        fpaths = []
-        for url in urls:
-            fpath = download_url(url, self.root)
-            fpaths.append(fpath)
-
-        # download again if download was unsuccessful
-        while not self._check(checklist[: len(urls)], self.root):
+        # Else, download and verify files
+        while True:
+            # Download files
+            paths = [utils.download.from_url(url, self.root) for url in urls]
+            # Verify downloads
+            if self._check(checklist[: len(urls)], dataset_root):
+                break
+            # If verification failed, clean up and retry
             print("Dataset corrupted. Redownloading dataset.")
-            # first, delete files
-            for fpath in fpaths:
-                _path.rmfile(fpath)
-            # then, download again
-            fpaths = []
-            for url in urls:
-                fpath = download_url(url, self.root)
-                fpaths.append(fpath)
-
-        # unzip dataset
-        for fpath in fpaths:
-            extract(fpath, dataset_root)
-
-        # check downloaded file
+            for path in paths:
+                _path.rmfile(path)
+        # Extract downloads
+        for path in paths:
+            utils.zip.extract(path, dataset_root)
+        # Verify extracted files
         assert self._check(checklist[len(urls) :], dataset_root)
 
-    def _initialize(
-        self,
-    ) -> None:
-        """
-        Initializes the dataset.
+    def _check(self, checklist: List[Tuple[Path, str]], root: Path) -> bool:
+        """Check if all files in checklist exist and have correct MD5 checksums.
+
+        ### Args
+            - `checklist` (List[Tuple[Path, str]]): List of (filepath, checksum) tuples to verify
+            - `root` (Path): Root directory containing the files
 
         ### Returns
-        - `None`
+            - `bool`: True if all files exist and have correct checksums, False otherwise
 
-        ### Notes
-        - This method must be implemented by subclasses to initialize the dataset.
+        ### Example
+        ```python
+        >>> checklist = [('data.txt', 'abc123'), ('labels.txt', 'def456')]
+        >>> _check(checklist, './data')
+        True
+        ```
         """
-        raise NotImplementedError
-
-    def _preprocess_data(
-        self,
-        data: Any,
-    ) -> Any:
-        """
-        Preprocesses the data.
-
-        ### Parameters
-        - `data` (Any): The data to preprocess.
-
-        ### Returns
-        - `Any`: The preprocessed data.
-
-        ### Notes
-        - This method must be implemented by subclasses to preprocess the data.
-        """
-        raise NotImplementedError
-
-    def set_return_data_only(
-        self,
-    ) -> None:
-        """
-        Sets the flag to return only data without targets.
-        """
-        self.return_data_only = True
-
-    def unset_return_data_only(
-        self,
-    ) -> None:
-        """
-        Unsets the flag to return only data without targets.
-        """
-        self.return_data_only = False
-
-    def set_return_w_index(
-        self,
-    ) -> None:
-        """
-        Sets the flag to return data with index.
-        """
-        self.return_w_index = True
-
-    def unset_return_w_index(
-        self,
-    ) -> None:
-        """
-        Unsets the flag to return data with index.
-        """
-        self.return_w_index = False
+        if not checklist:
+            return True
+        return all(
+            utils.download.md5_check(
+                path=_path.join(root, path),
+                checksum=checksum,
+            )
+            for path, checksum in checklist
+        )

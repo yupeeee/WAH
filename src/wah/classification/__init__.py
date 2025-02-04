@@ -5,6 +5,5 @@ __all__ = [
     "datasets",
     "models",
     "test",
-    # train
     "Trainer",
 ]

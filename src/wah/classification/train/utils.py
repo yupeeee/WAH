@@ -1,7 +1,7 @@
 from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.loggers import TensorBoardLogger
 
-from ...typing import Devices, List, LRScheduler, Optional, Path, Trainer, Tuple
+from ...misc.typing import Devices, List, LRScheduler, Optional, Path, Trainer, Tuple
 
 __all__ = [
     "check_config",
@@ -26,12 +26,11 @@ config_requirements: List[str] = [
 def check_config(
     **config,
 ) -> None:
-    required_args = config_requirements
-    missing_args = [arg for arg in required_args if arg not in config.keys()]
-
-    assert (
-        len(missing_args) == 0
-    ), f"{len(missing_args)} missing args in config: {', '.join(missing_args)}"
+    missing_args = [arg for arg in config_requirements if arg not in config]
+    if missing_args:
+        raise ValueError(
+            f"Missing required config arguments: {', '.join(missing_args)}"
+        )
 
 
 def get_lr(
@@ -39,7 +38,6 @@ def get_lr(
 ) -> float:
     scheduler: LRScheduler = trainer.lr_scheduler_configs[0].scheduler
     lr = scheduler.get_last_lr()[0]
-
     return lr
 
 
@@ -48,18 +46,14 @@ def load_accelerator_and_devices(
 ) -> Tuple[str, List[int]]:
     if isinstance(devices, str) and "cuda" in devices:
         devices = devices.replace("cuda", "gpu")
-
     devices_cfg: List[str] = devices.split(":")
-
     accelerator = "auto"
     devices = "auto"
-
     if len(devices_cfg) == 1:
         accelerator = devices_cfg[0]
     else:
         accelerator = devices_cfg[0]
         devices = [int(d) for d in devices_cfg[1].split(",")]
-
     return accelerator, devices
 
 

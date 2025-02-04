@@ -1,12 +1,13 @@
 from pathlib import Path
-from setuptools import setup, find_packages
+
+from setuptools import find_packages, setup
 
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
 
 setup(
     name="wah",
-    version="1.12.16",
+    version="1.13.0",
     description="a library so simple you will learn Within An Hour",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -16,6 +17,11 @@ setup(
     license="MIT",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
+    entry_points={
+        "console_scripts": [
+            "wah=wah.cli:main",
+        ],
+    },
     install_requires=[
         "setuptools>=61.0",
         "lightning",

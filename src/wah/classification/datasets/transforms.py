@@ -5,13 +5,12 @@ import torch
 import torchvision.transforms.v2 as T
 from torchvision.transforms.functional import InterpolationMode
 
-from ...typing import Sequence
+from ...misc.typing import Sequence
 
 __all__ = [
-    "get_mixup_cutmix",
-    "DeNormalize",
     "ClassificationPresetTrain",
     "ClassificationPresetEval",
+    "DeNormalize",
 ]
 
 
@@ -30,30 +29,6 @@ def get_mixup_cutmix(
         return None
 
     return T.RandomChoice(mixup_cutmix)
-
-
-class DeNormalize(T.Normalize):
-    def __init__(
-        self,
-        mean: Sequence[float],
-        std: Sequence[float],
-    ) -> None:
-        """
-        Initialize the DeNormalize class by reversing the mean and std.
-
-        Args:
-            mean (list or tuple): The mean values used for normalization.
-            std (list or tuple): The standard deviation values used for normalization.
-        """
-        self._mean = mean
-        self._std = std
-        # Reverse the operation of normalization: de-normalization
-        reversed_mean = [-m / s for m, s in zip(mean, std)]
-        reversed_std = [1 / s for s in std]
-        super().__init__(mean=reversed_mean, std=reversed_std)
-
-    def __repr__(self) -> str:
-        return f"DeNormalize(mean={tuple(self._mean)}, std={tuple(self._std)})"
 
 
 class ClassificationPresetTrain:
@@ -159,3 +134,38 @@ class ClassificationPresetEval:
 
     def __call__(self, img):
         return self.transforms(img)
+
+
+class DeNormalize(T.Normalize):
+    """Reverse the normalization transform.
+
+    ### Args
+        - `mean` (Sequence[float]): Mean values used in original normalization
+        - `std` (Sequence[float]): Standard deviation values used in original normalization
+
+    ### Example
+    ```python
+    >>> denormalize = DeNormalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    >>> normalized_img = transforms.Normalize(...)(img)
+    >>> original_img = denormalize(normalized_img)  # Reverses normalization
+    ```
+    """
+
+    def __init__(
+        self,
+        mean: Sequence[float],
+        std: Sequence[float],
+    ) -> None:
+        """
+        - `mean` (Sequence[float]): Mean values used in original normalization
+        - `std` (Sequence[float]): Standard deviation values used in original normalization
+        """
+        self._mean = mean
+        self._std = std
+        # Reverse the operation of normalization: de-normalization
+        reversed_mean = [-m / s for m, s in zip(mean, std)]
+        reversed_std = [1 / s for s in std]
+        super().__init__(mean=reversed_mean, std=reversed_std)
+
+    def __repr__(self) -> str:
+        return f"DeNormalize(mean={tuple(self._mean)}, std={tuple(self._std)})"

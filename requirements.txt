@@ -2,15 +2,11 @@ lightning
 matplotlib
 numpy
 pandas
-pyperclip
-PyYAML
-selenium
-tensorboard
+pillow
+requests
 timm
-## package location
-# --find-links https://download.pytorch.org/whl/torch_stable.html
 torch
-torchaudio
 torchmetrics
 torchvision
-webdriver_manager
+tqdm
+yaml

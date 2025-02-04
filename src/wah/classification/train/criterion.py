@@ -1,6 +1,6 @@
 from torch import nn
 
-from ...typing import Literal, Module
+from ...misc.typing import Literal, Module
 
 __all__ = [
     "load_criterion",
@@ -12,16 +12,16 @@ def load_criterion(
     reduction: Literal["none", "mean", "sum"] = "mean",
     **kwargs,
 ) -> Module:
-    assert "criterion" in kwargs.keys()
-
-    criterion: Module = getattr(nn, kwargs["criterion"])
-
-    criterion_cfg = {
-        "reduction": reduction,
-    }
-    if train and "label_smoothing" in kwargs.keys():
+    if "criterion" not in kwargs:
+        raise ValueError("'criterion' must be specified.")
+    criterion_name = kwargs["criterion"]
+    if not hasattr(nn, criterion_name):
+        raise ValueError(
+            f"Invalid criterion '{criterion_name}'. Must be a valid torch.nn criterion."
+        )
+    criterion_cfg = {"reduction": reduction}
+    if "criterion_cfg" in kwargs:
+        criterion_cfg.update(kwargs["criterion_cfg"])
+    if train and "label_smoothing" in kwargs:
         criterion_cfg["label_smoothing"] = kwargs["label_smoothing"]
-
-    criterion = criterion(**criterion_cfg)
-
-    return criterion
+    return getattr(nn, criterion_name)(**criterion_cfg)
