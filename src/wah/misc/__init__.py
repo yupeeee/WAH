@@ -1,12 +1,9 @@
-from . import dicts as dict
-from . import lists as list
-from . import mods as mod
-from . import path, random, tensor, time, typing
+from . import dicts, lists, mods, path, random, tensor, time, typing
 
 __all__ = [
-    "dict",
-    "list",
-    "mod",
+    "dicts",
+    "lists",
+    "mods",
     "path",
     "random",
     "tensor",

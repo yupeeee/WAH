@@ -1,5 +1,5 @@
 from . import classification as lib
-from .misc import dicts as _dict
+from .misc import dicts as _dicts
 from .misc import path as _path
 from .misc.typing import Config, Dataset, Module, Namespace, Trainer
 
@@ -104,7 +104,7 @@ def load_trainer(
 
 
 def main(args: Namespace):
-    config = _dict.load(args.cfg_path)
+    config = _dicts.load(args.cfg_path)
     train_dataset = load_dataset(args, config, train=True)
     val_dataset = load_dataset(args, config, train=False)
     model = load_model(args, config)

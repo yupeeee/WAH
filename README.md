@@ -62,4 +62,4 @@ yaml
 - `utils`
     - `ArgumentParser`
     - `download`
-    - `zip`
+    - `zips`

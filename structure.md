@@ -32,4 +32,4 @@
 	- `utils`
 		- `ArgumentParser`
 		- `download`
-		- `zip`
+		- `zips`
