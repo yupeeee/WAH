@@ -160,7 +160,7 @@ class ClassificationDataset(Dataset):
                 _path.rmfile(path)
         # Extract downloads
         for path in paths:
-            utils.zip.extract(path, dataset_root)
+            utils.zips.extract(path, dataset_root)
         # Verify extracted files
         assert self._check(checklist[len(urls) :], dataset_root)
 

@@ -148,7 +148,7 @@ class ImageNetTrain(ClassificationDataset):
 
                 for c in classes:
                     fpath = _path.join(data_root, f"{c}.tar")
-                    utils.zip.extract(fpath, save_dir=_path.join(data_root, c))
+                    utils.zips.extract(fpath, save_dir=_path.join(data_root, c))
 
                     # delete zipfiles
                     _path.rmfile(fpath)
