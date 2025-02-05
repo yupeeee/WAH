@@ -96,8 +96,9 @@ def create_structure_md(root_dir: Path = "src/wah") -> str:
     nested_dict["wah"] = build_nested_structure(structure_dict, keys)
 
     # Generate markdown content
-    md_lines = dict_to_md(nested_dict)
-    structure_md = "\n".join(md_lines)
+    md_lines = dict_to_md(nested_dict)[1:]
+    md_lines = [line[1:] for line in md_lines]
+    structure_md = "### `wah`\n" + "\n".join(md_lines)
 
     return structure_md
 
