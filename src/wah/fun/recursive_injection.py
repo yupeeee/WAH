@@ -2,7 +2,7 @@ import torch
 import tqdm
 from torch import nn
 
-from .. import mods as _mods
+from ..misc import mods as _mods
 from ..misc.typing import Device, List, Module, Tensor, Tuple
 
 __all__ = [
