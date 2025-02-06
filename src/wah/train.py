@@ -1,6 +1,7 @@
 import torch
 
 from . import classification as lib
+from .misc import cuda as _cuda
 from .misc import dicts as _dicts
 from .misc import path as _path
 from .misc.typing import Config, Dataset, Module, Namespace, Trainer
@@ -122,6 +123,7 @@ def load_trainer(
 
 
 def main(args: Namespace):
+    _cuda.set_visible_devices(args.device)
     config = _dicts.load(args.cfg_path)
     train_dataset = load_dataset(args, config, train=True)
     val_dataset = load_dataset(args, config, train=False)
