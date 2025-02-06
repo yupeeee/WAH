@@ -10,7 +10,7 @@
 		- `STL10`
 	- `models`
 		- `FeatureExtractor`
-		- `load_model`
+		- `load`
 		- `load_state_dict`
 		- `replace`
 			- `gelu_with_relu`
@@ -23,6 +23,8 @@
 		- `ece`
 	- `Trainer`
 - `dicts`
+- `fun`
+	- `RecursionWrapper`
 - `lists`
 - `mods`
 - `path`

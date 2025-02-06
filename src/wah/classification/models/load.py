@@ -148,7 +148,9 @@ def load_model(
     ... )
     ```
     """
-    weights_path: Path = weights if weights is not None else None
+    weights_path: Path = None
+    if weights is not None and weights != "auto":
+        weights_path = weights
     pretrained = True if weights == "auto" else False
     if load_from == "timm":
         model = load_timm_model(

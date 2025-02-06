@@ -30,29 +30,31 @@ yaml
 
 ### `wah`
 - `classification`
-    - `datasets`
-        - `CIFAR10`
-        - `CIFAR100`
-        - `compute_mean_and_std`
-        - `ImageNet`
-        - `load_dataloader`
-        - `portion_dataset`
-        - `STL10`
-    - `models`
-        - `FeatureExtractor`
-        - `load_model`
-        - `load_state_dict`
-        - `replace`
-            - `gelu_with_relu`
-            - `relu_with_gelu`
-            - `bn_with_ln`
-            - `ln_with_bn`
-        - `summary`
-    - `test`
-        - `brier_score`
-        - `ece`
-    - `Trainer`
+	- `datasets`
+		- `CIFAR10`
+		- `CIFAR100`
+		- `compute_mean_and_std`
+		- `ImageNet`
+		- `load_dataloader`
+		- `portion_dataset`
+		- `STL10`
+	- `models`
+		- `FeatureExtractor`
+		- `load`
+		- `load_state_dict`
+		- `replace`
+			- `gelu_with_relu`
+			- `relu_with_gelu`
+			- `bn_with_ln`
+			- `ln_with_bn`
+		- `summary`
+	- `test`
+		- `brier_score`
+		- `ece`
+	- `Trainer`
 - `dicts`
+- `fun`
+	- `RecursionWrapper`
 - `lists`
 - `mods`
 - `path`
@@ -60,6 +62,6 @@ yaml
 - `tensor`
 - `time`
 - `utils`
-    - `ArgumentParser`
-    - `download`
-    - `zips`
+	- `ArgumentParser`
+	- `download`
+	- `zips`
