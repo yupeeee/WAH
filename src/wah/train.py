@@ -91,7 +91,7 @@ def load_model(
     config: Config,
 ) -> Module:
     # Load model
-    model = lib.models.load_model(
+    model = lib.models.load(
         name=args.model,
         num_classes=config["num_classes"],
         image_size=config["crop_size"],
