@@ -39,13 +39,6 @@ def main():
         help="Replace layers of one type with another. Format: from1:to1,from2:to2,... (e.g. 'bn:ln')",
     )
     train_parser.add_argument(
-        "--version",
-        type=str,
-        required=False,
-        default=None,
-        help="Name of the version to identify this training run",
-    )
-    train_parser.add_argument(
         "--cfg-path",
         type=str,
         required=True,
@@ -59,10 +52,24 @@ def main():
         help="Root directory where training logs will be stored",
     )
     train_parser.add_argument(
+        "--version",
+        type=str,
+        required=False,
+        default=None,
+        help="Name of the version to identify this training run",
+    )
+    train_parser.add_argument(
         "--resume",
         action="store_true",
         default=False,
         help="Resume training from the last checkpoint",
+    )
+    train_parser.add_argument(
+        "--device",
+        type=str,
+        required=False,
+        default="cpu",
+        help="Device to run the model on",
     )
 
     args = parser.parse_args()

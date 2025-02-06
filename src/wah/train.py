@@ -44,6 +44,10 @@ def load_dataset(
         raise ValueError(
             f"Unsupported dataset: {args.dataset}. Currently supported datasets are: {DATASET_CONFIGS.keys()}"
         )
+    # Adjust batch size for multi-GPU training
+    config["devices"] = args.device
+    num_devices = len(config["devices"].split(":")[-1].split(","))
+    config["batch_size"] = int(args.bs / num_devices)
     # Get dataset config and class
     dataset_config = DATASET_CONFIGS[args.dataset]
     dataset = getattr(lib.datasets, dataset_config["class_name"])
