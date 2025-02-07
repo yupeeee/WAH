@@ -31,7 +31,8 @@ criterion: CrossEntropyLoss
 and simply run:
 
 ```bash
-wah train --dataset cifar10 --dataset-root ./dataset --model resnet18 --cfg-path ./config.yaml --log-root ./logs --device auto
+wah train --dataset cifar10 --dataset-root ./dataset --model resnet18 \
+    --cfg-path ./config.yaml --log-root ./logs --device auto
 ```
 
 ### What Happens Next?
