@@ -1,5 +1,3 @@
-import torch
-
 from . import classification as lib
 from .misc import cuda as _cuda
 from .misc import dicts as _dicts
@@ -48,20 +46,11 @@ def load_dataset(
             f"Unsupported dataset: {args.dataset}. Currently supported datasets are: {DATASET_CONFIGS.keys()}"
         )
     # Adjust batch size for multi-GPU training
-    if args.device == "auto":
-        num_devices = torch.cuda.device_count()
-        config["devices"] = (
-            f"gpu:{','.join(str(i) for i in range(num_devices))}"
-            if num_devices > 0
-            else "cpu"
-        )
-    else:
-        config["devices"] = args.device
-        num_devices = (
-            len(config["devices"].split(":")[-1].split(","))
-            if ":" in config["devices"]
-            else 1
-        )
+    num_devices = (
+        len(config["devices"].split(":")[-1].split(","))
+        if ":" in config["devices"]
+        else 1
+    )
     config["batch_size"] = int(config["batch_size"] / num_devices)
     # Get dataset config and class
     dataset_config = DATASET_CONFIGS[args.dataset]

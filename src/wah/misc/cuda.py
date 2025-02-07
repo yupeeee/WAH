@@ -25,6 +25,10 @@ def set_visible_devices(device: str) -> str:
     >>> set_visible_devices("cpu")
     'cpu'
 
+    >>> set_visible_devices("auto")
+    'gpu:0,1'   # if there are 2 GPUs
+    'cpu'       # if there are no GPUs
+
     >>> set_visible_devices("gpu:0,1")
     'gpu:0,1'
 
@@ -40,6 +44,12 @@ def set_visible_devices(device: str) -> str:
         return device
     # Handle auto case
     if device == "auto":
+        num_devices = torch.cuda.device_count()
+        device = (
+            f"gpu:{','.join(str(i) for i in range(num_devices))}"
+            if num_devices > 0
+            else "cpu"
+        )
         return device
     # Parse device string
     if ":" in device:
