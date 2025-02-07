@@ -2,11 +2,12 @@ lightning
 matplotlib
 numpy
 pandas
+PyYAML
 pillow
 requests
+tensorboard
 timm
 torch
 torchmetrics
 torchvision
 tqdm
-yaml
