@@ -123,8 +123,8 @@ def load_trainer(
 
 
 def main(args: Namespace):
-    _cuda.set_visible_devices(args.device)
     config = _dicts.load(args.cfg_path)
+    config["devices"] = _cuda.set_visible_devices(args.device)
     train_dataset = load_dataset(args, config, train=True)
     val_dataset = load_dataset(args, config, train=False)
     model = load_model(args, config)
