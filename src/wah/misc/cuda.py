@@ -2,32 +2,60 @@ import os
 
 import torch
 
-from .typing import Devices
-
 __all__ = [
     "set_visible_devices",
 ]
 
 
-def set_visible_devices(device: Devices) -> None:
-    assert isinstance(
-        device, str
-    ), "device must be a string, e.g. 'cpu', 'auto', 'gpu:0', or 'gpu:0,1,2'"
-    # For CPU, disable all CUDA devices
+def set_visible_devices(device: str) -> str:
+    """Set visible CUDA devices and return normalized device string.
+
+    ### Args
+        - `device` (str): Device specification string. Can be:
+            - 'cpu': Disable all CUDA devices
+            - 'auto': Use all available devices
+            - '0', '1', etc: Use specific device number
+            - 'gpu:0', 'gpu:0,1', etc: Use specific GPU devices
+
+    ### Returns
+        - `str`: Normalized device string
+
+    ### Example
+    ```python
+    >>> set_visible_devices("cpu")
+    'cpu'
+
+    >>> set_visible_devices("gpu:0,1")
+    'gpu:0,1'
+
+    >>> set_visible_devices("2")
+    'gpu:0'
+    ```
+    """
+    if not isinstance(device, str):
+        raise TypeError("device must be a string")
+    # Handle CPU case
     if device == "cpu":
         os.environ["CUDA_VISIBLE_DEVICES"] = ""
-        return
-    # For auto, don't modify anything to use all available devices
+        return device
+    # Handle auto case
     if device == "auto":
-        return
-    # Parse device specification
+        return device
+    # Parse device string
     if ":" in device:
-        # Handle gpu:0,1,2 format
-        devices = device.split(":")[-1]
+        prefix, devices = device.split(":")
     else:
-        # Handle single device number
+        prefix = "gpu"
         devices = device
-    # Set primary device and visible devices
-    primary_device = int(devices.split(",")[0])
-    torch.cuda.set_device(primary_device)
-    os.environ["CUDA_VISIBLE_DEVICES"] = devices
+    # Validate and normalize device numbers
+    try:
+        device_ids = [int(d.strip()) for d in devices.split(",")]
+        if any(d < 0 for d in device_ids):
+            raise ValueError("Device IDs must be non-negative")
+    except ValueError:
+        raise ValueError("Invalid device specification")
+    # Set CUDA devices
+    os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(map(str, device_ids))
+    normalized_ids = list(range(len(device_ids)))
+    torch.cuda.set_device(normalized_ids[0])
+    return f"{prefix}:{','.join(map(str, normalized_ids))}"
