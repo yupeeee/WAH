@@ -89,8 +89,8 @@ class RecursionWrapper(nn.Module):
         with torch.no_grad():
             y = self.model(x)
         init_hook.remove()
-        self.injections.append(self.injection.clone())
-        self.outputs.append(y.clone())
+        self.injections.append(self.injection.clone().cpu())
+        self.outputs.append(y.clone().cpu())
 
         # Recursively inject
         loop_hook = _mods.getmod(self.model, self.in_layer).register_forward_pre_hook(
@@ -99,8 +99,8 @@ class RecursionWrapper(nn.Module):
         for _ in tqdm.trange(self.num_iter, desc=self.msg, disable=self.msg is None):
             with torch.no_grad():
                 y = self.model(x)
-            self.injections.append(self.injection.clone())
-            self.outputs.append(y.clone())
+            self.injections.append(self.injection.clone().cpu())
+            self.outputs.append(y.clone().cpu())
         loop_hook.remove()
         return self.injections, self.outputs
 
