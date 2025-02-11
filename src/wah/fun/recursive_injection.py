@@ -3,7 +3,7 @@ import tqdm
 from torch import nn
 
 from ..misc import mods as _mods
-from ..misc.typing import Device, List, Module, Optional, Tensor, Tuple
+from ..misc.typing import Device, List, Module, Optional, Sequence, Tensor, Tuple
 
 __all__ = [
     "RecursionWrapper",
@@ -18,6 +18,7 @@ class RecursionWrapper(nn.Module):
         - `out_layer` (str): Layer to extract features from
         - `in_layer` (str): Layer to inject features into
         - `num_iter` (int): Number of recursive iterations. Defaults to `1`.
+        - `permute` (Sequence[int], optional): Permutation to apply to the injection tensor. Defaults to `None`.
         - `device` (Device): Device to run model on. Defaults to `"cpu"`.
         - `msg` (str, optional): Message to display in progress bar. If None, no progress bar will be shown. Defaults to `None`.
 
@@ -30,6 +31,7 @@ class RecursionWrapper(nn.Module):
         - `out_layer` (str): Layer to extract features from
         - `in_layer` (str): Layer to inject features into
         - `num_iter` (int): Number of recursive iterations
+        - `permute` (Sequence[int], optional): Permutation to apply to the injection tensor. Defaults to `None`.
         - `device` (Device): Device model is running on
         - `msg` (str, optional): Message to display in progress bar
         - `injection` (Tensor): Current injection tensor
@@ -56,6 +58,7 @@ class RecursionWrapper(nn.Module):
         out_layer: str,
         in_layer: str,
         num_iter: int = 1,
+        permute: Sequence[int] = None,
         device: Device = "cpu",
         msg: Optional[str] = None,
     ) -> None:
@@ -64,6 +67,7 @@ class RecursionWrapper(nn.Module):
         - `out_layer` (str): Layer to extract features from
         - `in_layer` (str): Layer to inject features into
         - `num_iter` (int): Number of recursive iterations. Defaults to `1`.
+        - `permute` (Sequence[int], optional): Permutation to apply to the injection tensor. Defaults to `None`.
         - `device` (Device): Device to run model on. Defaults to `"cpu"`.
         - `msg` (str, optional): Message to display in progress bar. If None, no progress bar will be shown. Defaults to `None`.
         """
@@ -72,6 +76,7 @@ class RecursionWrapper(nn.Module):
         self.out_layer = out_layer
         self.in_layer = in_layer
         self.num_iter = num_iter
+        self.permute = permute
         self.device = device
         self.msg = msg
         self.injection: Tensor = None
@@ -110,6 +115,8 @@ class RecursionWrapper(nn.Module):
 
     def _loop_hook(self, module: Module, input: Tensor) -> Tensor:
         assert self.injection is not None
+        if self.permute is not None:
+            self.injection = self.injection.permute(*self.permute)
         self.injection = self.injection.reshape(
             len(self.injection), *input[0].shape[1:]
         )
