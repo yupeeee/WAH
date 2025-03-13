@@ -24,12 +24,16 @@ setup(
     },
     install_requires=[
         "setuptools>=61.0",
+        "accelerate",
+        "diffusers",
+        "ftfy",
         "lightning",
         "matplotlib",
         "numpy",
         "pandas",
         "PyYAML",
         "pillow",
+        "regex",
         "requests",
         "tensorboard",
         "timm",
@@ -37,5 +41,6 @@ setup(
         "torchmetrics",
         "torchvision",
         "tqdm",
+        "transformers",
     ],
 )

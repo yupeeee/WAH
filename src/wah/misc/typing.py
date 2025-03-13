@@ -5,6 +5,7 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Tuple
 from lightning import LightningModule, Trainer
 from matplotlib.axes import Axes
 from pandas import DataFrame
+from PIL.Image import Image
 from torch import Tensor
 from torch import device as Device
 from torch.nn import Module
@@ -18,11 +19,13 @@ except ImportError:
 
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.hooks import RemovableHandle
+from transformers.modeling_outputs import BaseModelOutputWithPooling as CLIPOutput
 
 __all__ = [
     "Any",
     "Axes",
     "Callable",
+    "CLIPOutput",
     "Config",
     "DataFrame",
     "DataLoader",
@@ -30,6 +33,7 @@ __all__ = [
     "Device",
     "Devices",
     "Dict",
+    "Image",
     "LightningModule",
     "List",
     "Literal",

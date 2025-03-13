@@ -1,9 +1,13 @@
+accelerate
+diffusers
+ftfy
 lightning
 matplotlib
 numpy
 pandas
 PyYAML
 pillow
+regex
 requests
 tensorboard
 timm
@@ -11,3 +15,4 @@ torch
 torchmetrics
 torchvision
 tqdm
+transformers
