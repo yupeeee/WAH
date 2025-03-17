@@ -1,15 +1,35 @@
 import torch
-import torchvision.transforms as T
-from diffusers import StableDiffusionPipeline
 from PIL import ImageFilter
 
-from ..misc.typing import (Device, Image, List, Literal, Optional, Tensor,
-                           Tuple, Union)
-from .utils import is_text
+from ...misc.typing import (Device, Image, List, Literal, Optional, Tensor,
+                            Tuple, Union)
+from ..utils import is_text
+from . import sd1_, sd3_5
+from .safety_checker import SafetyChecker
 
 __all__ = [
     "StableDiffusion",
 ]
+
+supported_versions = [
+    version for version in
+    list(sd1_.model_ids.keys()) +
+    list(sd3_5.model_ids.keys())
+]
+
+
+def load_pipeline(version: str, **kwargs):
+    if version not in supported_versions:
+        raise ValueError(
+            f"Version {version} is not supported for Stable Diffusion.\n"
+            f"Supported versions: {supported_versions}"
+        )
+    if version.startswith("1."):
+        return sd1_.load_pipeline(version, **kwargs)
+    elif version.startswith("3.5-"):
+        return sd3_5.load_pipeline(version, **kwargs)
+    else:
+        raise
 
 
 def decode_tensors(pipe, step, timestep, callback_kwargs):
@@ -23,70 +43,59 @@ class StableDiffusion:
     """[Stable Diffusion](https://huggingface.co/docs/diffusers/api/pipelines/stable_diffusion/text2img) Pipeline.
 
     ### Args
-        - `pretrained_model_name_or_path` (str): Path to pretrained model or model identifier from huggingface.co/models.
-        - `variant` (str): Variant of the model to use, e.g. "fp16" for half precision. Defaults to "fp16".
+        - `version` (str): Version of Stable Diffusion to use. Must be one of the supported versions.
         - `blur_nsfw` (bool): Whether to blur NSFW images. Defaults to True.
         - `**kwargs`: Additional arguments to pass to the pipeline.
 
     ### Attributes
-        - `pipe` (StableDiffusionPipeline): The underlying pipeline.
+        - `pipe` (Union[StableDiffusionPipeline, StableDiffusion3Pipeline]): The underlying pipeline.
         - `blur_nsfw` (bool): Whether to blur NSFW images.
         - `safety_checker`: The safety checker model.
         - `device` (Device): The device the model is on.
 
     ### Example
     ```python
-    >>> sd = StableDiffusion("CompVis/stable-diffusion-v1-4")
+    >>> sd = StableDiffusion("3.5-large")
     >>> sd = sd.to("cuda")
-    
+
     # Generate images from text prompt
-    >>> images, latents, has_nsfw = sd("a photo of a cat")
+    >>> images, latents, has_nsfw = sd(
+    ...     prompt="a photo of a cat",
+    ...     num_inference_steps=50,
+    ...     guidance_scale=7.5,
+    ...     num_images_per_prompt=1,
+    ...     seed=42
+    ... )
     >>> images[0].save("cat.png")
-    
-    # Generate images from prompt embeddings
-    >>> prompt_embeds, negative_prompt_embeds = sd.encode("a photo of a cat")
-    >>> images, latents, has_nsfw = sd(prompt_embeds=prompt_embeds)
-    >>> images[0].save("cat_from_embeds.png")
-    
-    # Encode images to latent space
-    >>> image_latents, hidden_states = sd.encode(images, output_hidden_states=True)
-    >>> print(image_latents.shape)  # [1, 4, 64, 64]
     ```
     """
+
     def __init__(
         self,
-        pretrained_model_name_or_path: str,
-        variant: str = "fp16",
+        version: str,
         blur_nsfw: bool = True,
         **kwargs,
     ) -> None:
         _ = kwargs.pop("safety_checker", None)
-        self.pipe = StableDiffusionPipeline.from_pretrained(
-            pretrained_model_name_or_path,
-            variant=variant,
-            **kwargs,
-        )
-        self.blur_nsfw = blur_nsfw
-        self.safety_checker = self.pipe.safety_checker
-        self.pipe.safety_checker = None
+        self.pipe = load_pipeline(version, **kwargs)
         self.device = self.pipe.device
-        setattr(self.pipe, "generator", torch.Generator("cpu"))
+        self.blur_nsfw = blur_nsfw
+        self.safety_checker = SafetyChecker(self.device)
+
+        setattr(self.pipe, "generator", torch.Generator(self.device))
         setattr(self.pipe, "latents", [])
 
     def to(self, device: Device):
-        self.pipe.to(device)
+        self.device = device
+        self.pipe = self.pipe.to(self.device)
+        self.safety_checker = self.safety_checker.to(self.device)
         self.pipe.generator = torch.Generator(device=self.device)
-        self.device = self.pipe.device
         return self
 
     @torch.no_grad()
     def _safety_check(self, images: List[Image]) -> List[bool]:
-        image_to_tensor = T.PILToTensor()
-        images = [image_to_tensor(image) for image in images]
-        features = self.pipe.feature_extractor(images, return_tensors="pt")
-        clip_input = features.pixel_values
-        _, has_nsfw_concept = self.safety_checker(images=images, clip_input=clip_input)
-        return has_nsfw_concept
+        has_nsfw, _ = self.safety_checker(images)
+        return has_nsfw
 
     @torch.no_grad()
     def __call__(
@@ -122,7 +131,8 @@ class StableDiffusion:
         if self.blur_nsfw:
             for i, (image, is_nsfw) in enumerate(zip(images, has_nsfw_concept)):
                 if is_nsfw:
-                    images[i] = image.filter(ImageFilter.GaussianBlur(radius=10))
+                    images[i] = image.filter(
+                        ImageFilter.GaussianBlur(radius=10))
         latents = [latent for latent in torch.stack(self.pipe.latents, dim=1)]
         self.pipe.latents = []
         return images, latents, has_nsfw_concept
@@ -157,7 +167,7 @@ class StableDiffusion:
                 output_hidden_states=output_hidden_states,
             )
             return image_embeds, uncond_image_embeds
-    
+
     @torch.no_grad()
     def decode(
         self,

@@ -1,4 +1,5 @@
 accelerate
+bitsandbytes
 diffusers
 ftfy
 lightning
@@ -9,6 +10,7 @@ PyYAML
 pillow
 regex
 requests
+sentencepiece
 tensorboard
 timm
 torch
