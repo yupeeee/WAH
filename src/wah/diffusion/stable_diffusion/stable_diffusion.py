@@ -108,13 +108,16 @@ class StableDiffusion:
         guidance_scale: float = 7.5,
         num_images_per_prompt: int = 1,
         seed: int = None,
+        verbose: bool = True,
         **kwargs,
-    ) -> Tuple[List[Image], List[bool]]:
+    ) -> Tuple[List[Image], List[Tensor], List[bool]]:
         assert (
             prompt is not None or prompt_embeds is not None
         ), f"Either prompt or prompt_embeds must be provided"
         if seed is not None:
             kwargs["generator"] = self.pipe.generator.manual_seed(seed)
+        if not verbose:
+            self.pipe.set_progress_bar_config(disable=True)
         images = self.pipe(
             prompt=prompt,
             prompt_embeds=prompt_embeds,

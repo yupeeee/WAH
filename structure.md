@@ -22,7 +22,13 @@
 		- `brier_score`
 		- `ece`
 	- `Trainer`
+- `clip`
+	- `CLIP`
+- `cuda`
 - `dicts`
+- `diffusion`
+	- `StableDiffusion`
+	- `login`
 - `fun`
 	- `RecursionWrapper`
 - `lists`
