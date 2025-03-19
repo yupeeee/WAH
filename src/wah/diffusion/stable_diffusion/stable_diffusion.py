@@ -19,18 +19,18 @@ supported_versions = [
 ]
 
 
-def load_pipeline(version: str, **kwargs):
+def load_pipeline(version: str, scheduler: str, **kwargs):
     if version not in supported_versions:
         raise ValueError(
             f"Version {version} is not supported for Stable Diffusion.\n"
             f"Supported versions: {supported_versions}"
         )
     if version.startswith("1."):
-        return sd1_.load_pipeline(version, **kwargs)
+        return sd1_.load_pipeline(version, scheduler, **kwargs)
     elif version.startswith("2"):
-        return sd2_.load_pipeline(version, **kwargs)
+        return sd2_.load_pipeline(version, scheduler, **kwargs)
     elif version.startswith("3.5-"):
-        return sd3_5.load_pipeline(version, **kwargs)
+        return sd3_5.load_pipeline(version, scheduler, **kwargs)
     else:
         raise
 
