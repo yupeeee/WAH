@@ -8,11 +8,14 @@ __all__ = [
 ]
 
 model_ids = {
-    "1.1": "CompVis/stable-diffusion-v1-1",
-    "1.2": "CompVis/stable-diffusion-v1-2",
-    "1.3": "CompVis/stable-diffusion-v1-3",
-    "1.4": "CompVis/stable-diffusion-v1-4",
-    "1.5": "sd-legacy/stable-diffusion-v1-5",
+    "2-base": "stabilityai/stable-diffusion-2-base",
+    "2": "stabilityai/stable-diffusion-2",
+    "2-depth": "stabilityai/stable-diffusion-2-depth",
+    "2.1-base": "stabilityai/stable-diffusion-2-1-base",
+    "2.1": "stabilityai/stable-diffusion-2-1",
+    "2.1-inpainting": "stabilityai/stable-diffusion-2-1-inpainting",
+    "2.1-unclip": "stabilityai/stable-diffusion-2-1-unclip",
+    "2.1-unclip-small": "stabilityai/stable-diffusion-2-1-unclip-small",
 }
 
 

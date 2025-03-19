@@ -3,6 +3,7 @@ from diffusers import (BitsAndBytesConfig, SD3Transformer2DModel,
                        StableDiffusion3Pipeline)
 
 from ..utils import is_valid_version
+from .scheduler import load_scheduler
 
 __all__ = [
     "load_pipeline",
@@ -17,6 +18,7 @@ model_ids = {
 
 def load_pipeline(
     version: str,
+    scheduler: str,
     **kwargs,
 ) -> StableDiffusion3Pipeline:
     assert is_valid_version(version, model_ids)
@@ -33,6 +35,7 @@ def load_pipeline(
     )
     pipeline = StableDiffusion3Pipeline.from_pretrained(
         model_ids[version],
+        scheduler=load_scheduler(version, model_ids, scheduler),
         transformer=model_nf4,
         torch_dtype=torch.bfloat16,
         **kwargs,

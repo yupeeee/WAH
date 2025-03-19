@@ -4,7 +4,7 @@ from PIL import ImageFilter
 from ...misc.typing import (Device, Image, List, Literal, Optional, Tensor,
                             Tuple, Union)
 from ..utils import is_text
-from . import sd1_, sd3_5
+from . import sd1_, sd2_, sd3_5
 from .safety_checker import SafetyChecker
 
 __all__ = [
@@ -14,6 +14,7 @@ __all__ = [
 supported_versions = [
     version for version in
     list(sd1_.model_ids.keys()) +
+    list(sd2_.model_ids.keys()) +
     list(sd3_5.model_ids.keys())
 ]
 
@@ -26,6 +27,8 @@ def load_pipeline(version: str, **kwargs):
         )
     if version.startswith("1."):
         return sd1_.load_pipeline(version, **kwargs)
+    elif version.startswith("2"):
+        return sd2_.load_pipeline(version, **kwargs)
     elif version.startswith("3.5-"):
         return sd3_5.load_pipeline(version, **kwargs)
     else:
@@ -44,6 +47,7 @@ class StableDiffusion:
 
     ### Args
         - `version` (str): Version of Stable Diffusion to use. Must be one of the supported versions.
+        - `scheduler` (str): Scheduler to use. Must be one of the supported schedulers in diffusers library.
         - `blur_nsfw` (bool): Whether to blur NSFW images. Defaults to True.
         - `**kwargs`: Additional arguments to pass to the pipeline.
 
@@ -73,11 +77,12 @@ class StableDiffusion:
     def __init__(
         self,
         version: str,
+        scheduler: str = "DDIM",
         blur_nsfw: bool = True,
         **kwargs,
     ) -> None:
         _ = kwargs.pop("safety_checker", None)
-        self.pipe = load_pipeline(version, **kwargs)
+        self.pipe = load_pipeline(version, scheduler, **kwargs)
         self.device = self.pipe.device
         self.blur_nsfw = blur_nsfw
         self.safety_checker = SafetyChecker(self.device)
