@@ -17,6 +17,7 @@ __all__ = [
     "rmfile",
     "split",
     "splitext",
+    "walk",
 ]
 
 
@@ -326,3 +327,50 @@ def splitext(
     ```
     """
     return os.path.splitext(clean(path))[1]
+
+
+def walk(
+    root: Path,
+    absolute: Optional[bool] = False,
+) -> List[Path]:
+    """Walk a directory recursively and return all file paths.
+
+    This function traverses a directory tree starting from the given root path,
+    and returns a list of all file paths found. It follows symbolic links and
+    includes files in all subdirectories.
+
+    ### Args
+        - `root` (Path): Root directory path to start walking from
+        - `absolute` (Optional[bool]): If True, return absolute paths. If False, return paths relative to root.
+                                     Defaults to False.
+
+    ### Returns
+        - `List[Path]`: List of paths to all files found under the root directory.
+                       If absolute=False (default), paths are relative to the root directory.
+                       If absolute=True, paths are absolute.
+
+    ### Example
+    ```python
+    >>> walk('data')
+    ['train.txt', 'test.txt', 'models/resnet18.pth']
+
+    >>> walk('data', absolute=True) 
+    ['/home/user/data/train.txt', '/home/user/data/test.txt', '/home/user/data/models/resnet18.pth']
+    ```
+
+    ### Notes
+        - Hidden files and directories (starting with '.') are included
+        - Directory paths themselves are not included in the output list
+        - All paths use forward slashes ('/'), even on Windows systems
+    """
+    paths = []
+    for dirpath, dirnames, filenames in os.walk(clean(root)):
+        for dirname in dirnames:
+            subdir = join(dirpath, dirname)
+            if isdir(subdir):
+                paths.extend(walk(subdir))
+        for filename in filenames:
+            paths.append(join(dirpath, filename))
+    if absolute:
+        paths = [join(root, path) for path in paths]
+    return paths

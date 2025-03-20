@@ -1,7 +1,9 @@
 accelerate
 bitsandbytes
+black
 diffusers
 ftfy
+isort
 lightning
 matplotlib
 numpy

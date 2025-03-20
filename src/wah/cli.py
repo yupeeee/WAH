@@ -1,5 +1,6 @@
 import argparse
 
+from .format import main as format
 from .train import DATASET_CONFIGS
 from .train import main as train
 
@@ -9,6 +10,15 @@ def main():
         prog="wah", description="Wah command-line interface."
     )
     subparsers = parser.add_subparsers(dest="command", help="Sub-commands")
+
+    # format
+    format_parser = subparsers.add_parser("format", help="Format code")
+    format_parser.add_argument(
+        "roots",
+        type=str,
+        nargs="+",
+        help="Directories and files to format code in",
+    )
 
     # train
     train_parser = subparsers.add_parser("train", help="Train a model on a dataset")
@@ -74,7 +84,9 @@ def main():
 
     args = parser.parse_args()
 
-    if args.command == "train":
+    if args.command == "format":
+        format(args)
+    elif args.command == "train":
         train(args)
     else:
         parser.print_help()
