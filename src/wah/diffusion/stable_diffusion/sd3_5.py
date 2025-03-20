@@ -1,6 +1,9 @@
 import torch
-from diffusers import (BitsAndBytesConfig, SD3Transformer2DModel,
-                       StableDiffusion3Pipeline)
+from diffusers import (
+    BitsAndBytesConfig,
+    SD3Transformer2DModel,
+    StableDiffusion3Pipeline,
+)
 
 from ..utils import is_valid_version
 from .scheduler import load_scheduler

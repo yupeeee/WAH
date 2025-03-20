@@ -11,7 +11,11 @@ __all__ = [
 def load_py_fpaths(
     root: Path,
 ) -> List[Path]:
-    return [fpath for fpath in _path.walk(root, absolute=True) if _path.splitext(fpath) == ".py"]
+    return [
+        fpath
+        for fpath in _path.walk(root, absolute=True)
+        if _path.splitext(fpath) == ".py"
+    ]
 
 
 def format_files(

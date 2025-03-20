@@ -354,7 +354,7 @@ def walk(
     >>> walk('data')
     ['train.txt', 'test.txt', 'models/resnet18.pth']
 
-    >>> walk('data', absolute=True) 
+    >>> walk('data', absolute=True)
     ['/home/user/data/train.txt', '/home/user/data/test.txt', '/home/user/data/models/resnet18.pth']
     ```
 

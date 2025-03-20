@@ -1,8 +1,7 @@
 import torch
 from PIL import ImageFilter
 
-from ...misc.typing import (Device, Image, List, Literal, Optional, Tensor,
-                            Tuple, Union)
+from ...misc.typing import Device, Image, List, Literal, Optional, Tensor, Tuple, Union
 from ..utils import is_text
 from . import sd1_, sd2_, sd3_5
 from .safety_checker import SafetyChecker
@@ -12,10 +11,10 @@ __all__ = [
 ]
 
 supported_versions = [
-    version for version in
-    list(sd1_.model_ids.keys()) +
-    list(sd2_.model_ids.keys()) +
-    list(sd3_5.model_ids.keys())
+    version
+    for version in list(sd1_.model_ids.keys())
+    + list(sd2_.model_ids.keys())
+    + list(sd3_5.model_ids.keys())
 ]
 
 
@@ -139,8 +138,7 @@ class StableDiffusion:
         if self.blur_nsfw:
             for i, (image, is_nsfw) in enumerate(zip(images, has_nsfw_concept)):
                 if is_nsfw:
-                    images[i] = image.filter(
-                        ImageFilter.GaussianBlur(radius=10))
+                    images[i] = image.filter(ImageFilter.GaussianBlur(radius=10))
         latents = [latent for latent in torch.stack(self.pipe.latents, dim=1)]
         self.pipe.latents = []
         return images, latents, has_nsfw_concept

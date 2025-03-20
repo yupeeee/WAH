@@ -1,5 +1,4 @@
-from . import download
-from . import zips
+from . import download, zips
 from .args import ArgumentParser
 
 __all__ = [

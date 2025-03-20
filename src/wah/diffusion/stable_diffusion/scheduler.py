@@ -11,8 +11,13 @@ __all__ = [
 def load_scheduler(
     version: str,
     model_ids: Dict[str, str],
-    strategy: Literal["DDIM", "LMSDiscrete", "EulerDiscrete",
-                      "EulerAncestralDiscrete", "DPMSolverMultistep",] = "DDIM",
+    strategy: Literal[
+        "DDIM",
+        "LMSDiscrete",
+        "EulerDiscrete",
+        "EulerAncestralDiscrete",
+        "DPMSolverMultistep",
+    ] = "DDIM",
     # **kwargs,
 ) -> SchedulerMixin:
     scheduler = getattr(diffusers, f"{strategy}Scheduler").from_config(

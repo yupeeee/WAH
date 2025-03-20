@@ -2,8 +2,9 @@
 import numpy as np
 import torch
 import torch.nn as nn
-from diffusers.pipelines.stable_diffusion.safety_checker import \
-    StableDiffusionSafetyChecker
+from diffusers.pipelines.stable_diffusion.safety_checker import (
+    StableDiffusionSafetyChecker,
+)
 from transformers import CLIPImageProcessor
 
 from ...misc.typing import Device, Image, List, Tensor, Tuple
@@ -45,9 +46,7 @@ def detect_bad_concepts(
     # Add 0.01 to concept scores if any special scores are positive
     has_special = torch.any(special_scores > 0, dim=1)
     concept_scores = torch.where(
-        has_special.unsqueeze(1),
-        concept_scores + 0.01,
-        concept_scores
+        has_special.unsqueeze(1), concept_scores + 0.01, concept_scores
     )
 
     # Detect bad concepts
@@ -62,9 +61,9 @@ class SafetyChecker:
     def __init__(self, device: Device = "cpu") -> None:
         self.device = device
         self.processor = CLIPImageProcessor()
-        self.model = StableDiffusionSafetyChecker.from_pretrained(
-            self.MODEL_ID
-        ).to(self.device)
+        self.model = StableDiffusionSafetyChecker.from_pretrained(self.MODEL_ID).to(
+            self.device
+        )
 
     def to(self, device: Device) -> "SafetyChecker":
         self.device = device
@@ -72,8 +71,8 @@ class SafetyChecker:
         return self
 
     def __call__(self, images: List[Image]):
-        clip_input = torch.tensor(
-            np.array(self.processor(images).pixel_values)).to(self.device)
-        has_nsfw, concept_scores = detect_bad_concepts(
-            self.model, clip_input)
+        clip_input = torch.tensor(np.array(self.processor(images).pixel_values)).to(
+            self.device
+        )
+        has_nsfw, concept_scores = detect_bad_concepts(self.model, clip_input)
         return has_nsfw, concept_scores
