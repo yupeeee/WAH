@@ -11,9 +11,11 @@ https://huggingface.co/datasets/Gustavosta/Stable-Diffusion-Prompts
 import json
 
 import requests
+from PIL import Image
 
 from ....misc import path as _path
-from ....misc.typing import Image, List, Path, Tuple
+from ....misc.typing import Image as ImageType
+from ....misc.typing import List, Path, Tuple
 from ..base import ClassificationDataset
 
 __all__ = [
@@ -121,7 +123,7 @@ class SDM1K(ClassificationDataset):
     def _preprocess_data(
         self,
         data: Tuple[str, str, int],
-    ) -> Tuple[str, Image, int]:
+    ) -> Tuple[str, ImageType, int]:
         caption, url, index = data
         image = Image.open(requests.get(url, stream=True).raw)
         return caption, image, index
