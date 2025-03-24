@@ -34,6 +34,17 @@ def load_pipeline(version: str, scheduler: str, **kwargs):
         raise
 
 
+def load_noise_at_T(version: str, pipe, **kwargs):
+    if version.startswith("1."):
+        return sd1_.noise_at_T(pipe, **kwargs)
+    # elif version.startswith("2"):
+    #     return sd2_.noise_at_T(pipe, **kwargs)
+    # elif version.startswith("3.5-"):
+    #     return sd3_5.noise_at_T(pipe, **kwargs)
+    else:
+        raise
+
+
 def decode_tensors(pipe, step, timestep, callback_kwargs):
     """https://huggingface.co/docs/diffusers/using-diffusers/callback"""
     latents = callback_kwargs["latents"]
@@ -81,6 +92,7 @@ class StableDiffusion:
         **kwargs,
     ) -> None:
         _ = kwargs.pop("safety_checker", None)
+        self.version = version
         self.pipe = load_pipeline(version, scheduler, **kwargs)
         self.device = self.pipe.device
         self.blur_nsfw = blur_nsfw
@@ -142,6 +154,16 @@ class StableDiffusion:
         latents = [latent for latent in torch.stack(self.pipe.latents, dim=1)]
         self.pipe.latents = []
         return images, latents, has_nsfw_concept
+
+    @torch.no_grad()
+    def noise_at_T(self, **kwargs) -> Tuple[Tensor, Tensor]:
+        seed = kwargs.pop("seed", None)
+        if seed is not None:
+            kwargs["generator"] = self.pipe.generator.manual_seed(seed)
+        latent_model_input, noise_pred = load_noise_at_T(
+            self.version, self.pipe, **kwargs
+        )
+        return latent_model_input, noise_pred
 
     @torch.no_grad()
     def encode(

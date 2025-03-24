@@ -5,7 +5,7 @@ Yuxin Wen, Yuchen Liu, Chen Chen, Lingjuan Lyu
 https://github.com/YuxinWenRick/diffusion_memorization/blob/main/examples/sdv1_500_memorized.jsonl
 
 [Normal]
-https://huggingface.co/datasets/Gustavosta/Stable-Diffusion-Prompts
+https://github.com/ml-research/localizing_memorization_in_diffusion_models/tree/main/prompts
 """
 
 import json
