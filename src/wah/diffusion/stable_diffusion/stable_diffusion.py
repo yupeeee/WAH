@@ -34,13 +34,13 @@ def load_pipeline(version: str, scheduler: str, **kwargs):
         raise
 
 
-def load_noise_at_T(version: str, pipe, **kwargs):
+def predict_noise(version: str, pipe, t: int, **kwargs):
     if version.startswith("1."):
-        return sd1_.noise_at_T(pipe, **kwargs)
+        return sd1_.predict_noise(pipe, t, **kwargs)
     # elif version.startswith("2"):
-    #     return sd2_.noise_at_T(pipe, **kwargs)
+    #     return sd2_.predict_noise(pipe, t, **kwargs)
     # elif version.startswith("3.5-"):
-    #     return sd3_5.noise_at_T(pipe, **kwargs)
+    #     return sd3_5.predict_noise(pipe, t, **kwargs)
     else:
         raise
 
@@ -156,14 +156,16 @@ class StableDiffusion:
         return images, latents, has_nsfw_concept
 
     @torch.no_grad()
-    def noise_at_T(self, **kwargs) -> Tuple[Tensor, Tensor]:
+    def predict_noise(self, t: int = None, **kwargs) -> List[Tensor]:
         seed = kwargs.pop("seed", None)
         if seed is not None:
             kwargs["generator"] = self.pipe.generator.manual_seed(seed)
-        latent_model_input, noise_pred = load_noise_at_T(
-            self.version, self.pipe, **kwargs
-        )
-        return latent_model_input, noise_pred
+        if t is None:
+            t = kwargs.get(
+                "num_inference_steps", self.pipe.scheduler.num_inference_steps
+            )
+        noise_preds = predict_noise(self.version, self.pipe, t, **kwargs)
+        return noise_preds
 
     @torch.no_grad()
     def encode(

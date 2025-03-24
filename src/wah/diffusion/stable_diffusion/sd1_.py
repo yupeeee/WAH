@@ -5,15 +5,15 @@ from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion import (
     rescale_noise_cfg,
     retrieve_timesteps,
 )
-from diffusers.utils import deprecate
+from diffusers.utils import deprecate, is_torch_xla_available
 
-from ...misc.typing import Tensor, Tuple
+from ...misc.typing import Any, Dict, List, Tensor, Tuple
 from ..utils import is_valid_version
 from .scheduler import load_scheduler
 
 __all__ = [
     "load_pipeline",
-    "noise_at_T",
+    "predict_noise",
 ]
 
 model_ids = {
@@ -23,6 +23,14 @@ model_ids = {
     "1.4": "CompVis/stable-diffusion-v1-4",
     "1.5": "sd-legacy/stable-diffusion-v1-5",
 }
+
+# TODO: XLA is not supported yet
+# if is_torch_xla_available():
+#     import torch_xla.core.xla_model as xm
+
+#     XLA_AVAILABLE = True
+# else:
+#     XLA_AVAILABLE = False
 
 
 def load_pipeline(
@@ -40,10 +48,10 @@ def load_pipeline(
     return pipeline
 
 
-def noise_at_T(
+def load_unet_args(
     pipe: StableDiffusionPipeline,
     **kwargs,
-) -> Tuple[Tensor, Tensor]:
+) -> Tuple[Tensor, Tensor, Dict[str, Any]]:
     """https://github.com/huggingface/diffusers/blob/v0.32.2/src/diffusers/pipelines/stable_diffusion/pipeline_stable_diffusion.py"""
     prompt = kwargs.pop("prompt", None)
     height = kwargs.pop("height", None)
@@ -54,17 +62,13 @@ def noise_at_T(
     guidance_scale = kwargs.pop("guidance_scale", 7.5)
     negative_prompt = kwargs.pop("negative_prompt", None)
     num_images_per_prompt = kwargs.pop("num_images_per_prompt", 1)
-    eta = kwargs.pop("eta", 0.0)
     generator = kwargs.pop("generator", pipe.generator)
     latents = kwargs.pop("latents", None)
     prompt_embeds = kwargs.pop("prompt_embeds", None)
     negative_prompt_embeds = kwargs.pop("negative_prompt_embeds", None)
     ip_adapter_image = kwargs.pop("ip_adapter_image", None)
     ip_adapter_image_embeds = kwargs.pop("ip_adapter_image_embeds", None)
-    output_type = kwargs.pop("output_type", "pil")
-    return_dict = kwargs.pop("return_dict", True)
     cross_attention_kwargs = kwargs.pop("cross_attention_kwargs", None)
-    guidance_rescale = kwargs.pop("guidance_rescale", 0.0)
     clip_skip = kwargs.pop("clip_skip", None)
     callback_on_step_end = kwargs.pop("callback_on_step_end", None)
     callback_on_step_end_tensor_inputs = kwargs.pop(
@@ -186,9 +190,6 @@ def noise_at_T(
         latents,
     )
 
-    # 6. Prepare extra step kwargs. TODO: Logic should ideally just be moved out of the pipeline
-    extra_step_kwargs = pipe.prepare_extra_step_kwargs(generator, eta)
-
     # 6.1 Add image embeds for IP-Adapter
     added_cond_kwargs = (
         {"image_embeds": image_embeds}
@@ -206,38 +207,83 @@ def noise_at_T(
             guidance_scale_tensor, embedding_dim=pipe.unet.config.time_cond_proj_dim
         ).to(device=device, dtype=latents.dtype)
 
-    # expand the latents if we are doing classifier free guidance
-    t = timesteps[0]
-    latent_model_input = (
-        torch.cat([latents] * 2) if do_classifier_free_guidance else latents
+    return (
+        latents,
+        timesteps,
+        {
+            "encoder_hidden_states": prompt_embeds,
+            "timestep_cond": timestep_cond,
+            "cross_attention_kwargs": cross_attention_kwargs,
+            "added_cond_kwargs": added_cond_kwargs,
+            "return_dict": False,
+        },
     )
-    latent_model_input = pipe.scheduler.scale_model_input(latent_model_input, t)
 
-    # UNet args
-    unet_args = {
-        "sample": latent_model_input,
-        "timestep": t,
-        "encoder_hidden_states": prompt_embeds,
-        "timestep_cond": timestep_cond,
-        "cross_attention_kwargs": cross_attention_kwargs,
-        "added_cond_kwargs": added_cond_kwargs,
-        "return_dict": False,
-    }
 
-    # predict the noise residual
-    noise_pred = pipe.unet(**unet_args)[0]
+def predict_noise(
+    pipe: StableDiffusionPipeline,
+    t: int,
+    **kwargs,
+) -> List[Tensor]:
+    """https://github.com/huggingface/diffusers/blob/v0.32.2/src/diffusers/pipelines/stable_diffusion/pipeline_stable_diffusion.py"""
+    guidance_scale = kwargs.pop("guidance_scale", 7.5)
+    generator = kwargs.pop("generator", pipe.generator)
+    latents, timesteps, unet_args = load_unet_args(
+        pipe,
+        guidance_scale=guidance_scale,
+        generator=generator,
+        **kwargs,
+    )
+    guidance_rescale = kwargs.pop("guidance_rescale", 0.0)
+    eta = kwargs.pop("eta", 0.0)
 
-    # perform guidance
-    if do_classifier_free_guidance:
-        noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
-        noise_pred = noise_pred_uncond + guidance_scale * (
-            noise_pred_text - noise_pred_uncond
+    do_classifier_free_guidance = (
+        guidance_scale > 1 and pipe.unet.config.time_cond_proj_dim is None
+    )
+
+    noise_preds = []
+
+    for i, _t in enumerate(timesteps[:t]):
+        if pipe._interrupt:
+            continue
+
+        # expand the latents if we are doing classifier free guidance
+        latent_model_input = (
+            torch.cat([latents] * 2) if do_classifier_free_guidance else latents
         )
+        latent_model_input = pipe.scheduler.scale_model_input(latent_model_input, _t)
 
-    if do_classifier_free_guidance and guidance_rescale > 0.0:
-        # Based on 3.4. in https://arxiv.org/pdf/2305.08891.pdf
-        noise_pred = rescale_noise_cfg(
-            noise_pred, noise_pred_text, guidance_rescale=guidance_rescale
-        )
+        # predict the noise residual
+        noise_pred = pipe.unet(
+            latent_model_input,
+            _t,
+            **unet_args,
+        )[0]
 
-    return latent_model_input, noise_pred
+        # perform guidance
+        if do_classifier_free_guidance:
+            noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
+            noise_pred = noise_pred_uncond + guidance_scale * (
+                noise_pred_text - noise_pred_uncond
+            )
+
+        if do_classifier_free_guidance and guidance_rescale > 0.0:
+            # Based on 3.4. in https://arxiv.org/pdf/2305.08891.pdf
+            noise_pred = rescale_noise_cfg(
+                noise_pred, noise_pred_text, guidance_rescale=guidance_rescale
+            )
+
+        noise_preds.append(noise_pred)
+
+        # compute the previous noisy sample x_t -> x_t-1
+        # 6. Prepare extra step kwargs. TODO: Logic should ideally just be moved out of the pipeline
+        extra_step_kwargs = pipe.prepare_extra_step_kwargs(generator, eta)
+        latents = pipe.scheduler.step(
+            noise_pred, _t, latents, **extra_step_kwargs, return_dict=False
+        )[0]
+
+        # TODO: XLA is not supported yet
+        # if XLA_AVAILABLE:
+        #     xm.mark_step()
+
+    return noise_preds
