@@ -222,10 +222,11 @@ class Hessian:
         self,
         inputs: Tensor,
         targets: Tensor,
+        **kwargs,
     ) -> Tuple[List[Tensor], List[Tensor]]:
         inputs = inputs.to(self.device)
         targets = targets.to(self.device)
-        outputs = self.model(inputs)
+        outputs = self.model(inputs, **kwargs)
         loss = self.criterion(outputs, targets)
         with torch.autograd.set_grad_enabled(True):
             params = list(self.model.parameters())
@@ -239,6 +240,7 @@ class Hessian:
         top_n: int = 1,
         max_iter: int = 100,
         tol: float = 1e-3,
+        **kwargs,
     ) -> Tuple[List[float], List[List[Tensor]]]:
         """Compute top eigenvalues using power iteration.
 
@@ -260,7 +262,7 @@ class Hessian:
         """
         assert top_n >= 1
 
-        params, gradsH = self.params_and_grads(inputs, targets)
+        params, gradsH = self.params_and_grads(inputs, targets, **kwargs)
 
         eigenvalues = []
         eigenvectors = []
@@ -297,6 +299,7 @@ class Hessian:
         targets: Tensor,
         max_iter: int = 100,
         tol: float = 1e-3,
+        **kwargs,
     ) -> List[float]:
         """Estimate trace using Hutchinson's method.
 
@@ -315,7 +318,7 @@ class Hessian:
         >>> print(f"Final trace estimate: {np.mean(trace_estimates)}")
         ```
         """
-        params, gradsH = self.params_and_grads(inputs, targets)
+        params, gradsH = self.params_and_grads(inputs, targets, **kwargs)
 
         trace_vHv = []
         trace = 0.0
@@ -342,6 +345,7 @@ class Hessian:
         targets: Tensor,
         iter: int = 100,
         n_v: int = 1,
+        **kwargs,
     ) -> Tuple[List[List[float]], List[List[float]]]:
         """Estimate eigenvalue density using stochastic Lanczos algorithm.
 
@@ -360,7 +364,7 @@ class Hessian:
         >>> plt.hist(eigenvals[0], weights=weights[0])  # Plot density
         ```
         """
-        params, gradsH = self.params_and_grads(inputs, targets)
+        params, gradsH = self.params_and_grads(inputs, targets, **kwargs)
 
         eigen_list_full = []
         weight_list_full = []

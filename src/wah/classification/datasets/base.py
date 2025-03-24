@@ -123,7 +123,8 @@ class ClassificationDataset(Dataset):
         ### Args
             - `urls` (List[str]): List of URLs to download files from
             - `checklist` (List[Tuple[Path, str]]): List of (filepath, checksum) tuples to verify. Should include both downloaded and extracted files.
-            - `extract_dir` (Optional[Path]): Directory to extract downloaded files to, relative to self.root. Defaults to "."
+            - `extract_dir` (Optional[Path]): Directory to extract downloaded files to, relative to self.root. Defaults to ".". 
+                                            The extracted data will be saved to {self.root}/{extract_dir}/.
 
         ### Returns
             - `None`
@@ -133,9 +134,8 @@ class ClassificationDataset(Dataset):
         >>> urls = ['http://example.com/data.zip']
         >>> checklist = [
         ...     ('data.zip', 'abc123'),          # Downloaded file
-        ...     ('extracted/data.txt', 'def456')  # Extracted file
         ... ]
-        >>> _download(urls, checklist, 'extracted')
+        >>> _download(urls, checklist, 'extracted')  # Files will be extracted to ./extracted/
         ```
         """
         dataset_root = _path.join(self.root, extract_dir)
@@ -160,7 +160,10 @@ class ClassificationDataset(Dataset):
                 _path.rmfile(path)
         # Extract downloads
         for path in paths:
-            utils.zips.extract(path, dataset_root)
+            try:
+                utils.zips.extract(path, dataset_root)
+            except:
+                pass
         # Verify extracted files
         assert self._check(checklist[len(urls) :], dataset_root)
 

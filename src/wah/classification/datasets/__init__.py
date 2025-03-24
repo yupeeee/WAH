@@ -2,6 +2,7 @@ from .cifar10 import CIFAR10
 from .cifar100 import CIFAR100
 from .dataloader import load_dataloader
 from .imagenet import ImageNet
+from .sd_memorization import SDM1K
 from .stl10 import STL10
 from .utils import compute_mean_and_std, portion_dataset
 
@@ -12,5 +13,6 @@ __all__ = [
     "ImageNet",
     "load_dataloader",
     "portion_dataset",
+    "SDM1K",
     "STL10",
 ]
