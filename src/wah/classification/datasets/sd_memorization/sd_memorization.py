@@ -9,10 +9,11 @@ https://huggingface.co/datasets/Gustavosta/Stable-Diffusion-Prompts
 """
 
 import json
+
 import requests
 
 from ....misc import path as _path
-from ....misc.typing import List, Path, Tuple, Image
+from ....misc.typing import Image, List, Path, Tuple
 from ..base import ClassificationDataset
 
 __all__ = [

@@ -123,7 +123,7 @@ class ClassificationDataset(Dataset):
         ### Args
             - `urls` (List[str]): List of URLs to download files from
             - `checklist` (List[Tuple[Path, str]]): List of (filepath, checksum) tuples to verify. Should include both downloaded and extracted files.
-            - `extract_dir` (Optional[Path]): Directory to extract downloaded files to, relative to self.root. Defaults to ".". 
+            - `extract_dir` (Optional[Path]): Directory to extract downloaded files to, relative to self.root. Defaults to ".".
                                             The extracted data will be saved to {self.root}/{extract_dir}/.
 
         ### Returns
