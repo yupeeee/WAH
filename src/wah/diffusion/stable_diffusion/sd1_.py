@@ -224,7 +224,7 @@ def predict_noise(
     pipe: StableDiffusionPipeline,
     t: int,
     **kwargs,
-) -> List[Tensor]:
+) -> Tuple[List[Tensor], List[Tensor]]:
     """https://github.com/huggingface/diffusers/blob/v0.32.2/src/diffusers/pipelines/stable_diffusion/pipeline_stable_diffusion.py"""
     guidance_scale = kwargs.pop("guidance_scale", 7.5)
     generator = kwargs.pop("generator", pipe.generator)
@@ -241,7 +241,8 @@ def predict_noise(
         guidance_scale > 1 and pipe.unet.config.time_cond_proj_dim is None
     )
 
-    noise_preds = []
+    _noise_preds = []
+    _latents = [latents]
 
     for i, _t in enumerate(timesteps[:t]):
         if pipe._interrupt:
@@ -273,7 +274,7 @@ def predict_noise(
                 noise_pred, noise_pred_text, guidance_rescale=guidance_rescale
             )
 
-        noise_preds.append(noise_pred)
+        _noise_preds.append(noise_pred)
 
         # compute the previous noisy sample x_t -> x_t-1
         # 6. Prepare extra step kwargs. TODO: Logic should ideally just be moved out of the pipeline
@@ -282,8 +283,10 @@ def predict_noise(
             noise_pred, _t, latents, **extra_step_kwargs, return_dict=False
         )[0]
 
+        _latents.append(latents)
+
         # TODO: XLA is not supported yet
         # if XLA_AVAILABLE:
         #     xm.mark_step()
 
-    return noise_preds
+    return _noise_preds, _latents
