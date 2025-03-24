@@ -172,6 +172,7 @@ def noise_at_T(
     timesteps, num_inference_steps = retrieve_timesteps(
         pipe.scheduler, num_inference_steps, device, timesteps, sigmas
     )
+    t = timesteps[0]
     assert t < len(timesteps)
 
     # 5. Prepare latent variables
