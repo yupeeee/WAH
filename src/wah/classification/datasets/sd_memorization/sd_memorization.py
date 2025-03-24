@@ -123,7 +123,9 @@ class SDM1K(ClassificationDataset):
     def _preprocess_data(
         self,
         data: Tuple[str, str, int],
-    ) -> Tuple[str, ImageType, int]:
+        # ) -> Tuple[str, ImageType, int]:
+    ) -> str:
         caption, url, index = data
-        image = Image.open(requests.get(url, stream=True).raw)
-        return caption, image, index
+        # image = Image.open(requests.get(url, stream=True).raw)
+        # return caption, image, index
+        return caption
