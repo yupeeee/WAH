@@ -93,9 +93,9 @@ def portion_dataset(
     """
     assert 0 < portion <= 1, f"Expected 0 < portion <= 1, got {portion}"
     if balanced:
-        assert hasattr(
-            dataset, "targets"
-        ), f"Unable to create a balanced dataset as there are no targets in the dataset."
+        assert hasattr(dataset, "targets"), (
+            f"Unable to create a balanced dataset as there are no targets in the dataset."
+        )
         targets = torch.tensor(dataset.targets)
         classes = torch.unique(targets).sort()[0]
         indices = []

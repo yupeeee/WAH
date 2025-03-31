@@ -91,9 +91,9 @@ def getattrs(
     ```
     """
     if max_depth is not None:
-        assert (
-            isinstance(max_depth, int) and max_depth > 0
-        ), "max_depth must be a positive integer"
+        assert isinstance(max_depth, int) and max_depth > 0, (
+            "max_depth must be a positive integer"
+        )
 
     # Get all module names
     attrs = []

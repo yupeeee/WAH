@@ -2,7 +2,7 @@ from . import classification as lib
 from .misc import cuda as _cuda
 from .misc import dicts as _dicts
 from .misc import path as _path
-from .misc.typing import Config, Dataset, Module, Namespace, Trainer
+from .misc.typing import Dataset, Module, Namespace, Trainer
 
 __all__ = [
     "main",
@@ -38,7 +38,7 @@ DATASET_CONFIGS = {
 
 def load_dataset(
     args: Namespace,
-    config: Config,
+    config,
     train: bool = False,
 ) -> Dataset:
     if args.dataset not in DATASET_CONFIGS:
@@ -78,7 +78,7 @@ def load_dataset(
 
 def load_model(
     args: Namespace,
-    config: Config,
+    config,
 ) -> Module:
     # Load model
     model = lib.models.load(
@@ -100,7 +100,7 @@ def load_model(
 
 def load_trainer(
     args: Namespace,
-    config: Config,
+    config,
 ) -> Trainer:
     trainer = lib.Trainer(
         log_root=args.log_root,

@@ -44,8 +44,7 @@ def load_timm_model(
     ```
     """
     assert name in timm.list_models(), (
-        f"timm does not support {name}. "
-        f"Check timm.list_models() for supported models."
+        f"timm does not support {name}. Check timm.list_models() for supported models."
     )
     model_kwargs = {
         "model_name": name,

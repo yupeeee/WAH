@@ -389,7 +389,7 @@ class UNet(nn.Module):
         self.pipe = pipe
         self._unet_args = _unet_args
         self.guidance_scale = guidance_scale
-    
+
     def to(self, device: Device) -> "UNet":
         self.pipe = self.pipe.to(device)
         return self

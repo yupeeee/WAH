@@ -7,6 +7,7 @@
 		- `ImageNet`
 		- `load_dataloader`
 		- `portion_dataset`
+		- `SDM1K`
 		- `STL10`
 	- `models`
 		- `FeatureExtractor`
@@ -25,12 +26,16 @@
 - `clip`
 	- `CLIP`
 - `cuda`
+- `decor`
+	- `config`
 - `dicts`
 - `diffusion`
 	- `StableDiffusion`
 	- `login`
 - `fun`
 	- `RecursionWrapper`
+- `hessian`
+	- `Hessian`
 - `lists`
 - `mods`
 - `path`

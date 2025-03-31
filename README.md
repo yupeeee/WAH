@@ -92,6 +92,7 @@ yaml
 		- `ImageNet`
 		- `load_dataloader`
 		- `portion_dataset`
+		- `SDM1K`
 		- `STL10`
 	- `models`
 		- `FeatureExtractor`
@@ -107,9 +108,19 @@ yaml
 		- `brier_score`
 		- `ece`
 	- `Trainer`
+- `clip`
+	- `CLIP`
+- `cuda`
+- `decor`
+	- `config`
 - `dicts`
+- `diffusion`
+	- `StableDiffusion`
+	- `login`
 - `fun`
 	- `RecursionWrapper`
+- `hessian`
+	- `Hessian`
 - `lists`
 - `mods`
 - `path`

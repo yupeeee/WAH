@@ -220,9 +220,9 @@ def mat_elmul_vec(
     ```
     """
     # Check dimensions match
-    assert (
-        mat.shape[dim] == vec.shape[0]
-    ), f"Shape mismatch at dim {dim}: {mat.shape[dim]} != {vec.shape[0]}"
+    assert mat.shape[dim] == vec.shape[0], (
+        f"Shape mismatch at dim {dim}: {mat.shape[dim]} != {vec.shape[0]}"
+    )
 
     # Create shape for broadcasting
     expand_shape = [1] * len(mat.shape)

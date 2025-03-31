@@ -182,7 +182,9 @@ def round_nums(
         k: (
             v
             if isinstance(v, int)
-            else round(float(v), decimal) if isinstance(v, float) else v
+            else round(float(v), decimal)
+            if isinstance(v, float)
+            else v
         )
         for k, v in d.items()
     }
@@ -225,9 +227,9 @@ def save_in_csv(
     # 2.35,4.57
     ```
     """
-    assert (
-        _path.splitext(path).lower() == ".csv"
-    ), f"File extension must be .csv, got {_path.splitext(path)}"
+    assert _path.splitext(path).lower() == ".csv", (
+        f"File extension must be .csv, got {_path.splitext(path)}"
+    )
     for k, v in d.items():
         if not isinstance(v, list):
             d[k] = [v]
@@ -270,9 +272,9 @@ def save_in_yaml(
     #   age: 30
     ```
     """
-    assert (
-        _path.splitext(path).lower() == ".yaml"
-    ), f"File extension must be .yaml, got {_path.splitext(path)}"
+    assert _path.splitext(path).lower() == ".yaml", (
+        f"File extension must be .yaml, got {_path.splitext(path)}"
+    )
     with open(path, mode) as f:
         yaml.dump(d, f, **kwargs)
 

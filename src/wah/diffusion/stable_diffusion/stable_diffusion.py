@@ -127,9 +127,9 @@ class StableDiffusion:
         verbose: bool = True,
         **kwargs,
     ) -> Tuple[List[Image], List[Tensor], List[bool]]:
-        assert (
-            prompt is not None or prompt_embeds is not None
-        ), f"Either prompt or prompt_embeds must be provided"
+        assert prompt is not None or prompt_embeds is not None, (
+            f"Either prompt or prompt_embeds must be provided"
+        )
         if seed is not None:
             kwargs["generator"] = self.pipe.generator.manual_seed(seed)
         if not verbose:

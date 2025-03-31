@@ -1,6 +1,6 @@
 accelerate
 bitsandbytes
-black
+# black
 diffusers
 ftfy
 isort
@@ -12,6 +12,7 @@ PyYAML
 pillow
 regex
 requests
+ruff
 sentencepiece
 tensorboard
 timm
