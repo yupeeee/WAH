@@ -26,7 +26,8 @@ def format_files(
 
 
 def main(args: Namespace):
-    fpaths = []
-    for root in args.roots:
-        fpaths.extend(load_py_fpaths(root))
-    format_files(fpaths)
+    # fpaths = []
+    # for root in args.roots:
+    #     fpaths.extend(load_py_fpaths(root))
+    # format_files(fpaths)
+    subprocess.run(["ruff", "format"] + args.roots)

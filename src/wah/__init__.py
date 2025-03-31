@@ -1,4 +1,4 @@
-from . import classification, clip, diffusion, fun, hessian, utils
+from . import classification, clip, decor, diffusion, fun, hessian, utils
 from .misc import cuda, dicts, lists, mods, path, random, tensor
 from .misc.time import time
 
@@ -6,6 +6,7 @@ __all__ = [
     "classification",
     "clip",
     "cuda",
+    "decor",
     "dicts",
     "diffusion",
     "fun",

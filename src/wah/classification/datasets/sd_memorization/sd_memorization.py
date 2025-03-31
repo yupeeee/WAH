@@ -14,8 +14,9 @@ import requests
 from PIL import Image
 
 from ....misc import path as _path
+from ....misc.typing import Callable
 from ....misc.typing import Image as ImageType
-from ....misc.typing import List, Path, Tuple
+from ....misc.typing import List, Optional, Path, Tuple
 from ..base import ClassificationDataset
 
 __all__ = [
@@ -48,11 +49,13 @@ class SDM1K(ClassificationDataset):
 
     ### Args
         - `root` (Path): Root directory where the dataset exists or will be saved to.
+        - `transform` (Optional[Callable]): Transform applied to the data.
         - `download` (bool): If True, downloads the dataset from the internet and puts it into the `root` directory.
           If the dataset is already downloaded, it is not downloaded again.
 
     ### Attributes
         - `root` (Path): Root directory where the dataset exists or will be saved to.
+        - `transform` (Optional[Callable]): Transform applied to the data.
         - `data`: Data of the dataset.
         - `targets`: Targets of the dataset.
         - `labels`: Labels of the dataset.
@@ -80,16 +83,18 @@ class SDM1K(ClassificationDataset):
     def __init__(
         self,
         root: Path = ROOT,
+        transform: Optional[Callable] = None,
         download: bool = False,
     ) -> None:
         """
         - `root` (Path): Root directory where the dataset exists or will be saved to.
+        - `transform` (Optional[Callable]): Transform applied to the data.
         - `download` (bool): If True, downloads the dataset from the internet and puts it into the `root` directory.
           If the dataset is already downloaded, it is not downloaded again.
         """
         super().__init__(
             root,
-            None,
+            transform,
             None,
         )
 

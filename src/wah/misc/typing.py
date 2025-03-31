@@ -1,6 +1,17 @@
 import os
 from argparse import Namespace
-from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 from lightning import LightningModule, Trainer
 from matplotlib.axes import Axes
@@ -8,7 +19,7 @@ from pandas import DataFrame
 from PIL.Image import Image
 from torch import Tensor
 from torch import device as Device
-from torch.nn import Module
+from torch.nn import Module, Parameter
 from torch.optim import Optimizer
 
 # ImportError: cannot import name 'LRScheduler' from 'torch.optim.lr_scheduler'
@@ -26,7 +37,6 @@ __all__ = [
     "Axes",
     "Callable",
     "CLIPOutput",
-    "Config",
     "DataFrame",
     "DataLoader",
     "Dataset",
@@ -34,6 +44,7 @@ __all__ = [
     "Devices",
     "Dict",
     "Image",
+    "Iterator",
     "LightningModule",
     "List",
     "Literal",
@@ -42,6 +53,7 @@ __all__ = [
     "Namespace",
     "Optimizer",
     "Optional",
+    "Parameter",
     "Path",
     "RemovableHandle",
     "Sequence",
@@ -51,6 +63,5 @@ __all__ = [
     "Union",
 ]
 
-Config = Dict[str, Any]
 Devices = Union[int, str, List[Union[int, str]]]
 Path = Union[str, bytes, os.PathLike]

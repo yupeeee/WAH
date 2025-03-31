@@ -20,7 +20,7 @@ def load_scheduler(
     ] = "DDIM",
     # **kwargs,
 ) -> SchedulerMixin:
-    scheduler = getattr(diffusers, f"{strategy}Scheduler").from_config(
+    scheduler = getattr(diffusers, f"{strategy}Scheduler").from_pretrained(
         model_ids[version],
         subfolder="scheduler",
         # **kwargs,

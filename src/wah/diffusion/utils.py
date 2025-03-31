@@ -3,12 +3,13 @@ import subprocess
 import torch
 from PIL import Image
 
-from ..misc.typing import Dict, Tensor
+from ..misc.typing import Device, Dict, Tensor
 
 __all__ = [
     "login",
     "is_valid_version",
     "is_text",
+    "load_generator",
     "sdxl2rgb",
 ]
 
@@ -57,6 +58,14 @@ def is_text(x):
     return isinstance(x, (str, list)) and (
         isinstance(x, str) or all(isinstance(s, str) for s in x)
     )
+
+
+def load_generator(seed: int = None, device: Device = "cpu") -> torch.Generator:
+    """Load a generator with a given seed and device."""
+    generator = torch.Generator(device=device)
+    if seed is not None:
+        generator.manual_seed(seed)
+    return generator
 
 
 def sdxl2rgb(latents: Tensor) -> Tensor:

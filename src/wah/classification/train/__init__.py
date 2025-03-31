@@ -1,12 +1,4 @@
-from ...misc.typing import (
-    Config,
-    DataLoader,
-    Dataset,
-    LightningModule,
-    Module,
-    Optional,
-    Path,
-)
+from ...misc.typing import DataLoader, Dataset, LightningModule, Module, Optional, Path
 from ...misc.typing import Trainer as _Trainer
 from ..datasets import load_dataloader
 from .train import Wrapper, load_trainer
@@ -23,12 +15,12 @@ class Trainer:
         - `log_root` (Path): Root directory for saving logs
         - `name` (str): Name of the experiment
         - `version` (Optional[str]): Version of the experiment
-        - `**kwargs` (Config): Configuration parameters
+        - `**kwargs`: Configuration parameters
 
     ### Attributes
         - `trainer` (Trainer): Lightning trainer instance
         - `log_dir` (Path): Directory where logs are saved
-        - `config` (Config): Configuration parameters
+        - `config`: Configuration parameters
 
     ### Example
     ```python
@@ -48,11 +40,11 @@ class Trainer:
         - `log_root` (Path): Root directory for saving logs
         - `name` (str): Name of the experiment
         - `version` (Optional[str]): Version of the experiment
-        - `**kwargs` (Config): Configuration parameters
+        - `**kwargs`: Configuration parameters
         """
         self.trainer: _Trainer = load_trainer(log_root, name, version, **kwargs)
         self.log_dir = self.trainer._log_dir
-        self.config: Config = kwargs
+        self.config = kwargs
 
     def run(
         self,

@@ -272,7 +272,8 @@ class Hessian:
             v = normalization(v)
             eigenvalue = None
 
-            for _ in range(max_iter):
+            for i in range(max_iter):
+                print(i)
                 v = orthnormal(v, eigenvectors)
                 self.model.zero_grad()
 
