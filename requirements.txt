@@ -1,6 +1,6 @@
 accelerate
 bitsandbytes
-# black
+black
 diffusers
 ftfy
 isort

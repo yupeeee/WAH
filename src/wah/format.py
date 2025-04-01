@@ -22,7 +22,7 @@ def format_files(
     fpaths: List[Path],
 ) -> None:
     subprocess.run(["isort"] + fpaths)
-    # subprocess.run(["black"] + fpaths)
+    subprocess.run(["black"] + fpaths)
 
 
 def main(args: Namespace):
