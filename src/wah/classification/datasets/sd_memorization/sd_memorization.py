@@ -134,3 +134,9 @@ class SDM1K(ClassificationDataset):
         # image = Image.open(requests.get(url, stream=True).raw)
         # return caption, image, index
         return caption
+
+    def memorized_prompts(self) -> List[str]:
+        return [prompt for prompt, _, _ in self.data[:500]]
+
+    def normal_prompts(self) -> List[str]:
+        return [prompt for prompt, _, _ in self.data[500:]]

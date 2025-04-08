@@ -1,16 +1,16 @@
 import subprocess
 
+import diffusers
 import torch
-from PIL import Image
+from diffusers import SchedulerMixin
 
-from ..misc.typing import Device, Dict, Tensor
+from ..misc.typing import Device, Dict, Literal
 
 __all__ = [
     "login",
     "is_valid_version",
-    "is_text",
     "load_generator",
-    "sdxl2rgb",
+    "load_scheduler",
 ]
 
 
@@ -53,13 +53,6 @@ def is_valid_version(version: str, ids: Dict[str, str]) -> bool:
         )
 
 
-def is_text(x):
-    """Returns True if x is a string or list of strings (Union[str, List[str]]), False otherwise"""
-    return isinstance(x, (str, list)) and (
-        isinstance(x, str) or all(isinstance(s, str) for s in x)
-    )
-
-
 def load_generator(seed: int = None, device: Device = "cpu") -> torch.Generator:
     """Load a generator with a given seed and device."""
     generator = torch.Generator(device=device)
@@ -68,23 +61,21 @@ def load_generator(seed: int = None, device: Device = "cpu") -> torch.Generator:
     return generator
 
 
-def sdxl2rgb(latents: Tensor) -> Tensor:
-    """https://huggingface.co/blog/TimothyAlexisVass/explaining-the-sdxl-latent-space"""
-    weights = (
-        (60, -60, 25, -70),
-        (60, -5, 15, -50),
-        (60, 10, -5, -35),
+def load_scheduler(
+    version: str,
+    model_ids: Dict[str, str],
+    strategy: Literal[
+        "DDIM",
+        "LMSDiscrete",
+        "EulerDiscrete",
+        "EulerAncestralDiscrete",
+        "DPMSolverMultistep",
+    ] = "DDIM",
+    # **kwargs,
+) -> SchedulerMixin:
+    scheduler = getattr(diffusers, f"{strategy}Scheduler").from_pretrained(
+        model_ids[version],
+        subfolder="scheduler",
+        # **kwargs,
     )
-
-    weights_tensor = torch.t(
-        torch.tensor(weights, dtype=latents.dtype).to(latents.device)
-    )
-    biases_tensor = torch.tensor((150, 140, 130), dtype=latents.dtype).to(
-        latents.device
-    )
-    rgb_tensor = torch.einsum(
-        "...lxy,lr -> ...rxy", latents, weights_tensor
-    ) + biases_tensor.unsqueeze(-1).unsqueeze(-1)
-    image_array = rgb_tensor.clamp(0, 255).byte().cpu().numpy().transpose(1, 2, 0)
-
-    return Image.fromarray(image_array)
+    return scheduler
