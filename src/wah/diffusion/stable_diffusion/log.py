@@ -62,19 +62,28 @@ class Wrapper(L.LightningModule):
         torch.save(
             prompt,
             _path.join(
-                self.log_dir, "prompts", "run", f"{self.local_rank}_{batch_idx}.pt"
+                self.log_dir,
+                "prompts",
+                "run",
+                f"batch{batch_idx}@{self.local_rank}_{self.seed}.pt",
             ),
         )
         torch.save(
             self.pipe._latents,
             _path.join(
-                self.log_dir, "latents", "run", f"{self.local_rank}_{batch_idx}.pt"
+                self.log_dir,
+                "latents",
+                "run",
+                f"batch{batch_idx}@{self.local_rank}_{self.seed}.pt",
             ),
         )
         torch.save(
             self.pipe._noise_preds,
             _path.join(
-                self.log_dir, "noise_preds", "run", f"{self.local_rank}_{batch_idx}.pt"
+                self.log_dir,
+                "noise_preds",
+                "run",
+                f"batch{batch_idx}@{self.local_rank}_{self.seed}.pt",
             ),
         )
 
