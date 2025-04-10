@@ -1,6 +1,7 @@
 import lightning as L
 import torch
 import tqdm
+from lightning.pytorch.strategies import DDPStrategy
 from torch.utils.data import DataLoader, Dataset
 
 from ...misc import lists as _lists
@@ -13,6 +14,14 @@ from .v2 import SDv2
 __all__ = [
     "Logger",
 ]
+
+
+def rearrange(
+    logs: List[Union[List[str], List[Tensor]]],
+) -> List[Union[List[str], List[Tensor]]]:
+    logs = list(map(list, zip(*logs)))
+    logs = [log for batch in logs for log in batch]
+    return logs
 
 
 class Wrapper(L.LightningModule):
@@ -110,42 +119,100 @@ class Wrapper(L.LightningModule):
                 sort=True,
                 absolute=True,
             )
+            # Group files by batch index
+            batch_indices = _lists.sort(
+                list(
+                    set(
+                        [
+                            _path.basename(fpath).split("@")[0].replace("batch", "")
+                            for fpath in prompt_batch_fpaths
+                        ]
+                    )
+                )
+            )
+            prompt_batch_fpaths = [
+                [fpath for fpath in prompt_batch_fpaths if f"batch{batch_idx}" in fpath]
+                for batch_idx in batch_indices
+            ]
+            latents_batch_fpaths = [
+                [
+                    fpath
+                    for fpath in latents_batch_fpaths
+                    if f"batch{batch_idx}" in fpath
+                ]
+                for batch_idx in batch_indices
+            ]
+            noise_preds_batch_fpaths = [
+                [
+                    fpath
+                    for fpath in noise_preds_batch_fpaths
+                    if f"batch{batch_idx}" in fpath
+                ]
+                for batch_idx in batch_indices
+            ]
 
             prompts = []
             i = 0
             for (
-                prompt_batch_fpath,
-                latents_batch_fpath,
-                noise_preds_batch_fpath,
+                prompt_fpaths,
+                latents_fpaths,
+                noise_preds_fpaths,
             ) in tqdm.tqdm(
                 zip(
-                    prompt_batch_fpaths, latents_batch_fpaths, noise_preds_batch_fpaths
+                    prompt_batch_fpaths,
+                    latents_batch_fpaths,
+                    noise_preds_batch_fpaths,
                 ),
                 total=len(prompt_batch_fpaths),
                 desc="Saving latents and noise preds",
             ):
-                prompt_batch = torch.load(prompt_batch_fpath)
-                latents_batch = torch.load(latents_batch_fpath)
-                noise_preds_batch = torch.load(noise_preds_batch_fpath)
+                prompts_batch = [
+                    torch.load(fpath, weights_only=True) for fpath in prompt_fpaths
+                ]
+                prompts.extend(rearrange(prompts_batch))
 
-                prompts.extend(prompt_batch)
-                latents_batch = torch.stack(latents_batch, dim=1)
-                noise_preds_batch = torch.stack(noise_preds_batch, dim=1)
+                # (world_size, batch_size, T, *feature_dim)
+                latents_batch = [
+                    torch.stack(torch.load(fpath, weights_only=True), dim=1).unbind(
+                        dim=0
+                    )
+                    for fpath in latents_fpaths
+                ]
+                noise_preds_batch = [
+                    torch.stack(torch.load(fpath, weights_only=True), dim=1).unbind(
+                        dim=0
+                    )
+                    for fpath in noise_preds_fpaths
+                ]
+                # rearrange to original order
+                latents_batch = rearrange(latents_batch)
+                noise_preds_batch = rearrange(noise_preds_batch)[
+                    1::2
+                ]  # remove noise_pred_uncond (use noise_pred_text only)
 
-                for latents, noise_preds in zip(latents_batch, noise_preds_batch):
+                for latent, noise_pred in zip(latents_batch, noise_preds_batch):
                     torch.save(
-                        latents,
-                        _path.join(self.log_dir, "latents", f"{i}@{self.seed}.pt"),
+                        latent,
+                        _path.join(self.log_dir, "latents", f"{i}_{self.seed}.pt"),
                     )
                     torch.save(
-                        noise_preds,
-                        _path.join(self.log_dir, "noise_preds", f"{i}@{self.seed}.pt"),
+                        noise_pred,
+                        _path.join(self.log_dir, "noise_preds", f"{i}_{self.seed}.pt"),
                     )
                     i += 1
 
-                _path.rmfile(prompt_batch_fpath)
-                _path.rmfile(latents_batch_fpath)
-                _path.rmfile(noise_preds_batch_fpath)
+                for (
+                    prompt_fpath,
+                    latents_fpath,
+                    noise_preds_fpath,
+                ) in zip(
+                    prompt_fpaths,
+                    latents_fpaths,
+                    noise_preds_fpaths,
+                ):
+                    _path.rmfile(prompt_fpath)
+                    _path.rmfile(latents_fpath)
+                    _path.rmfile(noise_preds_fpath)
 
             _lists.save(prompts, _path.join(self.log_dir, "prompts.txt"))
 
@@ -172,6 +239,7 @@ def load_logger(
         max_epochs=1,
         log_every_n_steps=None,
         deterministic="warn",
+        strategy=DDPStrategy(replace_sampler_ddp=False),
     )
     # Set log directory
     setattr(trainer, "_log_dir", log_dir)
@@ -190,7 +258,11 @@ class PromptDataset(Dataset):
         return len(self.prompts)
 
     def dataloader(self, **kwargs) -> DataLoader:
-        return DataLoader(self, **kwargs)
+        return DataLoader(
+            self,
+            shuffle=False,
+            **kwargs,
+        )
 
 
 class Logger:
