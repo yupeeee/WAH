@@ -5,6 +5,7 @@ from lightning.pytorch.strategies import DDPStrategy
 from torch.utils.data import DataLoader, Dataset
 
 from ...misc import lists as _lists
+from ...misc import dicts as _dicts
 from ...misc import path as _path
 from ...misc.lightning import load_accelerator_and_devices
 from ...misc.typing import Devices, List, Optional, Path, Tensor, Trainer, Union
@@ -47,6 +48,7 @@ class Wrapper(L.LightningModule):
             self.trainer._log_dir,
             self.pipe.config.pipe_id,
         )
+        _dicts.save(self.pipe.config.dict(), _path.join(self.log_dir, "config.yaml"))
         if self.trainer.is_global_zero:
             if (
                 _path.exists(_path.join(self.log_dir, "prompts", "run"))
