@@ -5,8 +5,7 @@ from diffusers import (
     StableDiffusion3Pipeline,
 )
 
-from ..utils import is_valid_version
-from .scheduler import load_scheduler
+from .utils import is_valid_version, load_scheduler
 
 __all__ = [
     "load_pipeline",

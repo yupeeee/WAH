@@ -4,7 +4,7 @@ import diffusers
 import torch
 from diffusers import SchedulerMixin
 
-from ..misc.typing import Device, Dict, Literal
+from ...misc.typing import Device, Dict, Literal
 
 __all__ = [
     "login",

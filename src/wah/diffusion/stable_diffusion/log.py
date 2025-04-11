@@ -8,8 +8,7 @@ from ...misc import lists as _lists
 from ...misc import path as _path
 from ...misc.lightning import load_accelerator_and_devices
 from ...misc.typing import Devices, List, Optional, Path, Tensor, Trainer, Union
-from .v1 import SDv1
-from .v2 import SDv2
+from .pipe import StableDiffusion
 
 __all__ = [
     "Logger",
@@ -27,7 +26,7 @@ def rearrange(
 class Wrapper(L.LightningModule):
     def __init__(
         self,
-        pipe: Union[SDv1, SDv2],
+        pipe: StableDiffusion,
         seed: Optional[int] = None,
         t: Optional[int] = 0,
         **kwargs,
@@ -270,7 +269,7 @@ class Logger:
     def __init__(
         self,
         log_dir: Path,
-        pipe: Union[SDv1, SDv2],
+        pipe: StableDiffusion,
         seeds: Optional[List[int]] = None,
         t: Optional[int] = 0,
         devices: Optional[Devices] = "auto",
