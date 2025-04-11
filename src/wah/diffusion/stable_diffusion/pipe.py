@@ -265,6 +265,8 @@ class StableDiffusion:
             torch.stack([noise_preds[b] for noise_preds in self.noise_preds]).cpu()
             for b in range(self.noise_preds[0].shape[0])
         ]
+        self.latents = []
+        self.noise_preds = []
         return (
             images,
             latents,
