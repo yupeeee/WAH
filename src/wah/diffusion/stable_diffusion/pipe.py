@@ -88,7 +88,7 @@ class StableDiffusion:
         self._generator = load_generator(self._seed, self.device)
         self.safety_checker = self.safety_checker.to(device)
         return self
-    
+
     def verbose(self, _verbose: bool) -> "StableDiffusion":
         if not _verbose:
             self.pipe.set_progress_bar_config(disable=True)
@@ -257,16 +257,17 @@ class StableDiffusion:
         hook.remove()
 
         # Rearrange from [(B,*D)]*T to [(T,*D)]*B
-        self.latents = [
+        latents: List[Tensor] = [
             torch.stack([latents[b] for latents in self.latents]).cpu()
             for b in range(self.latents[0].shape[0])
         ]
-        self.noise_preds = [
+        noise_preds: List[Tensor] = [
             torch.stack([noise_preds[b] for noise_preds in self.noise_preds]).cpu()
             for b in range(self.noise_preds[0].shape[0])
         ]
-        self.noise_preds = (
-            self.noise_preds[: len(self.latents)],  # noise_preds_uncond
-            self.noise_preds[len(self.latents) :],  # noise_preds_text
+        return (
+            images,
+            latents,
+            noise_preds[: len(latents)],  # noise_preds_uncond
+            noise_preds[len(latents) :],  # noise_preds_text
         )
-        return images, self.latents, self.noise_preds
