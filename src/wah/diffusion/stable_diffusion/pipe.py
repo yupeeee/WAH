@@ -268,6 +268,8 @@ class StableDiffusion:
         return (
             images,
             latents,
-            noise_preds[: len(latents)],  # noise_preds_uncond
-            noise_preds[len(latents) :],  # noise_preds_text
+            (
+                noise_preds[: len(latents)],  # noise_preds_uncond
+                noise_preds[len(latents) :],  # noise_preds_text
+            ),
         )
