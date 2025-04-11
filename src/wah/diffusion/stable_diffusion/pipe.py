@@ -54,6 +54,7 @@ class StableDiffusion:
         self,
         version: str,
         scheduler: str,
+        verbose: bool = True,
         **kwargs,
     ) -> None:
         self._version = version
@@ -61,6 +62,8 @@ class StableDiffusion:
         self._seed: int = None
 
         self.pipe = load_pipe(version, scheduler, **kwargs)
+        if not verbose:
+            self.pipe.set_progress_bar_config(disable=True)
         self.device: Device = self.pipe._execution_device
         self._generator: torch.Generator = load_generator(self._seed, self.device)
         self.safety_checker = SafetyChecker(self.device)
@@ -84,6 +87,11 @@ class StableDiffusion:
         self.pipe.to(device)
         self._generator = load_generator(self._seed, self.device)
         self.safety_checker = self.safety_checker.to(device)
+        return self
+    
+    def verbose(self, _verbose: bool) -> "StableDiffusion":
+        if not _verbose:
+            self.pipe.set_progress_bar_config(disable=True)
         return self
 
     def _latents_callback(self, pipe, step, timestep, callback_kwargs):

@@ -28,7 +28,6 @@ class Wrapper(L.LightningModule):
         self,
         pipe: StableDiffusion,
         seed: Optional[int] = None,
-        t: Optional[int] = 0,
         **kwargs,
     ) -> None:
         super().__init__()
@@ -37,7 +36,6 @@ class Wrapper(L.LightningModule):
 
         self.pipe.init(**kwargs)
         self.pipe.seed(self.seed)
-        self.t = t
 
         self.log_dir: Path
 
