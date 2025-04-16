@@ -9,6 +9,7 @@ __all__ = [
     "flatten_batch",
     "mat_elmul_vec",
     "new",
+    "patchify",
     "repeat",
     "stretch",
 ]
@@ -278,6 +279,45 @@ def new(
         return torch.full(**kwargs)
     else:
         raise ValueError(f"Unknown strategy: {strategy}")
+
+
+def patchify(
+    x: Tensor,
+    patchH: int,
+    patchW: int,
+) -> Tensor:
+    """Converts a 4D tensor into patches.
+
+    ### Args
+    - `x` (Tensor): Input tensor of shape (B, C, H, W)
+    - `patchH` (int): Height of each patch
+    - `patchW` (int): Width of each patch
+
+    ### Returns
+    - `Tensor`: Tensor of shape (B, NUM_PATCHES, C, patchH, patchW) containing patches
+
+    ### Example
+    ```python
+    >>> x = torch.randn(2, 3, 32, 32)  # 2 images, 3 channels, 32x32 pixels
+    >>> patches = patchify(x, 8, 8)  # Split into 8x8 patches
+    >>> patches.shape
+    torch.Size([2, 16, 3, 8, 8])  # 16 patches per image
+    ```
+    """
+    assert x.ndim == 4, "x must be a 4D tensor of shape (B, C, H, W)"
+    assert x.shape[2] % patchH == 0, (
+        f"H ({x.shape[2]}) must be divisible by patchH ({patchH})"
+    )
+    assert x.shape[3] % patchW == 0, (
+        f"W ({x.shape[3]}) must be divisible by patchW ({patchW})"
+    )
+    B, C, H, W = x.shape
+    NUM_PATCHES = int(H * W / patchH / patchW)
+    # (B, C, patchH, patchW, patchH, patchW)
+    x = x.unfold(2, patchH, patchH).unfold(3, patchW, patchW)
+    # (B, NUM_PATCHES, C, patchH, patchW)
+    x = x.contiguous().view(B, NUM_PATCHES, C, patchH, patchW)
+    return x
 
 
 def repeat(
