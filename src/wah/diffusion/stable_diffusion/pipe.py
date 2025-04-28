@@ -54,14 +54,17 @@ class StableDiffusion:
         self,
         version: str,
         scheduler: str,
+        variant: str = "fp16",
         verbose: bool = True,
         **kwargs,
     ) -> None:
         self._version = version
         self._scheduler = scheduler
+        self._variant = variant
         self._seed: int = None
+        self._verbose: bool = verbose
 
-        self.pipe = load_pipe(version, scheduler, **kwargs)
+        self.pipe = load_pipe(version, scheduler, variant=variant, **kwargs)
         if not verbose:
             self.pipe.set_progress_bar_config(disable=True)
         self.device: Device = self.pipe._execution_device
@@ -72,7 +75,15 @@ class StableDiffusion:
         self.noise_preds: List[Tensor] = []
 
     def __str__(self) -> str:
-        return f"SDv{self._version}_{self._scheduler}"
+        params = {
+            "version": self._version,
+            "scheduler": self._scheduler,
+            "variant": self._variant,
+            "seed": self._seed,
+            "device": self.device,
+            "verbose": self._verbose,
+        }
+        return "StableDiffusion(\n" + "\n".join([f"    {k}: {v}" for k, v in params.items()]) + "\n)"
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -90,6 +101,7 @@ class StableDiffusion:
         return self
 
     def verbose(self, _verbose: bool) -> "StableDiffusion":
+        self._verbose = _verbose
         if not _verbose:
             self.pipe.set_progress_bar_config(disable=True)
         return self
@@ -99,6 +111,8 @@ class StableDiffusion:
         return callback_kwargs
 
     def _unet_hook(self, module, input, output):
+        if len(self.latents) == 0:
+            self.latents.append(input[0] if isinstance(input, tuple) else input)
         self.noise_preds.append(output[0] if isinstance(output, tuple) else output)
 
     @torch.no_grad()
