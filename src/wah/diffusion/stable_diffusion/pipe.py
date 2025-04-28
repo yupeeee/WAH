@@ -83,7 +83,11 @@ class StableDiffusion:
             "device": self.device,
             "verbose": self._verbose,
         }
-        return "StableDiffusion(\n" + "\n".join([f"    {k}: {v}" for k, v in params.items()]) + "\n)"
+        return (
+            "StableDiffusion(\n"
+            + "\n".join([f"    {k}: {v}" for k, v in params.items()])
+            + "\n)"
+        )
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -112,7 +116,8 @@ class StableDiffusion:
 
     def _unet_hook(self, module, input, output):
         if len(self.latents) == 0:
-            init_noise = (input[0] if isinstance(input, tuple) else input)[0:1]
+            init_noise = input[0] if isinstance(input, tuple) else input
+            init_noise = init_noise[: len(init_noise) // 2]
             self.latents.append(init_noise)
         self.noise_preds.append(output[0] if isinstance(output, tuple) else output)
 
