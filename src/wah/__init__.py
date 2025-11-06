@@ -1,6 +1,8 @@
-from . import diffusion, feature_extraction
+from . import classification, diffusion, feature_extraction, module
 
 __all__ = [
+    "classification",
     "diffusion",
     "feature_extraction",
+    "module",
 ]
