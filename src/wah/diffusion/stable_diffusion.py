@@ -57,15 +57,16 @@ def _load_scheduler(
 def _load_pipe(
     version: str,
     scheduler: str,
+    supported_versions: Dict[str, str],
     variant: str = None,
     verbose: bool = False,
     safety_check: bool = True,
     **kwargs,
 ) -> diffusers.StableDiffusionPipeline:
-    assert version in SUPPORTED_VERSIONS, f"Unsupported version: {version}"
+    assert version in supported_versions, f"Unsupported version: {version}"
 
     pipe = diffusers.StableDiffusionPipeline.from_pretrained(
-        pretrained_model_name_or_path=SUPPORTED_VERSIONS[version],
+        pretrained_model_name_or_path=supported_versions[version],
         scheduler=_load_scheduler(version, scheduler),
         variant=variant,
         **kwargs,
@@ -232,7 +233,7 @@ class StableDiffusion:
     ```
     """
 
-    SUPPORTED_VERSIONS = list(SUPPORTED_VERSIONS.keys())
+    _SUPPORTED_VERSIONS = SUPPORTED_VERSIONS
 
     def __init__(
         self,
@@ -246,6 +247,7 @@ class StableDiffusion:
         self.pipe: diffusers.StableDiffusionPipeline = _load_pipe(
             version,
             scheduler,
+            supported_versions=self.SUPPORTED_VERSIONS,
             variant=variant,
             verbose=verbose,
             safety_check=safety_check,
@@ -260,6 +262,10 @@ class StableDiffusion:
         self.visual_projection = nn.Linear(
             config.vision_config.hidden_size, config.projection_dim, bias=False
         )
+    
+    @property
+    def supported_versions(self) -> List[str]:
+        return list(self._SUPPORTED_VERSIONS.keys())
 
     def to(
         self,
