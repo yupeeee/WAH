@@ -247,7 +247,7 @@ class StableDiffusion:
         self.pipe: diffusers.StableDiffusionPipeline = _load_pipe(
             version,
             scheduler,
-            supported_versions=self.SUPPORTED_VERSIONS,
+            supported_versions=self._SUPPORTED_VERSIONS,
             variant=variant,
             verbose=verbose,
             safety_check=safety_check,
