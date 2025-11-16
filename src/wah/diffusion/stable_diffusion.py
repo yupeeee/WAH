@@ -262,7 +262,7 @@ class StableDiffusion:
         self.visual_projection = nn.Linear(
             config.vision_config.hidden_size, config.projection_dim, bias=False
         )
-    
+
     @property
     def supported_versions(self) -> List[str]:
         return list(self._SUPPORTED_VERSIONS.keys())
@@ -646,6 +646,41 @@ class StableDiffusion:
         )[0]
 
         return latents
+
+    def generate(
+        self,
+        prompt: Union[str, List[str]] = None,
+        seed: Optional[Union[int, List[int]]] = None,
+    ) -> Tuple[List[Image], List[torch.Tensor], List[torch.Tensor]]:
+        prompt_embeds = self.prepare_embeds(prompt)
+        timesteps, _, _ = self.prepare_timesteps()
+        x_t = self.prepare_latents(prompt_embeds, seed)
+
+        latents = []
+        noise_preds = []
+
+        for i, t in enumerate(timesteps):
+            noise_pred = self.predict_noise(x_t, prompt_embeds, t)
+            noise_preds.append(noise_pred.cpu())
+            noise_pred = self.perform_guidance(noise_pred)
+            x_t = self.step(noise_pred, t, x_t)
+            latents.append(x_t.cpu())
+
+        # Rearrange latents and noise predictions
+        latents = [latent for latent in torch.stack(latents, dim=0).transpose(0, 1)]
+        eps_ts_uncond, eps_ts_cond = (
+            torch.stack(noise_preds, dim=0).transpose(0, 1).chunk(2, dim=0)
+        )
+        noise_preds = [
+            (eps_t_uncond, eps_t_cond)
+            for eps_t_uncond, eps_t_cond in zip(eps_ts_uncond, eps_ts_cond)
+        ]
+
+        # Decode latents
+        x_0 = torch.stack([latent[-1] for latent in latents], dim=0)
+        images = self.decode(x_0)
+
+        return images, latents, noise_preds
 
     @torch.no_grad()
     def __call__(
