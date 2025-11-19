@@ -438,7 +438,7 @@ class StableDiffusion:
             image=images,
             height=self.pipe.unet.config.sample_size * 8,
             width=self.pipe.unet.config.sample_size * 8,
-        )
+        ).to(self.device)
         latents = self.pipe.vae.encode(images).latent_dist.mode()
         latents = latents * self.pipe.vae.config.scaling_factor
 
