@@ -618,7 +618,7 @@ class StableDiffusion:
         noise_pred: torch.Tensor,
         guidance_scale: Optional[float] = None,
     ) -> torch.Tensor:
-        if guidance_scale is not None:
+        if guidance_scale is None:
             guidance_scale = self.pipe.guidance_scale
 
         # perform guidance
