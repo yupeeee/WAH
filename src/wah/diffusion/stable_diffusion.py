@@ -616,11 +616,15 @@ class StableDiffusion:
     def perform_guidance(
         self,
         noise_pred: torch.Tensor,
+        guidance_scale: Optional[float] = None,
     ) -> torch.Tensor:
+        if guidance_scale is not None:
+            guidance_scale = self.pipe.guidance_scale
+
         # perform guidance
         if self.pipe.do_classifier_free_guidance:
             noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
-            noise_pred = noise_pred_uncond + self.pipe.guidance_scale * (
+            noise_pred = noise_pred_uncond + guidance_scale * (
                 noise_pred_text - noise_pred_uncond
             )
 
