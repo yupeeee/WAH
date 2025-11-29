@@ -681,7 +681,10 @@ class StableDiffusion:
                 for eps_t_uncond, eps_t_cond in zip(eps_ts_uncond, eps_ts_cond)
             ]
         else:
-            noise_preds = [noise_pred for noise_pred in torch.stack(noise_preds, dim=0).transpose(0, 1)]
+            noise_preds = [
+                noise_pred
+                for noise_pred in torch.stack(noise_preds, dim=0).transpose(0, 1)
+            ]
 
         # Decode latents
         x_0 = torch.stack([latent[-1] for latent in latents], dim=0)

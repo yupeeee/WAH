@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import torch
 
-from ..module import getattrs, summary
+from ...module import getattrs, summary
 from .load import _load_model, _load_state_dict
 
 __all__ = [
@@ -15,7 +15,7 @@ class ClassificationModel(torch.nn.Module):
     def __init__(
         self,
         name: str,
-        weights: Optional[Union[str, os.PathLike]] = None,
+        weights: Optional[Union[str, os.PathLike]] = "auto",
         num_classes: int = 1000,
         image_size: int = 224,
         num_channels: int = 3,

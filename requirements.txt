@@ -1,5 +1,7 @@
 accelerate
 diffusers
+pyperclip
+selenium
 timm
 torch
 torchvision

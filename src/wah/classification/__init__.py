@@ -1,5 +1,6 @@
-from .model import ClassificationModel
+from . import datasets, models
 
 __all__ = [
-    "ClassificationModel",
+    "datasets",
+    "models",
 ]
