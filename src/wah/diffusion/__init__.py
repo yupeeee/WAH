@@ -1,7 +1,6 @@
-from .realistic_vision import RealisticVision
-from .stable_diffusion import StableDiffusion
+from . import datasets, models
 
 __all__ = [
-    "RealisticVision",
-    "StableDiffusion",
+    "datasets",
+    "models",
 ]

@@ -8,8 +8,12 @@ from PIL import Image
 from ...misc import lists, path, zips
 from .base import ClassificationDataset
 from .ILSVRC2012 import _ilsvrc2012_labels, _ilsvrc2012_val_meta
-from .transform import (ClassificationPresetEval, ClassificationPresetTrain,
-                        DeNormalize, Normalize)
+from .transform import (
+    ClassificationPresetEval,
+    ClassificationPresetTrain,
+    DeNormalize,
+    Normalize,
+)
 
 __all__ = [
     "ImageNet",

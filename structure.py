@@ -1,9 +1,8 @@
 import os
+from typing import List
 
-from wah.misc.typing import List, Path
 
-
-def _get_all_from_init(init_path: Path) -> List[str]:
+def _get_all_from_init(init_path: os.PathLike) -> List[str]:
     """Extract __all__ list from a __init__.py file"""
     with open(init_path, "r") as f:
         content = f.read()
@@ -22,7 +21,9 @@ def _get_all_from_init(init_path: Path) -> List[str]:
     return all_list
 
 
-def _build_structure(root_dir: Path, current_dir: Path, structure_dict: dict) -> None:
+def _build_structure(
+    root_dir: os.PathLike, current_dir: os.PathLike, structure_dict: dict
+) -> None:
     """Recursively build the structure dictionary"""
     try:
         items = os.listdir(current_dir)
@@ -87,7 +88,7 @@ def dict_to_md(d, level=0):
     return lines
 
 
-def create_structure_md(root_dir: Path = "src/wah") -> str:
+def create_structure_md(root_dir: os.PathLike = "src/wah") -> str:
     # Build structure dictionary
     structure_dict = {}
     _build_structure(root_dir, root_dir, structure_dict)
