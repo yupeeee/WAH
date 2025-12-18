@@ -10,6 +10,7 @@ __all__ = [
     "getargs",
     "getattrs",
     "summary",
+    "replace",
 ]
 
 
@@ -478,3 +479,44 @@ def summary(
         print(f"#params: {sum(p.numel() for p in model.parameters())}")
 
     return summaries
+
+
+def replace(
+    module: torch.nn.Module,
+    target_attr: Union[str, List[str]],
+    replace_with: torch.nn.Module,
+) -> torch.nn.Module:
+    """Replace a module attribute with a new module.
+
+    ### Args
+        - `module` (torch.nn.Module): Module to replace submodules of
+        - `target_attr` (Union[str, List[str]]): Attribute string or list of attribute strings to replace
+        - `replace_with` (torch.nn.Module): New module to replace with
+
+    ### Returns
+        - `torch.nn.Module`: Module with replaced submodules
+
+    ### Example
+    ```python
+    >>> model = torch.nn.Sequential(OrderedDict([
+    ...     ('conv1', torch.nn.Conv2d(3, 64, 3)),
+    ...     ('relu1', torch.nn.ReLU()),
+    ...     ('pool1', torch.nn.MaxPool2d(2))
+    ... ]))
+    >>> replace(model, 'conv1', torch.nn.Conv2d(3, 128, 5))
+    >>> model
+    Sequential(
+        (conv1): Conv2d(3, 128, kernel_size=(5, 5), stride=(1, 1))
+        (relu1): ReLU()
+        (pool1): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+    )
+    """
+    if isinstance(target_attr, str):
+        target_attrs = [target_attr]
+    else:
+        target_attrs = target_attr
+
+    for target_attr in target_attrs:
+        setmod(module, target_attr, replace_with)
+
+    return module
