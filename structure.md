@@ -8,9 +8,9 @@
 	- `models`
 		- `ClassificationModel`
 - `diffusion`
-	- `datasets`
-		- `memorization`
-			- `MemorizedPrompts`
+	- `memorization`
+		- `MemorizedPrompts`
+		- `MemorizationMitigator`
 	- `models`
 		- `RealisticVision`
 		- `StableDiffusion`

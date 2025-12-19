@@ -1,7 +1,6 @@
-from . import datasets, memorization, models
+from . import memorization, models
 
 __all__ = [
-    "datasets",
     "memorization",
     "models",
 ]
