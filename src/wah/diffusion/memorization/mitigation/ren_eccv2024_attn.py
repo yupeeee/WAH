@@ -122,7 +122,9 @@ class AttnProcessor2_0:
         # Attention mask to mask out summary tokens
         attention_mask = []
         for prompt_length in self.prompt_lengths:
-            mask = torch.zeros(self.max_length).view(1, 1, 1, -1).to(hidden_states.device)
+            mask = (
+                torch.zeros(self.max_length).view(1, 1, 1, -1).to(hidden_states.device)
+            )
             mask[:, :, :, :prompt_length] = 1
             mask = mask.repeat(2, attn.heads, hidden_states.shape[1], 1)
             mask = mask != 0

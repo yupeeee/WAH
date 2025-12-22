@@ -49,14 +49,18 @@ def ren_eccv2024(
 
     # Replace attn processor of cross attention layers
     # to rescale beginning token logits and mask out summary tokens
-    ca_layers = [
-        layer_name.split(".attn2")[0] + ".attn2"
-        for layer_name in getattrs(pipe.pipe.unet)
-        if "attn2" in layer_name
+    ca_attrs = [
+        attr.split(".attn2")[0] + ".attn2"
+        for attr in getattrs(pipe.pipe.unet)
+        if "attn2" in attr
     ]
-    for ca_layer in ca_layers:
-        getmod(pipe.pipe.unet, ca_layer).set_processor(
-            AttnProcessor2_0(prompt_lengths=prompt_lengths, max_length=pipe.pipe.tokenizer.model_max_length, c1=c1,)
+    for ca_attr in ca_attrs:
+        getmod(pipe.pipe.unet, ca_attr).set_processor(
+            AttnProcessor2_0(
+                prompt_lengths=prompt_lengths,
+                max_length=pipe.pipe.tokenizer.model_max_length,
+                c1=c1,
+            )
         )
 
     # Denoising loop
