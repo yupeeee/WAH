@@ -560,12 +560,14 @@ class StableDiffusion:
             self._width,
             prompt_embeds.dtype,
             self.device,
-            generator,
+            self._generator,
             latents,
         )
 
         # 6. Prepare extra step kwargs. TODO: Logic should ideally just be moved out of the pipeline
-        extra_step_kwargs = self.pipe.prepare_extra_step_kwargs(generator, self._eta)
+        extra_step_kwargs = self.pipe.prepare_extra_step_kwargs(
+            self._generator, self._eta
+        )
         self._extra_step_kwargs = extra_step_kwargs
 
         # 6.2 Optionally get Guidance Scale Embedding

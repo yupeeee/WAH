@@ -93,6 +93,7 @@ def md5_check(
         h = hashlib.md5()
         while chunk := f.read(chunk_size):
             h.update(chunk)
+        # print(h.hexdigest())
         return h.hexdigest() == checksum
 
 
