@@ -30,12 +30,12 @@ SDV1_4_STATS_CHECKSUM = "cfe00e5b554c6f516cfcfe4468896dcb"
 
 
 def load_sdv1_4_stats() -> Tuple[torch.Tensor, torch.Tensor]:
-    sdv1_4_stats_path = from_url(SDV1_4_STATS_URL, root=".")
+    sdv1_4_stats_path = from_url(SDV1_4_STATS_URL, root="hintersdorf_nips2024_stats")
     assert md5_check(sdv1_4_stats_path, SDV1_4_STATS_CHECKSUM)
     sdv1_4_means, sdv1_4_stds = torch.load(
         sdv1_4_stats_path, weights_only=True, map_location="cpu"
     )
-    os.remove(sdv1_4_stats_path)
+    # os.remove(sdv1_4_stats_path)
     return sdv1_4_means, sdv1_4_stds
 
 
