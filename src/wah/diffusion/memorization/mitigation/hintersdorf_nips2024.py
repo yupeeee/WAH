@@ -8,7 +8,8 @@ GitHub: https://github.com/ml-research/localizing_memorization_in_diffusion_mode
 """
 
 import copy
-import os
+
+# import os
 from typing import Dict, List, Optional, Tuple, Union
 
 import torch
@@ -17,8 +18,10 @@ from PIL.Image import Image
 from torchmetrics.image import MultiScaleStructuralSimilarityIndexMeasure
 
 from ....module import getattrs, getmod
-from ....web.download import from_url, md5_check
+
+# from ....web.download import from_url, md5_check
 from .hintersdorf_nips2024_hook import BlockActivations
+from .hintersdorf_nips2024_stats import sdv1_4_means, sdv1_4_stds
 
 __all__ = [
     "hintersdorf_nips2024",
@@ -29,17 +32,17 @@ SDV1_4_STATS_URL = "https://raw.githubusercontent.com/ml-research/localizing_mem
 SDV1_4_STATS_CHECKSUM = "cfe00e5b554c6f516cfcfe4468896dcb"
 
 
-def load_sdv1_4_stats() -> Tuple[torch.Tensor, torch.Tensor]:
-    sdv1_4_stats_path = from_url(SDV1_4_STATS_URL, root="hintersdorf_nips2024_stats")
-    assert md5_check(sdv1_4_stats_path, SDV1_4_STATS_CHECKSUM)
-    sdv1_4_means, sdv1_4_stds = torch.load(
-        sdv1_4_stats_path, weights_only=True, map_location="cpu"
-    )
-    # os.remove(sdv1_4_stats_path)
-    return sdv1_4_means, sdv1_4_stds
+# def load_sdv1_4_stats() -> Tuple[torch.Tensor, torch.Tensor]:
+#     sdv1_4_stats_path = from_url(SDV1_4_STATS_URL, root="hintersdorf_nips2024_stats")
+#     assert md5_check(sdv1_4_stats_path, SDV1_4_STATS_CHECKSUM)
+#     sdv1_4_means, sdv1_4_stds = torch.load(
+#         sdv1_4_stats_path, weights_only=True, map_location="cpu"
+#     )
+#     # os.remove(sdv1_4_stats_path)
+#     return sdv1_4_means, sdv1_4_stds
 
 
-sdv1_4_means, sdv1_4_stds = load_sdv1_4_stats()
+# sdv1_4_means, sdv1_4_stds = load_sdv1_4_stats()
 
 
 def compute_noise_differences(
@@ -89,7 +92,9 @@ def get_ood_neurons(
 
     for attr, activation in activations.items():
         # Check each neuron in each layer for OOD activation
-        indices = (activation.abs() > theta).nonzero(as_tuple=True)[0].tolist()
+        indices = list(
+            set((activation.abs() > theta).nonzero().flatten().tolist()[1::2])
+        )
 
         # Add k neurons of layer l with the highest absolute activations to the candidate set
         topk_indices = activation.abs().topk(k=min(k, len(activation))).indices
@@ -109,7 +114,7 @@ def compute_memorization(
         reduction="none",
         kernel_size=11,
         betas=(0.33, 0.33, 0.33),
-    )(noise_diffs_unblocked, noise_diffs_blocked)
+    )(noise_diffs_unblocked, noise_diffs_blocked).max()
 
     return ssim.item()
 
@@ -160,7 +165,6 @@ def initial_neuron_selection(
 
 
 def neuron_selection_refinement(
-    activations: Dict[str, torch.Tensor],
     blocking_indices: Dict[str, List[int]],
     ssim_threshold_ref: float,
     prompt_embeds: torch.Tensor,
@@ -211,18 +215,14 @@ def neuron_selection_refinement(
     return blocking_indices
 
 
-def hintersdorf_nips2024_single_prompt(
-    prompt: str,
+def hintersdorf_nips2024(
+    prompt: List[str],
     pipe,
     seed: Optional[Union[int, List[int]]] = None,
     verbose: bool = False,
 ) -> List[Image]:
-    if isinstance(prompt, list):
-        assert (
-            len(prompt) == 1
-        ), f"Mitigation for multiple prompts is not supported for hintersdorf_nips2024."
-        prompt = prompt[0]
-    assert isinstance(prompt, str), f"prompt must be a string, got type {type(prompt)}"
+    if isinstance(prompt, str):
+        prompt = [prompt]
 
     # Fetch cross attention (attn2) value (to_v) layers in down & mid blocks
     value_attrs = [
@@ -239,7 +239,7 @@ def hintersdorf_nips2024_single_prompt(
     prompt_embeds, _ = pipe.encode_prompt(prompt)
     with torch.no_grad():
         activations = dict(
-            (attr, value_layers[attr].forward(prompt_embeds).mean(dim=1)[0].cpu())
+            (attr, value_layers[attr].forward(prompt_embeds).mean(dim=1).cpu())
             for attr in value_attrs
         )  # (num_prompts, max_token_length=77, num_neurons) -(mean along dim=1)-> (num_prompts, num_neurons) with num_prompts = 1
 
@@ -255,7 +255,7 @@ def hintersdorf_nips2024_single_prompt(
 
     # Neuron selection refinement
     blocking_indices = neuron_selection_refinement(
-        activations, blocking_indices, ssim_threshold_ref, prompt_embeds, pipe, seed
+        blocking_indices, ssim_threshold_ref, prompt_embeds, pipe, seed
     )
 
     # Prepare denoising
@@ -285,18 +285,4 @@ def hintersdorf_nips2024_single_prompt(
     # Decode image
     images = pipe.decode(latents)
 
-    return images
-
-
-def hintersdorf_nips2024(
-    prompt: List[str],
-    pipe,
-    seed: Optional[Union[int, List[int]]] = None,
-    verbose: bool = False,
-) -> List[Image]:
-    if isinstance(prompt, str):
-        prompt = [prompt]
-    images = []
-    for p in prompt:
-        images.extend(hintersdorf_nips2024_single_prompt(p, pipe, seed, verbose))
     return images
