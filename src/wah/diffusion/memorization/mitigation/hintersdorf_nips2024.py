@@ -8,6 +8,7 @@ GitHub: https://github.com/ml-research/localizing_memorization_in_diffusion_mode
 """
 
 import copy
+
 # import os
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -17,6 +18,7 @@ from PIL.Image import Image
 from torchmetrics.image import MultiScaleStructuralSimilarityIndexMeasure
 
 from ....module import getattrs, getmod
+
 # from ....web.download import from_url, md5_check
 from .hintersdorf_nips2024_hook import BlockActivations
 from .hintersdorf_nips2024_stats import sdv1_4_means, sdv1_4_stds
