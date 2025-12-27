@@ -34,25 +34,8 @@ def adjust_prompt(
     # Optimizer
     optimizer = torch.optim.AdamW([_prompt_embeds], lr=lr)
 
-    # expand the latents if we are doing classifier free guidance
-    latent_model_input = (
-        torch.cat([latents] * 2) if pipe.pipe.do_classifier_free_guidance else latents
-    )
-    if hasattr(pipe.pipe.scheduler, "scale_model_input"):
-        latent_model_input = pipe.pipe.scheduler.scale_model_input(
-            latent_model_input, timesteps[0]
-        )
-
     # Compute loss (l2 norm of text-conditional noise prediction)
-    noise_pred = pipe.pipe.unet(
-        latent_model_input,
-        timesteps[0],
-        encoder_hidden_states=prompt_embeds,
-        timestep_cond=pipe._timestep_cond,
-        cross_attention_kwargs=pipe.pipe._cross_attention_kwargs,
-        added_cond_kwargs=pipe._added_cond_kwargs,
-        return_dict=False,
-    )[0]
+    noise_pred = pipe.predict_noise(latents, prompt_embeds, timesteps[0], enable_grad=True)
     noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
     loss = torch.norm(noise_pred_text - noise_pred_uncond, p=2).mean()
 

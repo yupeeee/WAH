@@ -584,12 +584,12 @@ class StableDiffusion:
 
         return latents
 
-    @torch.no_grad()
     def predict_noise(
         self,
         latents: torch.Tensor,
         prompt_embeds: torch.Tensor,
         t: int,
+        enable_grad: bool = False,
     ) -> torch.Tensor:
         # expand the latents if we are doing classifier free guidance
         latent_model_input = (
@@ -603,15 +603,17 @@ class StableDiffusion:
             )
 
         # predict the noise residual
-        noise_pred = self.pipe.unet(
-            latent_model_input,
-            t,
-            encoder_hidden_states=prompt_embeds,
-            timestep_cond=self._timestep_cond,
-            cross_attention_kwargs=self.pipe._cross_attention_kwargs,
-            added_cond_kwargs=self._added_cond_kwargs,
-            return_dict=False,
-        )[0]
+        flag = torch.enable_grad() if enable_grad else torch.no_grad()
+        with flag:
+            noise_pred = self.pipe.unet(
+                latent_model_input,
+                t,
+                encoder_hidden_states=prompt_embeds,
+                timestep_cond=self._timestep_cond,
+                cross_attention_kwargs=self.pipe._cross_attention_kwargs,
+                added_cond_kwargs=self._added_cond_kwargs,
+                return_dict=False,
+            )[0]
 
         return noise_pred
 
