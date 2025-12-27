@@ -60,6 +60,10 @@ def jain_cvpr2025_dynamic(
     verbose: bool = False,
     guidance_scale_before_transition: float = 0.0,
 ) -> List[Image]:
+    assert (
+        pipe.pipe.do_classifier_free_guidance
+    ), "jain_cvpr2025_dynamic requires classifier-free guidance enabled."
+
     # Prepare denoising
     prompt_embeds = pipe.prepare_embeds(prompt)
     timesteps, num_timesteps, num_warmup_steps = pipe.prepare_timesteps()

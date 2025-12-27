@@ -5,8 +5,10 @@ from PIL.Image import Image
 
 from .hintersdorf_nips2024 import hintersdorf_nips2024 as _hintersdorf_nips2024
 from .jain_cvpr2025 import jain_cvpr2025_dynamic as _jain_cvpr2025_dynamic
-from .jain_cvpr2025 import jain_cvpr2025_static as _jain_cvpr2025_static
+
+# from .jain_cvpr2025 import jain_cvpr2025_static as _jain_cvpr2025_static
 from .ren_eccv2024 import ren_eccv2024 as _ren_eccv2024
+from .wen_iclr2024 import wen_iclr2024 as _wen_iclr2024
 
 __all__ = [
     "MemorizationMitigator",
@@ -18,19 +20,19 @@ class MemorizationMitigator:
         self,
         pipe,
         strategy: Literal[
+            "wen_iclr2024",
             "ren_eccv2024",
             "hintersdorf_nips2024",
-            "jain_cvpr2025_static",
-            "jain_cvpr2025_dynamic",
-        ] = "jain_cvpr2025_dynamic",
+            "jain_cvpr2025",
+        ] = "jain_cvpr2025",
     ) -> None:
         self.pipe = pipe
         self.strategy = strategy
         self.strategies = {
+            "wen_iclr2024": _wen_iclr2024,
             "ren_eccv2024": _ren_eccv2024,
             "hintersdorf_nips2024": _hintersdorf_nips2024,
-            "jain_cvpr2025_static": _jain_cvpr2025_static,
-            "jain_cvpr2025_dynamic": _jain_cvpr2025_dynamic,
+            "jain_cvpr2025": _jain_cvpr2025_dynamic,
         }
 
     def to(self, device: Optional[Union[str, torch.device]]) -> "MemorizationMitigator":
