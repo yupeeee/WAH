@@ -3,7 +3,7 @@ from typing import Any, Callable, List, Optional, Tuple
 
 from torch.utils.data import Dataset
 
-from ...misc import zips
+from ...misc import path, zips
 from ...web import download
 
 __all__ = [
@@ -47,13 +47,15 @@ class ClassificationDataset(Dataset):
         - `transform` (Optional[Callable]): Optional transform to be applied to the data
         - `target_transform` (Optional[Callable]): Optional transform to be applied to the targets
         """
-        self.root = root
+        self.root = path.clean(root)
         self.transform = transform
         self.target_transform = target_transform
         # Must be initialized through self._initialize()
         self.data = ...
         self.targets = ...
         self.labels = ...
+
+        self._return_data_only = False
 
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
         """Get a sample from the dataset.
@@ -78,7 +80,10 @@ class ClassificationDataset(Dataset):
             data = self.transform(data)
         if self.target_transform is not None:
             target = self.target_transform(target)
-        return data, target
+        if self._return_data_only:
+            return data
+        else:
+            return data, target
 
     def __len__(self) -> int:
         """Return the length of the dataset.

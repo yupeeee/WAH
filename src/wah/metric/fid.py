@@ -1,107 +1,265 @@
 import os
-from typing import Callable, Literal, Optional, Union
+from typing import List, Tuple
 
+import lightning as L
 import torch
-from cleanfid import fid as _fid
+import torch.nn as nn
+from torch.utils.data import DataLoader, Dataset
+from torchvision import models
+from torchvision.datasets import ImageFolder
 
 __all__ = [
     "FID",
 ]
 
 
-class FID:
+def _load_inception_v3() -> nn.Module:
+    model = models.inception_v3(weights=models.Inception_V3_Weights.IMAGENET1K_V1)
+    model.eval()
+    model.dropout = nn.Identity()
+    model.fc = nn.Identity()
+    return model
+
+
+class Wrapper(L.LightningModule):
     def __init__(
         self,
-        metric: Literal["fid", "kid"] = "fid",
-        feature_extractor: Union[
-            Literal["inception_v3", "clip_vit_b_32"], Callable
-        ] = "inception_v3",
-        batch_size: int = 32,
-        num_workers: int = 12,
-        device: torch.device = torch.device("cpu"),
-        verbose: bool = True,
-        dataset_name: str = "FFHQ",
-        dataset_split: str = "train",
-        dataset_res: int = 1024,
-        num_gen: int = 50_000,
-        z_dim: int = 512,
-        use_dataparallel: bool = True,
-        custom_image_tranform: Optional[Callable] = None,
-        custom_fn_resize: Optional[Callable] = None,
+        model: nn.Module,
+    ) -> None:
+        super().__init__()
+
+        self.model = model
+
+        self.register_buffer("sum", torch.zeros(2048))
+        self.register_buffer("sum_sq", torch.zeros(2048))
+        self.register_buffer("num_examples", torch.tensor(0, dtype=torch.long))
+        self.register_buffer("mean", torch.zeros(2048))
+        self.register_buffer("std", torch.zeros(2048))
+
+    def on_test_start(self) -> None:
+        self.model.to(self.device)
+        self.sum.zero_()
+        self.sum_sq.zero_()
+        self.num_examples.zero_()
+        self.mean.zero_()
+        self.std.zero_()
+
+    def test_step(self, batch, batch_idx):
+        # batch: [B, 3, 299, 299]
+        activations = self.model(batch)  # [B, 2048]
+
+        batch_sum = activations.sum(dim=0)
+        batch_sum_sq = (activations**2).sum(dim=0)
+        batch_count = activations.size(0)
+
+        # Accumulate stats
+        self.sum += batch_sum
+        self.sum_sq += batch_sum_sq
+        self.num_examples += batch_count
+
+        return {}
+
+    def on_test_end(self) -> None:
+        # Gather sum, sum_sq, num_examples from all devices
+        if self.trainer.world_size > 1:
+            # For DDP, sync across all processes
+            sum = self.sum.clone()
+            sum_sq = self.sum_sq.clone()
+            num_examples = self.num_examples.clone()
+            torch.distributed.all_reduce(sum, op=torch.distributed.ReduceOp.SUM)
+            torch.distributed.all_reduce(sum_sq, op=torch.distributed.ReduceOp.SUM)
+            torch.distributed.all_reduce(
+                num_examples, op=torch.distributed.ReduceOp.SUM
+            )
+        else:
+            # Single-device
+            sum = self.sum.clone()
+            sum_sq = self.sum_sq.clone()
+            num_examples = self.num_examples.clone()
+
+        mean = sum / num_examples
+        mean_sq = sum_sq / num_examples
+        std = (mean_sq - mean**2).sqrt()
+        self.mean = mean
+        self.std = std
+
+        return {}
+
+
+def _load_accelerator_and_devices(
+    devices: str = "auto",
+) -> Tuple[str, List[int]]:
+    if isinstance(devices, str) and "cuda" in devices:
+        devices = devices.replace("cuda", "gpu")
+    devices_cfg: List[str] = devices.split(":")
+    accelerator = "auto"
+    devices = "auto"
+    if len(devices_cfg) == 1:
+        accelerator = devices_cfg[0]
+    else:
+        accelerator = devices_cfg[0]
+        devices = [int(d) for d in devices_cfg[1].split(",")]
+    return accelerator, devices
+
+
+def _load_runner(
+    devices: str = "auto",
+    use_half: bool = True,
+) -> L.Trainer:
+    # Load accelerator and devices
+    accelerator, devices = _load_accelerator_and_devices(devices)
+    # Set precision
+    if use_half:
+        torch.set_float32_matmul_precision("medium")
+    # Load runner
+    runner = L.Trainer(
+        accelerator=accelerator,
+        devices=devices,
+        precision="16-mixed" if use_half else "32-true",
+        logger=False,
+        callbacks=None,
+        max_epochs=1,
+        log_every_n_steps=None,
+        enable_checkpointing=False,
+        deterministic=False,
+    )
+    # Return runner
+    return runner
+
+
+class Runner:
+    def __init__(
+        self,
+        batch_size: int = 128,
+        num_workers: int = 4,
+        devices: str = "auto",
+        use_half: bool = True,
+    ) -> None:
+        self.batch_size = batch_size
+        self.num_workers = num_workers
+        self.runner: L.Trainer = _load_runner(devices, use_half)
+        self.model: nn.Module = _load_inception_v3()
+
+    def run(
+        self,
+        dataset: Dataset,
+    ) -> None:
+        dataloader: DataLoader = DataLoader(
+            dataset,
+            batch_size=self.batch_size,
+            shuffle=False,
+            num_workers=self.num_workers,
+        )
+        model: L.LightningModule = Wrapper(self.model)
+        self.runner.test(
+            model=model,
+            dataloaders=dataloader,
+        )
+        return model.mean.cpu(), model.std.cpu()
+
+
+def _prepare_dataset(
+    dataset,
+) -> Dataset:
+    if isinstance(dataset, str):
+        if os.path.isdir(dataset):
+            return ImageFolder(
+                dataset,
+                transform=models.Inception_V3_Weights.DEFAULT.transforms(),
+            )
+        elif dataset in []:
+            pass
+        else:
+            raise ValueError(f"Invalid dataset: {dataset}")
+    elif isinstance(dataset, Dataset):
+        return dataset
+    else:
+        raise ValueError(f"Invalid dataset type: {type(dataset)}")
+
+
+def _compute_fid(
+    mu1: torch.Tensor,
+    sigma1: torch.Tensor,
+    mu2: torch.Tensor,
+    sigma2: torch.Tensor,
+) -> float:
+    # The Fréchet Inception Distance (FID)
+    # between two multivariate Gaussians X_1 ~ N(mu_1, C_1) and X_2 ~ N(mu_2, C_2) is
+    # d^2 = ||mu_1 - mu_2||^2 + Tr(C_1 + C_2 - 2*sqrt(C_1*C_2)).
+
+    # Compute covariance matrices
+    C1 = torch.diag(sigma1**2)
+    C2 = torch.diag(sigma2**2)
+
+    # Compute FID
+    diff = mu1 - mu2
+    sqrt_C1_C2 = torch.diag((C1 * C2).sqrt())
+    fid = diff.dot(diff) + torch.trace(C1 + C2 - 2 * sqrt_C1_C2)
+
+    return fid.item()
+
+
+class FID:
+    """Fréchet Inception Distance (FID) metric.
+
+    ### Args
+        - `batch_size` (int): Batch size.
+        - `num_workers` (int): Number of workers.
+        - `devices` (str): Devices to use.
+        - `use_half` (bool): Whether to use half precision.
+
+    ### Example
+    ```python
+    >>> fid = FID(batch_size=16, num_workers=4, devices="auto", use_half=True)
+    >>> fid(dataset1, dataset2)
+    ```
+    """
+
+    def __init__(
+        self,
+        batch_size: int = 16,
+        num_workers: int = 4,
+        devices: str = "auto",
+        use_half: bool = True,
     ) -> None:
         """
-        ### Args
-            - `metric` (Literal["fid", "kid"]): Metric to compute. Supports "fid" (default) and "kid".
-            - `feature_extractor` (Union[Literal["inception_v3", "clip_vit_b_32"], Callable]): Model to use for FID feature extraction. Supports "inception_v3" (default), "clip_vit_b_32", and a custom callable function.
-            - `batch_size` (int): Batch size for processing images. Default is 32.
-            - `num_workers` (int): Number of worker threads for DataLoader. Default is 12.
-            - `device` (torch.device): The device to run the computation on. Default is torch.device("cuda").
-            - `verbose` (bool): If True, print progress and debug information. Default is True.
-            - `dataset_name` (str): Name of the dataset for reference statistics. Default is "FFHQ".
-            - `dataset_split` (str): The dataset split to use. Default is "train".
-            - `dataset_res` (int): Resolution of the dataset images. Default is 1024.
-            - `num_gen` (int): Number of images to generate for computing FID. Default is 50,000.
-            - `z_dim` (int): Dimensionality of the latent space for generation. Default is 512.
-            - `use_dataparallel` (bool): Whether to use DataParallel for feature extraction. Default is True.
-            - `custom_image_tranform` (Optional[Callable]): Custom transformation function for images for FID computation. Default is None.
-            - `custom_fn_resize` (Optional[Callable]): Custom function for resizing images for FID computation. Default is None.
+        - `batch_size` (int): Batch size.
+        - `num_workers` (int): Number of workers.
+        - `devices` (str): Devices to use.
+        - `use_half` (bool): Whether to use half precision.
         """
-        self.metric = metric
-        self.fid = _fid
-
-        self.kwargs = {
-            "mode": "clean",
-            "batch_size": batch_size,
-            "num_workers": num_workers,
-            "device": device,
-            "verbose": verbose,
-            "dataset_name": dataset_name,
-            "dataset_split": dataset_split,
-            "dataset_res": dataset_res,
-            "num_gen": num_gen,
-            "z_dim": z_dim,
-            "use_dataparallel": use_dataparallel,
-        }
-
-        if self.metric == "fid":
-            self.kwargs["model_name"] = (
-                feature_extractor
-                if isinstance(feature_extractor, str)
-                else "inception_v3"
-            )
-            self.kwargs["custom_feat_extractor"] = (
-                feature_extractor if not isinstance(feature_extractor, str) else None
-            )
-            self.kwargs["custom_image_tranform"] = custom_image_tranform
-            self.kwargs["custom_fn_resize"] = custom_fn_resize
-
-    def to(self, device: torch.device) -> "FID":
-        self.kwargs["device"] = device
-        return self
+        self.batch_size = batch_size
+        self.num_workers = num_workers
+        self.devices = devices
+        self.use_half = use_half
 
     def __call__(
         self,
-        img_dir1: os.PathLike = None,
-        img_dir2: os.PathLike = None,
-        img_generator: Callable = None,
+        dataset1,
+        dataset2,
     ) -> float:
         """
-        Compute the Fréchet Inception Distance (FID) or Kernel Inception Distance (KID) between two sets of images, or between generated images and a predefined dataset.
+        Compute FID score between two datasets.
 
         ### Args
-            - `img_dir1` (os.PathLike): Directory containing the first set of images.
-            - `img_dir2` (os.PathLike): Directory containing the second set of images.
-            - `img_generator` (Callable): A generator function for creating images.
+        - `dataset1` (Dataset): First dataset.
+        - `dataset2` (Dataset): Second dataset.
 
         ### Returns
-            - `float`: The computed FID or KID score.
-
-        ### Raises:
-            - `ValueError`: If an invalid combination of directories and models is entered.
+        - `fid` (float): FID score.
         """
-        return getattr(self.fid, f"compute_{self.metric}")(
-            fdir1=img_dir1,
-            fdir2=img_dir2,
-            gen=img_generator,
-            **self.kwargs,
+        dataset1 = _prepare_dataset(dataset1)
+        dataset2 = _prepare_dataset(dataset2)
+
+        runner = Runner(
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+            devices=self.devices,
+            use_half=self.use_half,
         )
+        mean1, std1 = runner.run(dataset1)
+        mean2, std2 = runner.run(dataset2)
+
+        fid = _compute_fid(mean1, std1, mean2, std2)
+
+        return fid
