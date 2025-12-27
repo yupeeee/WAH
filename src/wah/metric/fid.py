@@ -4,9 +4,11 @@ from typing import List, Tuple
 import lightning as L
 import torch
 import torch.nn as nn
+from PIL import Image
 from torch.utils.data import DataLoader, Dataset
 from torchvision import models
-from torchvision.datasets import ImageFolder
+
+from ..misc import path
 
 __all__ = [
     "FID",
@@ -158,15 +160,30 @@ class Runner:
         return model.mean.cpu(), model.std.cpu()
 
 
+class ImageOnlyDataset(Dataset):
+    def __init__(self, img_dir: os.PathLike) -> None:
+        self.paths = path.ls(
+            path=img_dir,
+            absolute=True,
+        )
+        self.transform = models.Inception_V3_Weights.DEFAULT.transforms()
+
+    def __len__(self) -> int:
+        return len(self.paths)
+
+    def __getitem__(self, index: int) -> Image.Image:
+        img = Image.open(self.paths[index]).convert("RGB")
+        if self.transform:
+            img = self.transform(img)
+        return img
+
+
 def _prepare_dataset(
     dataset,
 ) -> Dataset:
     if isinstance(dataset, str):
         if os.path.isdir(dataset):
-            return ImageFolder(
-                dataset,
-                transform=models.Inception_V3_Weights.DEFAULT.transforms(),
-            )
+            return ImageOnlyDataset(dataset)
         elif dataset in []:
             pass
         else:
