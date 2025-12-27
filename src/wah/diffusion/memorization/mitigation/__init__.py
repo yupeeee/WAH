@@ -5,8 +5,6 @@ from PIL.Image import Image
 
 from .hintersdorf_nips2024 import hintersdorf_nips2024 as _hintersdorf_nips2024
 from .jain_cvpr2025 import jain_cvpr2025_dynamic as _jain_cvpr2025_dynamic
-
-# from .jain_cvpr2025 import jain_cvpr2025_static as _jain_cvpr2025_static
 from .ren_eccv2024 import ren_eccv2024 as _ren_eccv2024
 from .wen_iclr2024 import wen_iclr2024 as _wen_iclr2024
 

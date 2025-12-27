@@ -15,7 +15,10 @@
 		- `RealisticVision`
 		- `StableDiffusion`
 - `feature_extraction`
+	- `CLIP`
 	- `SSCD`
+- `metric`
+	- `FID`
 - `misc`
 	- `dicts`
 	- `lists`
