@@ -31,10 +31,10 @@ SUPPORTED_VERSIONS = {
     "1.3": "CompVis/stable-diffusion-v1-3",
     "1.4": "CompVis/stable-diffusion-v1-4",
     "1.5": "stable-diffusion-v1-5/stable-diffusion-v1-5",
-    "2-base": "stabilityai/stable-diffusion-2-base",
-    "2": "stabilityai/stable-diffusion-2",
-    "2.1-base": "stabilityai/stable-diffusion-2-1-base",
-    "2.1": "stabilityai/stable-diffusion-2-1",
+    "2-base": "Manojb/stable-diffusion-2-base",
+    # "2": "stabilityai/stable-diffusion-2",
+    # "2.1-base": "stabilityai/stable-diffusion-2-1-base",
+    # "2.1": "stabilityai/stable-diffusion-2-1",
 }
 
 
