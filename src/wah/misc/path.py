@@ -16,10 +16,10 @@ def clean(
     """Clean a path by expanding user directory and normalizing path separators.
 
     ### Args
-        - `path` (os.PathLike): Path to clean
+        - `path` (os.PathLike): Path to clean.
 
     ### Returns
-        - `os.PathLike`: Cleaned path with expanded user directory and normalized separators
+        - `os.PathLike`: Cleaned path with expanded user directory and normalized separators.
 
     ### Example
     ```python
@@ -44,7 +44,7 @@ def ls(
     """List files in a directory.
 
     ### Args
-        - `path` (os.PathLike): Path to the directory
+        - `path` (os.PathLike): Path to the directory.
         - `fext` (Optional[str]): File extension filter. If "dir", only list directories.
             If None or empty string, list all files. Otherwise, list files with matching extension.
             Defaults to None.
@@ -52,7 +52,7 @@ def ls(
         - `absolute` (Optional[bool]): Whether to return absolute paths. Defaults to False.
 
     ### Returns
-        - `List[str]`: List of files in the directory
+        - `List[str]`: List of files in the directory.
 
     ### Example
     ```python
@@ -105,14 +105,14 @@ def walk(
     includes files in all subdirectories.
 
     ### Args
-        - `root` (os.PathLike): Root directory path to start walking from
+        - `root` (os.PathLike): Root directory path to start walking from.
         - `absolute` (Optional[bool]): If True, return absolute paths. If False, return paths relative to root.
                                      Defaults to False.
 
     ### Returns
         - `List[os.PathLike]`: List of paths to all files found under the root directory.
-                       If absolute=False (default), paths are relative to the root directory.
-                       If absolute=True, paths are absolute.
+                       If `absolute=False` (default), paths are relative to the root directory.
+                       If `absolute=True`, paths are absolute.
 
     ### Example
     ```python
@@ -124,9 +124,9 @@ def walk(
     ```
 
     ### Notes
-        - Hidden files and directories (starting with '.') are included
-        - Directory paths themselves are not included in the output list
-        - All paths use forward slashes ('/'), even on Windows systems
+        - Hidden files and directories (starting with '.') are included.
+        - Directory paths themselves are not included in the output list.
+        - All paths use forward slashes ('/'), even on Windows systems.
     """
     paths = []
     for dirpath, dirnames, filenames in os.walk(root):

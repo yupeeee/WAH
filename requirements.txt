@@ -1,10 +1,7 @@
 accelerate
-clean-fid
 diffusers
 pandas
 pyarrow
-pyperclip
-selenium
 timm
 torch
 torchvision

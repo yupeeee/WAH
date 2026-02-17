@@ -11,7 +11,10 @@ def _get_all_from_init(init_path: os.PathLike) -> List[str]:
     if "__all__" not in content:
         return []
 
-    # Remove whitespace and newlines
+    # Remove comments, whitespace, and newlines
+    content = "\n".join(
+        [line for line in content.splitlines() if not line.lstrip().startswith("#")]
+    )
     content = content.replace(" ", "").replace("\n", "")
 
     # Extract __all__ list

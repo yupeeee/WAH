@@ -17,11 +17,11 @@ def load(
     """Load a text file and convert it to a list.
 
     ### Args
-        - `path` (os.PathLike): Path to the text file
+        - `path` (os.PathLike): Path to the text file.
         - `dtype` (type): Type to convert each line to. Defaults to `str`.
 
     ### Returns
-        - `List[str]`: List containing the text file data with each line as an element
+        - `List[str]`: List containing the text file data with each line as an element.
 
     ### Example
     ```python
@@ -51,8 +51,8 @@ def save(
     """Save a list to a text file.
 
     ### Args
-        - `l` (List[Any]): List to save
-        - `path` (os.PathLike): Path to save the text file
+        - `l` (List[Any]): List to save.
+        - `path` (os.PathLike): Path to save the text file.
 
     ### Returns
         - `None`
@@ -93,12 +93,12 @@ def sort(
     with natural sorting "10" comes after "2" as expected.
 
     ### Args
-        - `l` (List[str]): List to sort
+        - `l` (List[str]): List to sort.
         - `return_indices` (bool, optional): Whether to return the indices of the sorted elements.
             Defaults to False.
 
     ### Returns
-        - `Union[List[str], Tuple[List[str], List[int]]]`: If return_indices is False, returns
+        - `Union[List[str], Tuple[List[str], List[int]]]`: If `return_indices` is False, returns
             the sorted list. If return_indices is True, returns a tuple of (sorted list, indices).
 
     ### Example
@@ -138,11 +138,11 @@ def eq(
 ) -> bool:
     """Check if two lists are equal.
     ### Args
-        - `l1` (List[Any]): First list
-        - `l2` (List[Any]): Second list
+        - `l1` (List[Any]): First list.
+        - `l2` (List[Any]): Second list.
 
     ### Returns
-        - `bool`: True if the lists are equal, False otherwise
+        - `bool`: True if the lists are equal, False otherwise.
 
     ### Example
     ```python

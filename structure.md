@@ -1,31 +1,28 @@
 ### `wah`
-- `classification`
-	- `datasets`
-		- `ClassificationDataset`
-		- `CIFAR10`
-		- `CIFAR100`
-		- `ImageNet`
-	- `models`
-		- `ClassificationModel`
-- `diffusion`
-	- `memorization`
-		- `MemorizedPrompts`
+- `datasets`
+	- `CIFAR10`
+	- `CIFAR100`
+	- `ImageNet`
+	- `WebsterArXiv2023`
+- `lab`
+	- `diffusion_memorization_mitigation`
 		- `MemorizationMitigator`
-	- `models`
-		- `RealisticVision`
-		- `StableDiffusion`
-- `feature_extraction`
-	- `CLIP`
-	- `SSCD`
-- `metric`
+- `metrics`
 	- `FID`
-- `misc`
-	- `dicts`
-	- `lists`
-	- `parquet`
-	- `path`
-	- `zips`
-- `module`
-- `web`
-	- `download`
-	- `selenium`
+- `models`
+	- `ClassificationModel`
+	- `StableDiffusion`
+	- `RealisticVision`
+	- `SSCD`
+	- `getargs`
+	- `getattrs`
+	- `getmod`
+	- `getname`
+	- `setmod`
+	- `summary`
+- `ddp`
+- `dicts`
+- `lists`
+- `path`
+- `tensor`
+- `zips`

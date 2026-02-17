@@ -1,11 +1,16 @@
-from . import classification, diffusion, feature_extraction, metric, misc, module, web
+from . import datasets, lab, metrics, models
+from .misc import ddp, dicts, lists, path, tensor, zips
 
 __all__ = [
-    "classification",
-    "diffusion",
-    "feature_extraction",
-    "metric",
-    "misc",
-    "module",
-    "web",
+    "datasets",
+    "lab",
+    "metrics",
+    "models",
+    # misc
+    "ddp",
+    "dicts",
+    "lists",
+    "path",
+    "tensor",
+    "zips",
 ]

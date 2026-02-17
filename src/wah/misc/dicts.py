@@ -21,11 +21,11 @@ def load_csv(
     """Load a CSV file and convert it to a dictionary.
 
     ### Args
-        - `path` (os.PathLike): Path to the CSV file
-        - `**kwargs`: Additional keyword arguments passed to pandas.read_csv()
+        - `path` (os.PathLike): Path to the CSV file.
+        - `**kwargs`: Additional keyword arguments passed to pandas.read_csv().
 
     ### Returns
-        - `Dict`: Dictionary containing the CSV data with column names as keys and values as lists
+        - `Dict`: Dictionary containing the CSV data with column names as keys and values as lists.
 
     ### Example
     ```python
@@ -54,6 +54,43 @@ def load_csv(
     return df.to_dict(orient="list")
 
 
+def load_parquet(
+    path: os.PathLike,
+    **kwargs,
+) -> Dict:
+    """Load a Parquet file and convert it to a dictionary.
+
+    ### Args
+        - `path` (os.PathLike): Path to the Parquet file.
+        - `**kwargs`: Additional keyword arguments passed to pandas.read_parquet().
+
+    ### Returns
+        - `Dict`: Dictionary containing the Parquet data.
+
+    ### Example
+    ```python
+    # data.parquet contents:
+    # id,col1,col2
+    # 1,a,1.1
+    # 2,b,2.2
+    # 3,c,3.3
+    >>> data = load_parquet('data.parquet')
+    >>> print(data)
+    {'id': [1, 2, 3], 'col1': ['a', 'b', 'c'], 'col2': [1.1, 2.2, 3.3]}
+
+    # Using index_col to ignore the id column
+    >>> data = load_parquet('data.parquet', index_col=0)
+    >>> print(data)
+    {'col1': ['a', 'b', 'c'], 'col2': [1.1, 2.2, 3.3]}
+    >>> data = load_parquet('data.parquet', index_col='id')
+    >>> print(data)
+    {'col1': ['a', 'b', 'c'], 'col2': [1.1, 2.2, 3.3]}
+    ```
+    """
+    df: pd.DataFrame = pd.read_parquet(path, **kwargs)
+    return df.to_dict(orient="list")
+
+
 def load_yaml(
     path: os.PathLike,
     **kwargs,
@@ -61,11 +98,11 @@ def load_yaml(
     """Load a YAML file and convert it to a dictionary.
 
     ### Args
-        - `path` (os.PathLike): Path to the YAML file
-        - `**kwargs`: Additional keyword arguments passed to yaml.load()
+        - `path` (os.PathLike): Path to the YAML file.
+        - `**kwargs`: Additional keyword arguments passed to yaml.load().
 
     ### Returns
-        - `Dict`: Dictionary containing the YAML data
+        - `Dict`: Dictionary containing the YAML data.
 
     ### Example
     ```python
@@ -94,17 +131,17 @@ def load(
     **kwargs,
 ) -> Dict:
     """Load a file into a dictionary.
-    Currently supports .csv and .yaml files.
+    Currently supports .csv, .parquet, and .yaml (.yml) files.
 
     ### Args
-        - `path` (os.PathLike): Path to the file
-        - `**kwargs`: Additional keyword arguments passed to the respective loader function
+        - `path` (os.PathLike): Path to the file.
+        - `**kwargs`: Additional keyword arguments passed to the respective loader function.
 
     ### Returns
-        - `Dict`: Dictionary containing the file data
+        - `Dict`: Dictionary containing the file data.
 
     ### Raises
-        - `ValueError`: If file extension is not supported
+        - `ValueError`: If file extension is not supported.
 
     ### Example (load csv)
     ```python
@@ -122,6 +159,26 @@ def load(
     >>> print(data)
     {'col1': ['a', 'b', 'c'], 'col2': [1.1, 2.2, 3.3]}
     >>> data = load('data.csv', index_col='id')
+    >>> print(data)
+    {'col1': ['a', 'b', 'c'], 'col2': [1.1, 2.2, 3.3]}
+    ```
+
+    ### Example (load parquet)
+    ```python
+    # data.parquet contents:
+    # id,col1,col2
+    # 1,a,1.1
+    # 2,b,2.2
+    # 3,c,3.3
+    >>> data = load('data.parquet')
+    >>> print(data)
+    {'id': [1, 2, 3], 'col1': ['a', 'b', 'c'], 'col2': [1.1, 2.2, 3.3]}
+
+    # Using index_col to ignore the id column
+    >>> data = load('data.parquet', index_col=0)
+    >>> print(data)
+    {'col1': ['a', 'b', 'c'], 'col2': [1.1, 2.2, 3.3]}
+    >>> data = load('data.parquet', index_col='id')
     >>> print(data)
     {'col1': ['a', 'b', 'c'], 'col2': [1.1, 2.2, 3.3]}
     ```
@@ -149,11 +206,13 @@ def load(
 
     if ext == ".csv":
         return load_csv(path, **kwargs)
+    elif ext == ".parquet":
+        return load_parquet(path, **kwargs)
     elif ext in (".yaml", ".yml"):
         return load_yaml(path, **kwargs)
     else:
         raise NotImplementedError(
-            f"Could not load file with extension {ext}. Supported extensions are: .csv, .yaml, .yml"
+            f"Could not load file with extension {ext}. Supported extensions are: .csv, .parquet, .yaml, .yml"
         )
 
 
@@ -164,7 +223,7 @@ def round_nums(
     """Round numeric values in a dictionary to a specified decimal place.
 
     ### Args
-        - `d` (Dict): Input dictionary containing numeric values
+        - `d` (Dict): Input dictionary containing numeric values.
         - `decimal` (int, optional): Number of decimal places to round to. Defaults to 2.
 
     ### Returns
@@ -198,11 +257,11 @@ def save_in_csv(
     """Save a dictionary to a CSV file.
 
     ### Args
-        - `d` (Dict): Dictionary to save
-        - `path` (os.PathLike): Path to save the CSV file
+        - `d` (Dict): Dictionary to save.
+        - `path` (os.PathLike): Path to save the CSV file.
         - `mode` (str, optional): File opening mode. Defaults to "w".
         - `round` (int, optional): Number of decimal places to round numeric values to. Defaults to None.
-        - `**kwargs`: Additional keyword arguments passed to pandas.DataFrame.to_csv()
+        - `**kwargs`: Additional keyword arguments passed to pandas.DataFrame.to_csv().
 
     ### Returns
         - `None`
@@ -237,6 +296,40 @@ def save_in_csv(
     df.to_csv(path, mode=mode, index=False, **kwargs)
 
 
+def save_in_parquet(
+    d: Dict,
+    path: os.PathLike,
+    mode: str = "w",
+    **kwargs,
+) -> None:
+    """Save a dictionary to a Parquet file.
+
+    ### Args
+        - `d` (Dict): Dictionary to save.
+        - `path` (os.PathLike): Path to save the Parquet file.
+        - `mode` (str, optional): File opening mode. Defaults to "w".
+        - `**kwargs`: Additional keyword arguments passed to pandas.DataFrame.to_parquet().
+
+    ### Returns
+        - `None`
+
+    ### Example
+    ```python
+    >>> data = {"name": ["Alice", "Bob"], "age": [25, 30]}
+    >>> save_in_parquet(data, "output.parquet")
+    # Creates output.parquet with contents:
+    # name,age
+    # Alice,25
+    # Bob,30
+    ```
+    """
+    assert (
+        os.path.splitext(path)[1].lower() == ".parquet"
+    ), f"File extension must be .parquet, got {os.path.splitext(path)[1].lower()}"
+    df = to_df(d)
+    df.to_parquet(path, mode=mode, **kwargs)
+
+
 def save_in_yaml(
     d: Dict,
     path: os.PathLike,
@@ -246,10 +339,10 @@ def save_in_yaml(
     """Save a dictionary to a YAML file.
 
     ### Args
-        - `d` (Dict): Dictionary to save
-        - `path` (os.PathLike): Path to save the YAML file
+        - `d` (Dict): Dictionary to save.
+        - `path` (os.PathLike): Path to save the YAML file.
         - `mode` (str, optional): File opening mode. Defaults to "w".
-        - `**kwargs`: Additional keyword arguments passed to yaml.dump()
+        - `**kwargs`: Additional keyword arguments passed to yaml.dump().
 
     ### Returns
         - `None`
@@ -285,9 +378,9 @@ def save(
     """Save a dictionary to a file. The file format is determined by the file extension.
 
     ### Args
-        - `d` (Dict): Dictionary to save
-        - `path` (os.PathLike): Path to save the file
-        - `**kwargs`: Additional keyword arguments passed to the appropriate save function
+        - `d` (Dict): Dictionary to save.
+        - `path` (os.PathLike): Path to save the file.
+        - `**kwargs`: Additional keyword arguments passed to the appropriate save function.
 
     ### Returns
         - `None`
@@ -297,6 +390,13 @@ def save(
     >>> data = {"name": ["Alice", "Bob"], "age": [25, 30]}
     >>> save(data, "output.csv")
     # Creates output.csv with contents:
+    # name,age
+    # Alice,25
+    # Bob,30
+
+    >>> data = {"name": ["Alice", "Bob"], "age": [25, 30]}
+    >>> save(data, "output.parquet")
+    # Creates output.parquet with contents:
     # name,age
     # Alice,25
     # Bob,30
@@ -312,17 +412,20 @@ def save(
     ext = os.path.splitext(path)[1].lower()
     assert ext in (
         ".csv",
+        ".parquet",
         ".yaml",
         ".yml",
-    ), f"File extension must be .csv, .yaml, or .yml, got {ext}"
+    ), f"File extension must be .csv, .parquet, .yaml, or .yml, got {ext}"
     os.makedirs(os.path.dirname(path), exist_ok=True)
     if ext == ".csv":
         save_in_csv(d, path, **kwargs)
+    elif ext == ".parquet":
+        save_in_parquet(d, path, **kwargs)
     elif ext == ".yaml" or ext == ".yml":
         save_in_yaml(d, path, **kwargs)
     else:
         raise NotImplementedError(
-            f"Could not save file with extension {ext}. Supported extensions are: .csv, .yaml, .yml"
+            f"Could not save file with extension {ext}. Supported extensions are: .csv, .parquet, .yaml, .yml"
         )
 
 
@@ -334,15 +437,15 @@ def to_df(
     """Convert dictionary to a pandas DataFrame.
 
     ### Args
-        - `d` (Dict): Input dictionary
+        - `d` (Dict): Input dictionary.
         - `index` (Optional[Union[str, pd.Index]], optional): Index for the DataFrame.
             If a string is provided and matches a column name, that column will be used as the index.
             If a pd.Index object is provided (e.g., a list like [1, 2, 3] or ['a', 'b', 'c']), it will be used directly as the index of the DataFrame.
             Defaults to None.
-        - `**kwargs`: Additional arguments passed to pd.DataFrame()
+        - `**kwargs`: Additional arguments passed to pd.DataFrame().
 
     ### Returns
-        - `pd.DataFrame`: A pandas DataFrame created from the dictionary
+        - `pd.DataFrame`: A pandas DataFrame created from the dictionary.
 
     ### Example
     ```python
@@ -385,11 +488,11 @@ def to_tensor(
     """Convert dictionary values to a tensor.
 
     ### Args
-        - `d` (Dict): Input dictionary with numeric values
-        - `**kwargs`: Additional arguments passed to torch.tensor()
+        - `d` (Dict): Input dictionary with numeric values.
+        - `**kwargs`: Additional arguments passed to torch.tensor().
 
     ### Returns
-        - `torch.Tensor`: A tensor containing the dictionary values
+        - `torch.Tensor`: A tensor containing the dictionary values.
 
     ### Example
     ```python

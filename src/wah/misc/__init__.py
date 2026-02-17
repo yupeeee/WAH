@@ -1,9 +1,10 @@
-from . import dicts, lists, parquet, path, zips
+from . import ddp, dicts, lists, path, tensor, zips
 
 __all__ = [
+    "ddp",
     "dicts",
     "lists",
-    "parquet",
     "path",
+    "tensor",
     "zips",
 ]
