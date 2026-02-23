@@ -1,13 +1,13 @@
-from . import datasets, lab, metrics, models
-from .misc import ddp, dicts, lists, path, tensor, zips
+from . import datasets, ddp, lab, metrics, models
+from .misc import dicts, lists, path, tensor, zips
 
 __all__ = [
     "datasets",
+    "ddp",
     "lab",
     "metrics",
     "models",
     # misc
-    "ddp",
     "dicts",
     "lists",
     "path",

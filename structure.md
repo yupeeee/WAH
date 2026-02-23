@@ -4,6 +4,9 @@
 	- `CIFAR100`
 	- `ImageNet`
 	- `WebsterArXiv2023`
+- `ddp`
+	- `DDP`
+	- `make_dataloader`
 - `lab`
 	- `diffusion_memorization_mitigation`
 		- `MemorizationMitigator`
@@ -20,7 +23,6 @@
 	- `getname`
 	- `setmod`
 	- `summary`
-- `ddp`
 - `dicts`
 - `lists`
 - `path`
