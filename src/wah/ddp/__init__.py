@@ -259,7 +259,16 @@ class DDP:
             worker_fn(env, *args, **kwargs)
         finally:
             if dist.is_initialized():
-                dist.destroy_process_group()
+                try:
+                    # Synchronize so all ranks reach teardown before any closes the store
+                    dist.barrier()
+                except Exception:
+                    pass
+                try:
+                    dist.destroy_process_group()
+                except Exception:
+                    # Ignore store/pipe errors during shutdown (e.g. TCPStore "Broken pipe")
+                    pass
 
     def _log_env(self, env: Env) -> None:
         msg = (

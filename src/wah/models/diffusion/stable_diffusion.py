@@ -651,7 +651,7 @@ class StableDiffusion:
         self,
         prompt: Union[str, List[str]] = None,
         seed: Optional[Union[int, List[int]]] = None,
-    ) -> Tuple[List[Image], List[torch.Tensor], List[torch.Tensor]]:
+    ) -> Tuple[List[Image], List[torch.Tensor], List[Union[Tuple[torch.Tensor, torch.Tensor], torch.Tensor]]]:
         prompt_embeds = self.prepare_embeds(prompt)
         timesteps, _, _ = self.prepare_timesteps()
         x_t = self.prepare_latents(prompt_embeds, seed)
