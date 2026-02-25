@@ -6,7 +6,9 @@ __all__ = [
 
 
 model_path_dict = {
+    "1.3": "SG161222/Realistic_Vision_V1.3",
     "1.4": "SG161222/Realistic_Vision_V1.4",
+    "2.0": "SG161222/Realistic_Vision_V2.0",
 }
 
 
@@ -73,7 +75,7 @@ class RealisticVision(StableDiffusion):
         self,
         version: str,
         scheduler: str,
-        variant: str = None,
+        use_half: bool = False,
         verbose: bool = False,
         safety_check: bool = True,
         **kwargs,
@@ -81,7 +83,7 @@ class RealisticVision(StableDiffusion):
         super().__init__(
             version,
             scheduler,
-            variant=variant,
+            use_half=use_half,
             verbose=verbose,
             safety_check=safety_check,
             **kwargs,

@@ -42,7 +42,6 @@ def _load_pipe(
     version: str,
     scheduler: str,
     model_path_dict: Dict[str, str],
-    variant: str = None,
     verbose: bool = False,
     safety_check: bool = True,
     **kwargs,
@@ -52,7 +51,6 @@ def _load_pipe(
     pipe = diffusers.StableDiffusionPipeline.from_pretrained(
         pretrained_model_name_or_path=model_path_dict[version],
         scheduler=_load_scheduler(version, scheduler, model_path_dict),
-        variant=variant,
         **kwargs,
     )
 
@@ -223,7 +221,6 @@ class StableDiffusion:
         self,
         version: str,
         scheduler: str,
-        variant: str = None,
         verbose: bool = False,
         safety_check: bool = True,
         **kwargs,
@@ -232,7 +229,6 @@ class StableDiffusion:
             version,
             scheduler,
             model_path_dict=self._model_path_dict,
-            variant=variant,
             verbose=verbose,
             safety_check=safety_check,
             **kwargs,
