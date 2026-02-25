@@ -242,6 +242,7 @@ class DDP:
             init_method="env://",
             rank=rank,
             world_size=world_size,
+            device_id=idx,  # UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
         )
 
         env = Env(
