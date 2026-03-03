@@ -35,7 +35,8 @@ class Plot:
         ncols: int = 1,
         figsize: Optional[Tuple[float, float]] = None,
         fontsize: Optional[float] = None,
-        fontfamily: Optional[str] = None,
+        font: Optional[str] = None,
+        mathfont: Optional[str] = None,
         **kwargs,
     ) -> None:
         fig, ax_array = plt.subplots(
@@ -45,10 +46,13 @@ class Plot:
         # Always 1D so plot.axes[0] works for single or multi panel
         self._axes_2d: np.ndarray = ax_array
         self.axes: np.ndarray = ax_array.flatten()
+
         if fontsize is not None:
             plt.rcParams.update({"font.size": fontsize})
-        if fontfamily is not None:
-            plt.rcParams.update({"font.family": fontfamily})
+        if font is not None:
+            plt.rcParams.update({"font.family": font})
+        if mathfont is not None:
+            plt.rcParams.update({"mathtext.fontset": mathfont})
 
     @property
     def ax(self) -> plt.Axes:
