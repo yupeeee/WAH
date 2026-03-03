@@ -39,6 +39,14 @@ class Plot:
         mathfont: Optional[str] = None,
         **kwargs,
     ) -> None:
+        # Note: plt.rcParams.update() must be called before plt.subplots()
+        if fontsize is not None:
+            plt.rcParams.update({"font.size": fontsize})
+        if font is not None:
+            plt.rcParams.update({"font.family": font})
+        if mathfont is not None:
+            plt.rcParams.update({"mathtext.fontset": mathfont})
+
         fig, ax_array = plt.subplots(
             nrows, ncols, figsize=figsize, squeeze=False, **kwargs
         )
@@ -46,13 +54,6 @@ class Plot:
         # Always 1D so plot.axes[0] works for single or multi panel
         self._axes_2d: np.ndarray = ax_array
         self.axes: np.ndarray = ax_array.flatten()
-
-        if fontsize is not None:
-            plt.rcParams.update({"font.size": fontsize})
-        if font is not None:
-            plt.rcParams.update({"font.family": font})
-        if mathfont is not None:
-            plt.rcParams.update({"mathtext.fontset": mathfont})
 
     @property
     def ax(self) -> plt.Axes:
