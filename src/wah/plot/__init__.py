@@ -1,5 +1,5 @@
 import os
-from typing import List, Optional, Tuple, Union
+from typing import Optional, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -20,9 +20,11 @@ class Plot:
     ### Example
     ```python
     plot = Plot(2, 2, figsize=(8, 6))
-    sc = plot.axes[0].scatter(x, y)
+    sc = plot.axes[0].scatter(x, y, c=z)
     plot.axes[1].plot(t, f)
-    plot.add_colorbar(sc, ticks=[0, 1], ticklabels=["low", "high"])
+    cbar = plot.add_colorbar(sc, label="colorbar label")
+    cbar.set_ticks([0, 1])
+    cbar.set_ticklabels(["low", "high"])
     plot.save("out.png")
     ```
     """
@@ -32,12 +34,21 @@ class Plot:
         nrows: int = 1,
         ncols: int = 1,
         figsize: Optional[Tuple[float, float]] = None,
+        fontsize: Optional[float] = None,
+        fontfamily: Optional[str] = None,
+        **kwargs,
     ) -> None:
-        fig, ax_array = plt.subplots(nrows, ncols, figsize=figsize, squeeze=False)
+        fig, ax_array = plt.subplots(
+            nrows, ncols, figsize=figsize, squeeze=False, **kwargs
+        )
         self.fig: plt.Figure = fig
         # Always 1D so plot.axes[0] works for single or multi panel
         self._axes_2d: np.ndarray = ax_array
         self.axes: np.ndarray = ax_array.flatten()
+        if fontsize is not None:
+            plt.rcParams.update({"font.size": fontsize})
+        if fontfamily is not None:
+            plt.rcParams.update({"font.family": fontfamily})
 
     @property
     def ax(self) -> plt.Axes:
@@ -50,36 +61,31 @@ class Plot:
 
     def add_colorbar(
         self,
-        mappable: ScalarMappable,
-        ticks: Optional[Union[List[float], np.ndarray]] = None,
-        ticklabels: Optional[List[str]] = None,
-        alpha: float = 1.0,
+        _mappable: ScalarMappable,
+        clim: Optional[Tuple[float, float]] = None,
+        cmap: Optional[str] = None,
         **kwargs,
     ) -> Colorbar:
         """Add a colorbar for the given mappable (e.g. from scatter(..., c=...), imshow, pcolormesh).
 
-        The axes to attach the colorbar to are taken from `mappable.axes`. The colorbar
-        is drawn with the given `alpha` and is not affected by the plot axes' transparency.
+        The axes to attach the colorbar to are taken from `mappable.axes`.
 
         ### Args
             - `mappable`: ScalarMappable (e.g. return value of scatter/imshow/pcolormesh with c=).
-            - `ticks`: Optional tick positions (data coordinates along the colorbar).
-            - `ticklabels`: Optional list of strings for tick labels (same length as `ticks`).
-            - `alpha`: Opacity of the colorbar background (1.0 = opaque).
             - `**kwargs`: Passed to `fig.colorbar` (e.g. label=..., orientation='horizontal', shrink=...).
 
         ### Returns
             The created Colorbar (use cbar.set_ticks / cbar.set_ticklabels for more control).
         """
-        assert hasattr(mappable, "axes"), "Mappable must have an axes attribute"
-        cbar = self.fig.colorbar(mappable, ax=mappable.axes, **kwargs)
-        if ticks is not None:
-            cbar.set_ticks(ticks)
-        if ticklabels is not None:
-            cbar.set_ticklabels(ticklabels)
-        # Keep colorbar opaque (or explicitly alpha) so plot transparency doesn't affect it
-        cbar.ax.patch.set_alpha(alpha)
-        cbar.ax.patch.set_facecolor(plt.rcParams.get("figure.facecolor", "white"))
+        assert hasattr(_mappable, "axes"), "_mappable must have an axes attribute"
+        ax = _mappable.axes
+        vmin, vmax = clim if clim is not None else _mappable.get_clim()
+        cmap = cmap if cmap is not None else _mappable.get_cmap()
+        mappable = ScalarMappable(
+            norm=plt.Normalize(vmin=vmin, vmax=vmax),
+            cmap=cmap,
+        )
+        cbar = self.fig.colorbar(mappable, ax=ax, **kwargs)
         return cbar
 
     def save(
