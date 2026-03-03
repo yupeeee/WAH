@@ -5,6 +5,7 @@
 	- `ImageNet`
 	- `WebsterArXiv2023`
 - `ddp`
+	- `Env`
 	- `DDP`
 	- `make_dataloader`
 - `lab`
@@ -28,3 +29,4 @@
 - `path`
 - `tensor`
 - `zips`
+- `Plot`
