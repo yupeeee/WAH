@@ -27,6 +27,7 @@
 - `dicts`
 - `lists`
 - `path`
+- `prints`
 - `tensor`
 - `zips`
 - `Plot`

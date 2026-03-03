@@ -1,5 +1,5 @@
 from . import datasets, ddp, lab, metrics, models
-from .misc import dicts, lists, path, tensor, zips
+from .misc import dicts, lists, path, prints, tensor, zips
 from .plot import Plot
 
 __all__ = [
@@ -12,6 +12,7 @@ __all__ = [
     "dicts",
     "lists",
     "path",
+    "prints",
     "tensor",
     "zips",
     # plot
