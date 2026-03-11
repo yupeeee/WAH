@@ -1,13 +1,16 @@
 import os
+from pathlib import Path
 from typing import Optional, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.cm import ScalarMappable
 from matplotlib.colorbar import Colorbar
+from PIL import Image
 
 __all__ = [
     "Plot",
+    "make_gif",
 ]
 
 
@@ -126,3 +129,47 @@ class Plot:
 
     def __exit__(self, *args: object) -> None:
         self.close()
+
+
+def make_gif(
+    path: Union[str, os.PathLike],
+    duration: int = 100,
+    loop: int = 0,
+    pattern: str = "*.png",
+    output: Optional[Union[str, os.PathLike]] = None,
+) -> None:
+    """Make an animated GIF from images in a directory.
+
+    If `path` is a directory, frames are read from that directory.
+    If `path` ends with ".gif", frames are read from its parent directory and `path` is used as output.
+    """
+    p = Path(path)
+    if output is None:
+        if p.suffix.lower() == ".gif":
+            frames_dir = p.parent
+            output_path = p
+        else:
+            frames_dir = p
+            output_path = p / "animation.gif"
+    else:
+        frames_dir = p
+        output_path = Path(output)
+
+    frame_paths = sorted(frames_dir.glob(pattern))
+    if not frame_paths:
+        raise FileNotFoundError(
+            f"No frames found in '{frames_dir}' matching pattern '{pattern}'"
+        )
+
+    frames = []
+    for fp in frame_paths:
+        with Image.open(fp) as im:
+            frames.append(im.convert("RGBA").copy())
+
+    frames[0].save(
+        output_path,
+        save_all=True,
+        append_images=frames[1:],
+        duration=duration,
+        loop=loop,
+    )

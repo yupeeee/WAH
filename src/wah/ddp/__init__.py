@@ -8,6 +8,8 @@ import torch.distributed as dist
 import torch.multiprocessing as mp
 from torch.utils.data import DataLoader, Dataset, DistributedSampler
 
+from ..misc import prints as _prints
+
 __all__ = [
     "Env",
     "DDP",
@@ -205,7 +207,7 @@ class DDP:
                 ",".join(str(d) for d in self.devices) if self.devices else "cpu"
             )
             print(
-                f"\033[1m[wah.ddp]\033[0m "
+                f"{_prints.stylish('[wah.ddp]', style='bold', color='blue')} "
                 f"Launching {self.world_size} process{'es' if self.world_size > 1 else ''} "
                 f"(backend='{self.backend}', master={self.master_addr}:{self.master_port}, devices={device_str})"
             )
