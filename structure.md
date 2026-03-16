@@ -1,5 +1,7 @@
 ### `wah`
 - `datasets`
+	- `base`
+		- `ImageFolder`
 	- `CIFAR10`
 	- `CIFAR100`
 	- `ImageNet`
@@ -24,10 +26,12 @@
 	- `getname`
 	- `setmod`
 	- `summary`
+- `plot`
+	- `Plot`
+	- `make_gif`
 - `dicts`
 - `lists`
 - `path`
 - `prints`
 - `tensor`
 - `zips`
-- `Plot`

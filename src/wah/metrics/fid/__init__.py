@@ -1,14 +1,17 @@
 import os
-from typing import Tuple
+from typing import List, Tuple, Union
 
 import torch
 import torch.nn as nn
-from PIL import Image
+import tqdm
 from torch import Tensor
 from torch.utils.data import DataLoader, Dataset
 from torchvision import models
 
-from ..misc import path as _path
+from ...datasets.base import ImageFolder as _ImageFolder
+from ...misc import path as _path
+from ...misc import prints as _prints
+from ...misc import tensor as _tensor
 
 __all__ = [
     "FID",
@@ -16,7 +19,7 @@ __all__ = [
 
 
 def _load_inception_v3() -> nn.Module:
-    model = models.inception_v3(weights=models.Inception_V3_Weights.IMAGENET1K_V1)
+    model = models.inception_v3(weights=models.Inception_V3_Weights.DEFAULT)
     model.eval()
     model.dropout = nn.Identity()
     model.fc = nn.Identity()
@@ -41,46 +44,28 @@ class _StatsAccumulator:
         return mean.cpu(), std.cpu()
 
 
-class ImageOnlyDataset(Dataset):
-    def __init__(self, img_dir: os.PathLike) -> None:
-        self.paths = _path.ls(
-            path=img_dir,
-            absolute=True,
-        )
-        self.transform = models.Inception_V3_Weights.DEFAULT.transforms()
-
-    def __len__(self) -> int:
-        return len(self.paths)
-
-    def __getitem__(self, index: int) -> torch.Tensor:
-        img = Image.open(self.paths[index]).convert("RGB")
-        if self.transform:
-            img = self.transform(img)
-        return img
-
-
 def _prepare_dataset(
-    dataset,
+    dataset: Union[Dataset, os.PathLike],
 ) -> Dataset:
-    if isinstance(dataset, Dataset):
-        return dataset
     if isinstance(dataset, str):
         img_dir = _path.clean(dataset)
         if os.path.isdir(img_dir):
-            return ImageOnlyDataset(img_dir)
+            return _ImageFolder(
+                img_dir, transform=models.Inception_V3_Weights.DEFAULT.transforms()
+            )
         else:
             raise ValueError(f"dataset must be a path to a directory, got {dataset}")
-    raise ValueError(
-        f"Invalid dataset type: {type(dataset)} (expected str path or PyTorch Dataset)"
-    )
+    else:
+        return dataset
 
 
 def _run_single_dataset(
     dataset: Dataset,
-    batch_size: int = 128,
-    num_workers: int = 4,
+    batch_size: int = 1,
+    num_workers: int = 0,
     device: torch.device = torch.device("cpu"),
-    use_half: bool = True,
+    use_half: bool = False,
+    verbose: bool = False,
 ) -> Tuple[Tensor, Tensor]:
     dataloader = DataLoader(
         dataset,
@@ -98,7 +83,12 @@ def _run_single_dataset(
     stats = _StatsAccumulator(device)
 
     with torch.no_grad():
-        for batch in dataloader:
+        for batch in tqdm.tqdm(
+            dataloader,
+            desc=_prints.stylish("[wah.metrics.FID]", style="bold", color="blue")
+            + f" Computing statistics on {str(dataset)}",
+            disable=not verbose,
+        ):
             if isinstance(batch, (tuple, list)):
                 batch = batch[0]
             batch = batch.to(device)
@@ -133,12 +123,21 @@ def _compute_fid(
 
 
 class FID:
+    _precomputed_stats: List[str] = [
+        "cifar10_train",
+        "cifar10_test",
+        "cifar100_train",
+        "cifar100_test",
+        "imagenet_train",
+        "imagenet_val",
+    ]
     """Fréchet Inception Distance (FID) metric.
 
     ### Args
         - `batch_size` (int): Batch size.
         - `num_workers` (int): Number of workers.
         - `use_half` (bool): Whether to use half precision.
+        - `verbose` (bool): Whether to print verbose output.
 
     ### Example
     ```python
@@ -149,26 +148,29 @@ class FID:
 
     def __init__(
         self,
-        batch_size: int = 16,
-        num_workers: int = 4,
+        batch_size: int = 1,
+        num_workers: int = 0,
         device: torch.device = torch.device("cpu"),
-        use_half: bool = True,
+        use_half: bool = False,
+        verbose: bool = False,
     ) -> None:
         """
         - `batch_size` (int): Batch size.
         - `num_workers` (int): Number of workers.
         - `device` (torch.device): Device to use.
         - `use_half` (bool): Whether to use half precision.
+        - `verbose` (bool): Whether to print verbose output.
         """
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.device = device
         self.use_half = use_half
+        self.verbose = verbose
 
     def __call__(
         self,
-        dataset1,
-        dataset2,
+        dataset1: Union[Dataset, os.PathLike, str],
+        dataset2: Union[Dataset, os.PathLike, str],
     ) -> float:
         """
         Compute FID score between two datasets.
@@ -181,24 +183,36 @@ class FID:
         - `fid` (float): FID score.
         """
 
-        # Prepare datasets
-        dataset1 = _prepare_dataset(dataset1)
-        dataset2 = _prepare_dataset(dataset2)
+        # Compute statistics
+        if isinstance(dataset1, str) and dataset1 in self._precomputed_stats:
+            mean1, std1 = _tensor.load_from_url(f"TODO: URL for {dataset1}.pt")
+        else:
+            dataset1 = _prepare_dataset(dataset1)
+            mean1, std1 = _run_single_dataset(
+                dataset1,
+                batch_size=self.batch_size,
+                num_workers=self.num_workers,
+                device=self.device,
+                use_half=self.use_half,
+                verbose=self.verbose,
+            )
 
-        mean1, std1 = _run_single_dataset(
-            dataset1,
-            batch_size=self.batch_size,
-            num_workers=self.num_workers,
-            device=self.device,
-            use_half=self.use_half,
-        )
-        mean2, std2 = _run_single_dataset(
-            dataset2,
-            batch_size=self.batch_size,
-            num_workers=self.num_workers,
-            device=self.device,
-            use_half=self.use_half,
-        )
+        if isinstance(dataset2, str) and dataset2 in self._precomputed_stats:
+            mean2, std2 = _tensor.load_from_url(f"TODO: URL for {dataset2}.pt")
+        else:
+            dataset2 = _prepare_dataset(dataset2)
+            mean2, std2 = _run_single_dataset(
+                dataset2,
+                batch_size=self.batch_size,
+                num_workers=self.num_workers,
+                device=self.device,
+                use_half=self.use_half,
+                verbose=self.verbose,
+            )
+
+        # torch.save((mean1.cpu(), std1.cpu()), "dataset1.pt")
+        # torch.save((mean2.cpu(), std2.cpu()), "dataset2.pt")
 
         fid = _compute_fid(mean1, std1, mean2, std2)
+
         return fid
