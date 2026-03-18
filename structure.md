@@ -5,6 +5,7 @@
 	- `CIFAR10`
 	- `CIFAR100`
 	- `ImageNet`
+	- `COCO`
 	- `WebsterArXiv2023`
 - `ddp`
 	- `Env`

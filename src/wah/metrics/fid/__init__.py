@@ -128,6 +128,9 @@ class FID:
         "cifar10_test",
         "cifar100_train",
         "cifar100_test",
+        "coco_train",
+        "coco_val",
+        "coco_test",
         "imagenet_train",
         "imagenet_val",
     ]
@@ -185,7 +188,12 @@ class FID:
 
         # Compute statistics
         if isinstance(dataset1, str) and dataset1 in self._precomputed_stats:
-            mean1, std1 = _tensor.load_from_url(f"TODO: URL for {dataset1}.pt")
+            mean1, std1 = _tensor.load_from_url(
+                f"https://raw.githubusercontent.com/yupeeee/WAH/main/src/wah/metrics/fid/{dataset1}.pt"
+            )
+            if self.use_half:
+                mean1 = mean1.half()
+                std1 = std1.half()
         else:
             dataset1 = _prepare_dataset(dataset1)
             mean1, std1 = _run_single_dataset(
@@ -198,7 +206,12 @@ class FID:
             )
 
         if isinstance(dataset2, str) and dataset2 in self._precomputed_stats:
-            mean2, std2 = _tensor.load_from_url(f"TODO: URL for {dataset2}.pt")
+            mean2, std2 = _tensor.load_from_url(
+                f"https://raw.githubusercontent.com/yupeeee/WAH/main/src/wah/metrics/fid/{dataset2}.pt"
+            )
+            if self.use_half:
+                mean2 = mean2.half()
+                std2 = std2.half()
         else:
             dataset2 = _prepare_dataset(dataset2)
             mean2, std2 = _run_single_dataset(
@@ -210,8 +223,8 @@ class FID:
                 verbose=self.verbose,
             )
 
-        # torch.save((mean1.cpu(), std1.cpu()), "dataset1.pt")
-        # torch.save((mean2.cpu(), std2.cpu()), "dataset2.pt")
+        torch.save((mean1.cpu(), std1.cpu()), "dataset1.pt")
+        torch.save((mean2.cpu(), std2.cpu()), "dataset2.pt")
 
         fid = _compute_fid(mean1, std1, mean2, std2)
 

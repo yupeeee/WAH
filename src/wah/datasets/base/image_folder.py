@@ -21,8 +21,9 @@ class ImageFolder(Dataset):
     ) -> None:
         super().__init__()
 
+        self.img_dir = _path.clean(img_dir)
         self.paths = _path.ls(
-            path=img_dir,
+            path=self.img_dir,
             fext=fext,
             sort=True,
             absolute=True,
@@ -31,6 +32,9 @@ class ImageFolder(Dataset):
 
     def __len__(self) -> int:
         return len(self.paths)
+
+    def __repr__(self) -> str:
+        return f"ImageFolder({self.img_dir})"
 
     def __getitem__(self, index: int) -> torch.Tensor:
         img = Image.open(self.paths[index]).convert("RGB")

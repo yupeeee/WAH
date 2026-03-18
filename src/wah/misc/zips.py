@@ -27,7 +27,7 @@ def extract(
     assert os.path.exists(path), f"File {path} does not exist"
 
     # set extraction mode and target directory
-    ext = os.path.splitext(path)
+    ext = os.path.splitext(path)[1]
     save_dir = save_dir or os.path.dirname(path)
     if save_dir != os.path.dirname(path):
         os.makedirs(save_dir, exist_ok=True)
