@@ -16,6 +16,8 @@ __all__ = [
     "make_dataloader",
 ]
 
+HEADER = _prints.stylish("[wah.ddp]", style="bold", color="blue")
+
 
 def _parse_devices(devices: Union[str, List[int], int] = "auto") -> List[int]:
     """Parse a device specification into a list of GPU indices.
@@ -207,7 +209,7 @@ class DDP:
                 ",".join(str(d) for d in self.devices) if self.devices else "cpu"
             )
             print(
-                f"{_prints.stylish('[wah.ddp]', style='bold', color='blue')} "
+                f"{HEADER} "
                 f"Launching {self.world_size} process{'es' if self.world_size > 1 else ''} "
                 f"(backend='{self.backend}', master={self.master_addr}:{self.master_port}, devices={device_str})"
             )
@@ -275,7 +277,7 @@ class DDP:
 
     def _log_env(self, env: Env) -> None:
         msg = (
-            f"\033[1m[wah.ddp]\033[0m "
+            f"{HEADER} "
             f"Initialized rank {env.rank}/{env.world_size} "
             f"(device={env.device})"
         )
