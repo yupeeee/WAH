@@ -231,8 +231,8 @@ class FID:
                 verbose=self.verbose,
             )
 
-        torch.save((mean1.cpu(), std1.cpu()), "dataset1.pt")
-        torch.save((mean2.cpu(), std2.cpu()), "dataset2.pt")
+        # torch.save((mean1.cpu(), std1.cpu()), "dataset1.pt")
+        # torch.save((mean2.cpu(), std2.cpu()), "dataset2.pt")
 
         fid = _compute_fid(mean1, std1, mean2, std2)
 
