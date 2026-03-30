@@ -169,11 +169,11 @@ class FID:
         self.device = device
         self.use_half = use_half
         self.verbose = verbose
-    
+
     def to(self, device: torch.device) -> "FID":
         self.device = device
         return self
-    
+
     def half(self) -> "FID":
         self.use_half = True
         return self

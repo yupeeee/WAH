@@ -1,6 +1,8 @@
 import os
 import socket
+import traceback
 from dataclasses import dataclass
+from datetime import timedelta
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import torch
@@ -110,6 +112,7 @@ class DDP:
         backend: Optional[str] = None,
         master_addr: Optional[str] = "localhost",
         master_port: Optional[int] = None,
+        timeout_sec: int = 600,
         verbose: bool = True,
         force_spawn: bool = False,
     ) -> None:
@@ -122,6 +125,7 @@ class DDP:
             if master_port is not None
             else _find_free_port(self.master_addr)
         )
+        self.timeout_sec: int = timeout_sec
         self.verbose: bool = verbose
         self.force_spawn: bool = force_spawn
 
@@ -203,6 +207,9 @@ class DDP:
     ) -> Any:
         os.environ["MASTER_ADDR"] = self.master_addr
         os.environ["MASTER_PORT"] = str(self.master_port)
+        # Propagate rank failures to peers instead of hanging until NCCL watchdog.
+        os.environ.setdefault("NCCL_ASYNC_ERROR_HANDLING", "1")
+        os.environ.setdefault("TORCH_NCCL_BLOCKING_WAIT", "1")
 
         if self.verbose:
             device_str = (
@@ -241,13 +248,16 @@ class DDP:
         rank = local_rank
         world_size = self.world_size
 
-        dist.init_process_group(
+        init_pg_kwargs: Dict[str, Any] = dict(
             backend=self.backend,
             init_method="env://",
             rank=rank,
             world_size=world_size,
-            device_id=idx,  # UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+            timeout=timedelta(seconds=self.timeout_sec),
         )
+        if idx is not None:
+            init_pg_kwargs["device_id"] = idx
+        dist.init_process_group(**init_pg_kwargs)
 
         env = Env(
             rank=rank,
@@ -262,13 +272,26 @@ class DDP:
 
         try:
             worker_fn(env, *args, **kwargs)
-        finally:
+        except Exception:
+            print(f"{HEADER} Rank {rank} failed:\n{traceback.format_exc()}")
             if dist.is_initialized():
                 try:
-                    # Synchronize so all ranks reach teardown before any closes the store
-                    dist.barrier()
+                    abort = getattr(dist, "abort", None)
+                    if callable(abort):
+                        abort()
                 except Exception:
                     pass
+            raise
+        finally:
+            if dist.is_initialized():
+                # Do not call dist.barrier() here: after the worker returns, ranks can
+                # reach this block at different times (DataLoader teardown, GC, CUDA
+                # flush). A barrier is an NCCL collective and can hang until watchdog.
+                if idx is not None:
+                    try:
+                        torch.cuda.synchronize(idx)
+                    except Exception:
+                        pass
                 try:
                     dist.destroy_process_group()
                 except Exception:

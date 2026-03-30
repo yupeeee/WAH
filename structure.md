@@ -20,6 +20,7 @@
 	- `ClassificationModel`
 	- `StableDiffusion`
 	- `RealisticVision`
+	- `CLIP`
 	- `SSCD`
 	- `getargs`
 	- `getattrs`
