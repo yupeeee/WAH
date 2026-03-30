@@ -1,8 +1,7 @@
-from typing import List, Union
+from typing import List, Tuple, Union
 
 import torch
 import torchvision.transforms as T
-from huggingface_hub import list_models
 from PIL.Image import Image
 from transformers import CLIPModel, CLIPTokenizer
 
@@ -10,9 +9,20 @@ __all__ = [
     "CLIP",
 ]
 
+# OpenAI CLIP checkpoints on the Hub use the openai/clip-* id scheme. We validate
+# locally so construction does not call list_models() (no network; safe for DDP).
+_KNOWN_OPENAI_CLIP_IDS: Tuple[str, ...] = (
+    "openai/clip-vit-base-patch32",
+    "openai/clip-vit-base-patch16",
+    "openai/clip-vit-large-patch14",
+    "openai/clip-vit-large-patch14-336",
+    "openai/clip-rn50",
+    "openai/clip-rn101",
+)
 
-def _available_models() -> List[str]:
-    return [model.modelId for model in list_models(filter="clip", author="openai")]
+
+def _is_openai_clip_model_id(model_id: str) -> bool:
+    return isinstance(model_id, str) and model_id.startswith("openai/clip-")
 
 
 def _is_text(x) -> bool:
@@ -28,9 +38,11 @@ class CLIP:
         model_id: str = "openai/clip-vit-base-patch32",
         device: torch.device = torch.device("cpu"),
     ) -> None:
-        assert (
-            model_id in _available_models()
-        ), f"Model '{model_id}' is not supported. Available models: {', '.join(_available_models())}"
+        if not _is_openai_clip_model_id(model_id):
+            raise ValueError(
+                f"Model '{model_id}' must be an OpenAI CLIP Hub id (prefix 'openai/clip-'). "
+                f"Examples: {', '.join(_KNOWN_OPENAI_CLIP_IDS)}"
+            )
 
         self.model_id = model_id
         self.device = (
