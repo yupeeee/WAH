@@ -208,7 +208,7 @@ class DDP:
         os.environ["MASTER_ADDR"] = self.master_addr
         os.environ["MASTER_PORT"] = str(self.master_port)
         # Propagate rank failures to peers instead of hanging until NCCL watchdog.
-        os.environ.setdefault("NCCL_ASYNC_ERROR_HANDLING", "1")
+        os.environ.setdefault("TORCH_NCCL_ASYNC_ERROR_HANDLING", "1")
         os.environ.setdefault("TORCH_NCCL_BLOCKING_WAIT", "1")
 
         if self.verbose:
