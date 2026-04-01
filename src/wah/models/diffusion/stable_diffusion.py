@@ -234,6 +234,7 @@ class StableDiffusion:
             **kwargs,
         )
         self._device: torch.device = self._pipe._execution_device
+        self.reset()
 
         # encode_image
         # https://github.com/huggingface/diffusers/blob/main/src/diffusers/pipelines/stable_diffusion/safety_checker.py#L41
