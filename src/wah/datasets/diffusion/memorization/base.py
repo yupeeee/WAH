@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from torch.utils.data import Dataset
 
@@ -97,31 +97,28 @@ class _WebsterArXiv2023(Dataset):
     # def get_retrieved_url(self, index: int) -> str:
     #     return self.retrieved_urls[self.indices.index(index)]
 
-    def split_indices(self) -> Tuple[List[int], List[int], List[int], List[int]]:
-        overfit_types = [self.get_overfit_type(index) for index in self.indices]
+    def split_indices(
+        self, indices: Optional[List[int]] = None
+    ) -> Tuple[List[int], List[int], List[int], List[int]]:
+        if indices is None:
+            indices = self.indices
+
+        overfit_types = [self.get_overfit_type(index) for index in indices]
 
         # MATCHING VERBATIM
         MV_indices = [
-            self.indices[i]
-            for i in range(len(self.indices))
-            if overfit_types[i] == "MV"
+            indices[i] for i in range(len(indices)) if overfit_types[i] == "MV"
         ]
         # TEMPLATE DUPLICATE
         TV_indices = [
-            self.indices[i]
-            for i in range(len(self.indices))
-            if overfit_types[i] == "TV"
+            indices[i] for i in range(len(indices)) if overfit_types[i] == "TV"
         ]
         # RETRIEVED VERBATIM
         RV_indices = [
-            self.indices[i]
-            for i in range(len(self.indices))
-            if overfit_types[i] == "RV"
+            indices[i] for i in range(len(indices)) if overfit_types[i] == "RV"
         ]
         # NONE
-        N_indices = [
-            self.indices[i] for i in range(len(self.indices)) if overfit_types[i] == "N"
-        ]
+        N_indices = [indices[i] for i in range(len(indices)) if overfit_types[i] == "N"]
 
         return (
             MV_indices,
