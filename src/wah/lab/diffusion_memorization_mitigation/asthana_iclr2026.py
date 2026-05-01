@@ -134,7 +134,7 @@ def _mitigate_latents(
     torch.cuda.empty_cache()
     latents = torch.cat(lat_lst)[:ipp]
 
-    return latents
+    return latents.detach()
 
 
 def asthana_iclr2026_mitigate(
@@ -190,5 +190,6 @@ def asthana_iclr2026(
     pipe,
     seed: Optional[Union[int, List[int]]] = None,
     verbose: bool = False,
+    **kwargs,
 ) -> List[Image]:
-    return asthana_iclr2026_mitigate(prompt, pipe, seed, verbose)
+    return asthana_iclr2026_mitigate(prompt, pipe, seed, verbose, **kwargs)
