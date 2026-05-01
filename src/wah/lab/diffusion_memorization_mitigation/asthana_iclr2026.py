@@ -147,24 +147,33 @@ def asthana_iclr2026_mitigate(
     miti_budget: int = 8,
     miti_lr: float = 0.05,
     miti_max_steps: int = 10,
-    gen_seed: int = 0,
 ) -> List[Image]:
-
+    if isinstance(prompt, str):
+        prompt = [prompt]
     prompt_embeds = pipe.prepare_embeds(prompt)
+    prompt_embeds_uncond, prompt_embeds_cond = prompt_embeds.chunk(2, dim=0)
     timesteps, num_timesteps, _ = pipe.prepare_timesteps()
-    latents = pipe.prepare_latents(prompt_embeds, seed=seed)
 
-    latents = _mitigate_latents(
-        prompt_embeds,
-        timesteps,
-        latents,
-        pipe,
-        miti_thres=miti_thres,
-        miti_budget=miti_budget,
-        miti_lr=miti_lr,
-        miti_max_steps=miti_max_steps,
-        gen_seed=gen_seed,
-    )
+    latents = []
+    for i in range(len(prompt)):
+        prompt_embed = torch.stack(
+            [prompt_embeds_uncond[i], prompt_embeds_cond[i]], dim=0
+        )
+
+        latent = pipe.prepare_latents(prompt_embed, seed=seed)
+        latent = _mitigate_latents(
+            prompt_embed,
+            timesteps,
+            latent,
+            pipe,
+            miti_thres=miti_thres,
+            miti_budget=miti_budget,
+            miti_lr=miti_lr,
+            miti_max_steps=miti_max_steps,
+            gen_seed=seed,
+        )
+        latents.append(latent)
+    latents = torch.cat(latents, dim=0)
 
     for _, t in tqdm.tqdm(
         enumerate(timesteps), total=num_timesteps, disable=not verbose
