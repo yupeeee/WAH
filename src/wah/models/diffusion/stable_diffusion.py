@@ -225,6 +225,7 @@ class StableDiffusion:
         safety_check: bool = True,
         **kwargs,
     ) -> None:
+        self._version = version
         self._pipe: diffusers.StableDiffusionPipeline = _load_pipe(
             version,
             scheduler,
@@ -243,6 +244,10 @@ class StableDiffusion:
         self.visual_projection = nn.Linear(
             config.vision_config.hidden_size, config.projection_dim, bias=False
         )
+
+    @property
+    def version(self) -> str:
+        return self._version
 
     @property
     def pipe(self) -> diffusers.StableDiffusionPipeline:
