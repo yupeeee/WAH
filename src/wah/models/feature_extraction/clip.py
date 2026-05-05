@@ -3,6 +3,7 @@ from typing import List, Tuple, Union
 import torch
 import torchvision.transforms as T
 from PIL.Image import Image
+from torch import Tensor
 from transformers import CLIPModel, CLIPTokenizer
 
 __all__ = [
@@ -113,6 +114,11 @@ class CLIP:
         self, input: Union[str, List[str], Image, List[Image]]
     ) -> torch.Tensor:
         if _is_text(input):
-            return self._embed_text(input)
+            embeddings = self._embed_text(input)
         else:
-            return self._embed_image(input)
+            embeddings = self._embed_image(input)
+
+        if not isinstance(embeddings, Tensor) and hasattr(embeddings, "pooler_output"):
+            embeddings = embeddings.pooler_output
+
+        return embeddings
