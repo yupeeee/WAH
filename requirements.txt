@@ -1,8 +1,10 @@
 accelerate
 diffusers
+matplotlib
 pandas
 pyarrow
 timm
 torch
+torchmetrics
 torchvision
 transformers
