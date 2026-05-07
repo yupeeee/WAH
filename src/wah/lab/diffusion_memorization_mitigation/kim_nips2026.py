@@ -34,14 +34,17 @@ def adjust_prompt(
     # Optimizer
     optimizer = torch.optim.AdamW([_prompt_embeds], lr=lr)
 
-    # Compute loss (l2 norm of conditional noise prediction)
+    # Compute loss (l2 norm of conditional posterior)
+    alphas_cumprod = pipe.pipe.scheduler.alphas_cumprod
+    T = timesteps[0]
     noise_pred = pipe.predict_noise(
-        latents, prompt_embeds, timesteps[0], enable_grad=True
+        latents, prompt_embeds, T, enable_grad=True
     )
     if pipe.pipe.do_classifier_free_guidance:
         _, noise_pred_text = noise_pred.chunk(2)
         noise_pred = noise_pred_text
-    loss = torch.norm(noise_pred, p=2).mean()
+    posterior = (latents - alphas_cumprod[T] * noise_pred) / torch.sqrt(1 - alphas_cumprod[T])
+    loss = torch.norm(posterior, p=2).mean()
 
     # Compute gradient
     (_prompt_embeds.grad,) = torch.autograd.grad(loss, [_prompt_embeds])
