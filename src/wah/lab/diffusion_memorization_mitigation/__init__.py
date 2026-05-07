@@ -6,6 +6,7 @@ from PIL.Image import Image
 from .asthana_iclr2026 import asthana_iclr2026 as _asthana_iclr2026
 from .hintersdorf_nips2024 import hintersdorf_nips2024 as _hintersdorf_nips2024
 from .jain_cvpr2025 import jain_cvpr2025_dynamic as _jain_cvpr2025_dynamic
+from .kim_nips2026 import kim_nips2026 as _kim_nips2026
 from .ren_eccv2024 import ren_eccv2024 as _ren_eccv2024
 from .wen_iclr2024 import wen_iclr2024 as _wen_iclr2024
 
@@ -24,6 +25,7 @@ class MemorizationMitigator:
             "hintersdorf_nips2024",
             "jain_cvpr2025",
             "asthana_iclr2026",
+            "kim_nips2026",
         ] = "jain_cvpr2025",
     ) -> None:
         self._pipe = pipe
@@ -34,6 +36,7 @@ class MemorizationMitigator:
             "hintersdorf_nips2024": _hintersdorf_nips2024,
             "jain_cvpr2025": _jain_cvpr2025_dynamic,
             "asthana_iclr2026": _asthana_iclr2026,
+            "kim_nips2026": _kim_nips2026,
         }
 
     def to(self, device: Optional[Union[str, torch.device]]) -> "MemorizationMitigator":
