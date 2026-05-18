@@ -7,6 +7,7 @@ __all__ = [
     "_rescale_noise_cfg",
     "_retrieve_timesteps",
     "_calculate_shift",
+    "_detach_clone",
 ]
 
 
@@ -122,3 +123,15 @@ def _calculate_shift(
     b = base_shift - m * base_seq_len
     mu = image_seq_len * m + b
     return mu
+
+
+# RuntimeError: Error: accessing tensor output of CUDAGraphs that has been overwritten by a subsequent run.
+# ...
+# To prevent overwriting, clone the tensor outside of torch.compile() or call torch.compiler.cudagraph_mark_step_begin() before each model invocation.
+def _detach_clone(
+    tensor: Tensor,
+) -> Tensor:
+    if not tensor.requires_grad:
+        tensor = tensor.detach()
+    tensor = tensor.clone()
+    return tensor

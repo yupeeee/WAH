@@ -6,6 +6,7 @@ from PIL.Image import Image
 from torch import Tensor
 
 from .utils import (
+    _detach_clone,
     _get_generator,
     _get_image_embeds,
     _get_prompt_embeds,
@@ -355,6 +356,8 @@ def _predict_noise(
         added_cond_kwargs=pipe._params["added_cond_kwargs"],
         return_dict=False,
     )[0]
+
+    noise_preds = _detach_clone(noise_preds)
 
     return noise_preds
 

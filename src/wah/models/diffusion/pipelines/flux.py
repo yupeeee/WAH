@@ -8,6 +8,7 @@ from torch import Tensor
 
 from .utils import (
     _calculate_shift,
+    _detach_clone,
     _get_generator,
     _get_image_embeds,
     _get_prompt_embeds,
@@ -433,6 +434,7 @@ def _predict_noise(
             joint_attention_kwargs=pipe.joint_attention_kwargs,
             return_dict=False,
         )[0]
+    noise_preds = _detach_clone(noise_preds)
 
     negative_noise_preds = None
     if pipe._params["do_true_cfg"]:
@@ -453,6 +455,11 @@ def _predict_noise(
                 joint_attention_kwargs=pipe.joint_attention_kwargs,
                 return_dict=False,
             )[0]
+
+        if negative_noise_preds.requires_grad:
+            raise RuntimeError("negative_noise_preds should not require gradients")
+
+        negative_noise_preds = _detach_clone(negative_noise_preds)
 
     return noise_preds, negative_noise_preds
 
