@@ -12,6 +12,17 @@ __all__ = [
 ]
 
 
+def check_pipe_name(
+    name: str,
+):
+    if name in Pipelines:
+        return (name, Pipelines)
+    else:
+        raise ValueError(
+            f"Unsupported pipeline: {name} (must be one of {', '.join(list(Pipelines.keys()))})"
+        )
+
+
 def load_pipe(
     name: str,
     scheduler: str = None,
@@ -20,9 +31,7 @@ def load_pipe(
     compile_pipe: Optional[Literal["reduce-overhead", "max-autotune"]] = None,
     **kwargs,
 ):
-    assert (
-        name in Pipelines
-    ), f"Unsupported pipeline: {name} (must be one of {', '.join(list(Pipelines.keys()))})"
+    name, Pipelines = check_pipe_name(name)
 
     structure, model_name = Pipelines[name]
     utils = getattr(pipelines, structure)
