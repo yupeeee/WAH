@@ -7,7 +7,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name="wah",
-    version="1.22.4",
+    version="1.22.5",
     description="a library so simple you will learn Within An Hour",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -25,7 +25,9 @@ setup(
     install_requires=[
         "setuptools>=61.0",
         "accelerate",
+        "black",
         "diffusers",
+        "isort",
         "matplotlib",
         "pandas",
         "pyarrow",

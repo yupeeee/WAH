@@ -40,8 +40,8 @@ def load_pipe(
         model_name,
         torch_dtype=torch_dtype,
         use_safetensors=use_safetensors,
-        cache_dir=os.environ["HF_HUB_CACHE"],
-        token=os.environ["HF_TOKEN"],
+        cache_dir=os.environ.get("HF_HUB_CACHE"),
+        token=os.environ.get("HF_TOKEN"),
         **kwargs,
     )
     pipe.set_progress_bar_config(disable=True)

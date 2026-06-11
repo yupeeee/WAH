@@ -92,7 +92,8 @@ class CLIP:
 
         with torch.no_grad():
             embeddings = self.clip_model.get_text_features(
-                input_ids=inputs["input_ids"]
+                input_ids=inputs["input_ids"],
+                attention_mask=inputs["attention_mask"],
             )
 
         return embeddings

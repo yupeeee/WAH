@@ -1,5 +1,7 @@
 accelerate
+black
 diffusers
+isort
 matplotlib
 pandas
 pyarrow
